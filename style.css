@@ -1,0 +1,151 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.logo img {
+    height: 100px;
+}
+
+body {
+    background-color: #000;
+    color: #fff;
+}
+
+/* HEADER */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background-color: #111;
+}
+
+/* Logo */
+.logo img {
+    height: 100px;
+    width: auto;
+    max-width: 100%;
+}
+
+/* Links à esquerda */
+header .nav-left {
+    display: flex;
+    gap: 100px; /* espaçamento uniforme entre os links */
+    align-items: center;
+}
+
+header .nav-left a {
+    text-decoration: none;
+    color: white;
+    transition: 0.3s;
+
+    font-family: Arial, Helvetica, sans-serif; /* fonte simples e limpa */
+    font-size: 18px; /* aumenta o tamanho das letras */
+    font-weight: 500; /* opcional, dá leve destaque */
+}
+
+header .nav-left a:hover {
+    color: red;
+}
+
+/* Botões à direita */
+header .nav-right {
+    display: flex;
+    gap: 15px; /* espaçamento entre os botões */
+    align-items: center;
+}
+
+header .nav-right a.btn {
+    padding: 8px 16px;
+    background-color: red;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: 0.3s;
+
+     font-family: Arial, Helvetica, sans-serif; /* fonte simples e limpa */
+    font-size: 18px; /* aumenta o tamanho das letras */
+    font-weight: 500; /* opcional, dá leve destaque */
+}
+
+header .nav-right a.btn:hover {
+    background-color: darkred;
+}
+.main-title {
+    color: red;
+    text-align: center;
+    margin: 40px 0; /* espaço acima e abaixo */
+    font-size: 28px;
+}
+
+/* SEÇÕES */
+section {
+    padding: 60px 40px;
+}
+
+h3 {
+    color: red;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+
+/* LOGIN */
+.login {
+    text-align: center;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 30px;
+}
+
+.card {
+    background: #111;
+    padding: 30px;
+    border-radius: 15px;
+    width: 250px;
+}
+
+.card h3 {
+    color: red;
+    margin-bottom: 20px;
+}
+
+.card input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: none;
+}
+
+.card button {
+    width: 100%;
+    padding: 10px;
+    background: red;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.card button:hover {
+    background: darkred;
+}
+
+/* FOOTER */
+footer {
+    background: #111;
+    padding: 40px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
