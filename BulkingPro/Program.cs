@@ -1,13 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using BulkingPro.Data;
+using BulkingPro.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔥 Conexão com banco de dados
+// Banco
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 🔐 Identity com Usuario
+// Identity
 builder.Services.AddIdentity<Usuario, IdentityRole<Guid>>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
@@ -27,15 +29,13 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-// 🔥 IMPORTANTE (ordem correta)
-app.UseAuthentication(); // login
-app.UseAuthorization();  // autorização
+app.UseStaticFiles(); // 🔥 correto
 
-app.MapStaticAssets();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
