@@ -1,0 +1,3 @@
+//Configurando o GITHUB:
+git config --global user.name aureliovianadev
+git config --global user.email aureliovianadev@gmail.com
