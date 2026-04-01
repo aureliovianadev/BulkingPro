@@ -9,7 +9,11 @@ public class Exercicio
 
     public string Nome { get; set; }
     public string? Descricao { get; set; }
-    public string? GrupoMuscular { get; set; }
+
+    // 🔥 Relacionamento correto com GrupoMuscular
+    public Guid GrupoMuscularId { get; set; }
+    public GrupoMuscular GrupoMuscular { get; set; }
+
     public string? InstrucoesExecucao { get; set; }
 
     public bool Ativo { get; set; }
