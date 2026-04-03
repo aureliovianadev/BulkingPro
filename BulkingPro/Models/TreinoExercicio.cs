@@ -5,10 +5,10 @@ namespace BulkingPro.Models;
 
 public class TreinoExercicio
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; } // pode continuar int
 
-    public Guid TreinoId { get; set; }
-    public Guid ExercicioId { get; set; }
+    public int TreinoId { get; set; } // continua int (se Treino for int)
+    public int ExercicioId { get; set; } 
 
     public int Ordem { get; set; }
 

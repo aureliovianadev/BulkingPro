@@ -5,10 +5,10 @@ namespace BulkingPro.Models;
 
 public class ExecucaoTreino
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
-    public Guid TreinoId { get; set; }
-    public Guid AlunoId { get; set; }
+    public int TreinoId { get; set; }
+    public int AlunoId { get; set; }
 
     public DateTime DataExecucao { get; set; }
 

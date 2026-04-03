@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace BulkingPro.Models;
 public class Treino
 {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
 
-    public Guid PlanoTreinoId { get; set; }
+    public int PlanoTreinoId { get; set; }
 
     public string Nome { get; set; }
     public int OrdemDia { get; set; }

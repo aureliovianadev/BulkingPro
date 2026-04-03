@@ -24,11 +24,11 @@ namespace BulkingPro.Migrations
 
             modelBuilder.Entity("BulkingPro.Models.ExecucaoTreino", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AlunoId")
+                    b.Property<int>("AlunoId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("Concluido")
@@ -49,7 +49,7 @@ namespace BulkingPro.Migrations
                     b.Property<string>("ObservacoesGerais")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("TreinoId")
+                    b.Property<int>("TreinoId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -63,7 +63,7 @@ namespace BulkingPro.Migrations
 
             modelBuilder.Entity("BulkingPro.Models.ExecucaoTreinoExercicio", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -73,7 +73,7 @@ namespace BulkingPro.Migrations
                     b.Property<bool>("Concluido")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("ExecucaoTreinoId")
+                    b.Property<int>("ExecucaoTreinoId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Observacoes")
@@ -85,7 +85,7 @@ namespace BulkingPro.Migrations
                     b.Property<int?>("SeriesFeitas")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("TreinoExercicioId")
+                    b.Property<int>("TreinoExercicioId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -99,7 +99,7 @@ namespace BulkingPro.Migrations
 
             modelBuilder.Entity("BulkingPro.Models.Exercicio", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -131,11 +131,11 @@ namespace BulkingPro.Migrations
 
             modelBuilder.Entity("BulkingPro.Models.PlanoTreino", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AlunoId")
+                    b.Property<int>("AlunoId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("DataAtualizacao")
@@ -159,7 +159,7 @@ namespace BulkingPro.Migrations
                     b.Property<string>("Titulo")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("TreinadorId")
+                    b.Property<int>("TreinadorId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -173,7 +173,7 @@ namespace BulkingPro.Migrations
 
             modelBuilder.Entity("BulkingPro.Models.Treino", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -192,7 +192,7 @@ namespace BulkingPro.Migrations
                     b.Property<int>("OrdemDia")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("PlanoTreinoId")
+                    b.Property<int>("PlanoTreinoId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -204,7 +204,7 @@ namespace BulkingPro.Migrations
 
             modelBuilder.Entity("BulkingPro.Models.TreinoExercicio", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -217,7 +217,7 @@ namespace BulkingPro.Migrations
                     b.Property<DateTime>("DataCriacao")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("ExercicioId")
+                    b.Property<int>("ExercicioId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Observacoes")
@@ -235,7 +235,7 @@ namespace BulkingPro.Migrations
                     b.Property<int?>("TempoDescanso")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("TreinoId")
+                    b.Property<int>("TreinoId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -249,7 +249,7 @@ namespace BulkingPro.Migrations
 
             modelBuilder.Entity("BulkingPro.Models.Usuario", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -325,9 +325,9 @@ namespace BulkingPro.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.int>", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -353,7 +353,7 @@ namespace BulkingPro.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.int>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -367,7 +367,7 @@ namespace BulkingPro.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("RoleId")
+                    b.Property<int>("RoleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -377,7 +377,7 @@ namespace BulkingPro.Migrations
                     b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.int>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -391,7 +391,7 @@ namespace BulkingPro.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<int>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
@@ -401,7 +401,7 @@ namespace BulkingPro.Migrations
                     b.ToTable("AspNetUserClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.int>", b =>
                 {
                     b.Property<string>("LoginProvider")
                         .HasColumnType("nvarchar(450)");
@@ -412,7 +412,7 @@ namespace BulkingPro.Migrations
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<int>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("LoginProvider", "ProviderKey");
@@ -422,12 +422,12 @@ namespace BulkingPro.Migrations
                     b.ToTable("AspNetUserLogins", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.int>", b =>
                 {
-                    b.Property<Guid>("UserId")
+                    b.Property<int>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("RoleId")
+                    b.Property<int>("RoleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("UserId", "RoleId");
@@ -437,9 +437,9 @@ namespace BulkingPro.Migrations
                     b.ToTable("AspNetUserRoles", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.int>", b =>
                 {
-                    b.Property<Guid>("UserId")
+                    b.Property<int>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("LoginProvider")
@@ -543,16 +543,16 @@ namespace BulkingPro.Migrations
                     b.Navigation("Treino");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.int>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.int>", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.int>", b =>
                 {
                     b.HasOne("BulkingPro.Models.Usuario", null)
                         .WithMany()
@@ -561,7 +561,7 @@ namespace BulkingPro.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.int>", b =>
                 {
                     b.HasOne("BulkingPro.Models.Usuario", null)
                         .WithMany()
@@ -570,9 +570,9 @@ namespace BulkingPro.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.int>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.int>", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -585,7 +585,7 @@ namespace BulkingPro.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.int>", b =>
                 {
                     b.HasOne("BulkingPro.Models.Usuario", null)
                         .WithMany()
