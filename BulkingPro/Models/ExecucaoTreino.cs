@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+#nullable enable
+
 namespace BulkingPro.Models;
 
 public class ExecucaoTreino
@@ -21,8 +23,8 @@ public class ExecucaoTreino
 
     public DateTime DataCriacao { get; set; }
 
-    public Treino Treino { get; set; }
-    public Usuario Aluno { get; set; }
+    public Treino Treino { get; set; } = null!;
+    public Usuario Aluno { get; set; } = null!;
 
     public ICollection<ExecucaoTreinoExercicio> Exercicios { get; set; } = new List<ExecucaoTreinoExercicio>();
 }

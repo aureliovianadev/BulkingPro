@@ -12,6 +12,8 @@ public class ApplicationDbContext : IdentityDbContext<Usuario, IdentityRole<Guid
     {
     }
 
+    
+
     // 🔥 Tabelas
     public DbSet<Exercicio> Exercicios { get; set; }
     public DbSet<GrupoMuscular> GruposMusculares { get; set; }
@@ -236,6 +238,96 @@ builder.Entity<Exercicio>().HasData(
     new Exercicio { Id = 65, Nome = "Remo", GrupoMuscularId = cardioId, Ativo = true, DataCriacao = new DateTime(2026, 4, 2) }
 );
 
+// ===================== ROLES E USUÁRIOS =====================
+
+// 🔹 IDs FIXOS (NUNCA ALTERE DEPOIS DE CRIAR MIGRATION)
+var adminRoleId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+var modRoleId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+var userRoleId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
+var adminId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+var moderadorId = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee");
+var usuarioId = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff");
+
+// ===================== ROLES =====================
+builder.Entity<IdentityRole<Guid>>().HasData(
+    new IdentityRole<Guid>
+    {
+        Id = adminRoleId,
+        Name = "Administrador",
+        NormalizedName = "ADMINISTRADOR"
+    },
+    new IdentityRole<Guid>
+    {
+        Id = modRoleId,
+        Name = "Moderador",
+        NormalizedName = "MODERADOR"
+    },
+    new IdentityRole<Guid>
+    {
+        Id = userRoleId,
+        Name = "Usuario",
+        NormalizedName = "USUARIO"
+    }
+);
+
+// ===================== USUÁRIOS =====================
+var hasher = new PasswordHasher<Usuario>();
+
+var admin = new Usuario
+{
+    Id = adminId,
+    Nome = "Administrador",
+    UserName = "admin@bulking.com",
+    NormalizedUserName = "ADMIN@BULKING.COM",
+    Email = "admin@bulking.com",
+    NormalizedEmail = "ADMIN@BULKING.COM",
+    EmailConfirmed = true,
+    LockoutEnabled = false,
+    SecurityStamp = Guid.NewGuid().ToString()
+};
+
+admin.PasswordHash = hasher.HashPassword(admin, "123456");
+
+var moderador = new Usuario
+{
+    Id = moderadorId,
+    Nome = "Moderador",
+    UserName = "moderador@bulking.com",
+    NormalizedUserName = "MODERADOR@BULKING.COM",
+    Email = "moderador@bulking.com",
+    NormalizedEmail = "MODERADOR@BULKING.COM",
+    EmailConfirmed = true,
+    LockoutEnabled = false,
+    SecurityStamp = Guid.NewGuid().ToString()
+};
+
+moderador.PasswordHash = hasher.HashPassword(moderador, "123456");
+
+var usuario = new Usuario { Id = usuarioId, Nome = "Usuario", UserName = "usuario@bulking.com", NormalizedUserName = "USUARIO@BULKING.COM", Email = "usuario@bulking.com", NormalizedEmail = "USUARIO@BULKING.COM", EmailConfirmed = true, LockoutEnabled = false, SecurityStamp = Guid.NewGuid().ToString() };
+
+usuario.PasswordHash = hasher.HashPassword(usuario, "123456");
+
+builder.Entity<Usuario>().HasData(admin, moderador, usuario);
+
+// ===================== RELAÇÃO USER ↔ ROLE =====================
+builder.Entity<IdentityUserRole<Guid>>().HasData(
+    new IdentityUserRole<Guid>
+    {
+        UserId = adminId,
+        RoleId = adminRoleId
+    },
+    new IdentityUserRole<Guid>
+    {
+        UserId = moderadorId,
+        RoleId = modRoleId
+    },
+    new IdentityUserRole<Guid>
+    {
+        UserId = usuarioId,
+        RoleId = userRoleId
+    }
+);
             
     }
 

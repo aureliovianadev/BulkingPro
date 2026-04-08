@@ -5,11 +5,11 @@ namespace BulkingPro.Models;
 
 public class GrupoMuscular
 {
-    public Guid Id { get; set; }
-    public string Nome { get; set; }
+    public int Id { get; set; }
+    public string Nome { get; set; } = null!;
 
-    public Guid CategoriaMuscularId { get; set; }
-    public CategoriaMuscular CategoriaMuscular { get; set; }
+    public int CategoriaMuscularId { get; set; }
+    public CategoriaMuscular CategoriaMuscular { get; set; } = null!;
 
     public ICollection<Exercicio> Exercicios { get; set; } = new List<Exercicio>();
 }
