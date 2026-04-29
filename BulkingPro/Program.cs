@@ -7,10 +7,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Banco
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseMySQL(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Identity
-builder.Services.AddIdentity<Usuario, IdentityRole<int>>()
+builder.Services.AddIdentity<Usuario, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
@@ -18,6 +18,14 @@ builder.Services.AddIdentity<Usuario, IdentityRole<int>>()
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+// Garante a existência do banco
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
+}
+
 
 // Pipeline
 if (!app.Environment.IsDevelopment())
