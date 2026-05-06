@@ -1,74 +1,25 @@
-﻿@{
-    ViewData["mainClass"] = ViewData["mainClass"] ?? "container";
-}
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BulkingPro | @ViewData["Title"]</title>
-
-    <link rel="shortcut icon" href="~/img/logo.png" type="image/x-icon">
-
-    <!-- Ícones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-    <!-- Estilo -->
-    <link rel="stylesheet" href="~/css/darkStyle.css">
-
-    @await RenderSectionAsync("Styles", required: false)
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - BulkingPro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
-
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <a asp-action="Index" asp-controller="Home" class="logo-area">
-            <div class="logo-icon">
-                <img src="~/img/logo.png" alt="logo" width="50">
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo-area">
+                <img src="~/img/Logo.jpg" alt="BulkingPro" />
             </div>
-            <div class="logo-text">BulkingPro</div>
-        </a>
-
-        <div class="profile-section">
-            <div class="profile-preview">
-
-                <!-- depois você liga isso com usuário real -->
-                <img class="avatar-img"
-                     src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=80&h=80&fit=crop&auto=format"
-                     alt="Usuário">
-
-                <div class="user-info">
-                    <div class="user-name">Usuário</div>
-                    <div class="user-role">
-                        <i class="fas fa-dumbbell"></i> atleta
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dropdown -->
-            <div class="dropdown-menu">
-                <div class="dropdown-item">
-                    <i class="fas fa-user"></i> Meu perfil
-                </div>
-
-                <div class="dropdown-item">
-                    <i class="fas fa-cogs"></i> Configurações
-                </div>
-
-                <div class="dropdown-item">
-                    <i class="fas fa-sign-out-alt"></i> Sair
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <main class="@ViewData["mainClass"]">
-        @RenderBody()
-    </main>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
+            <nav>
+                <a asp-controller="Home" asp-action="Index">Home</a>
+                <a asp-controller="Exercicios" asp-action="Index">Exercícios</a>
+            </nav>
+        </aside>
+        <main class="content">
+            @RenderBody()
+        </main>
+    </div>
 </body>
 </html>
