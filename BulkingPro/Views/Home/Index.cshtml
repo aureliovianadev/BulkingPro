@@ -42,7 +42,7 @@
                 padding: 48px 40px;
                 width: 100%;
                 max-width: 420px;
-                border: 1px solid rgba(200, 60, 40, 0.4);
+                border: 1px solid rgba(238, 25, 32, 0.4);
                 box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.6);
             }
 
@@ -52,8 +52,9 @@
             }
 
             .logo-area img {
-                height: 70px;
-                width: auto;
+                height: auto;
+                width: 180px;
+                max-width: 100%;
             }
 
             .subtitulo {
@@ -98,9 +99,9 @@
 
             .input-group input:focus {
                 outline: none;
-                border-color: #d4523a;
+                border-color: #ee1920;
                 background: rgba(28, 24, 20, 0.9);
-                box-shadow: 0 0 0 2px rgba(212, 82, 58, 0.2);
+                box-shadow: 0 0 0 2px rgba(238, 25, 32, 0.2);
             }
 
             .input-group input::placeholder {
@@ -108,7 +109,7 @@
             }
 
             .btn-login {
-                background: linear-gradient(135deg, #d1422a 0%, #a8311a 50%, #c93a22 100%);
+                background: linear-gradient(135deg, #ee1920 0%, #c41218 50%, #d9151c 100%);
                 color: white;
                 border: none;
                 border-radius: 40px;
@@ -121,7 +122,7 @@
                 margin-top: 8px;
                 position: relative;
                 overflow: hidden;
-                box-shadow: 0 4px 12px rgba(193, 65, 45, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                box-shadow: 0 4px 12px rgba(238, 25, 32, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
                 text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
                 transition: all 0.25s ease;
             }
@@ -138,9 +139,9 @@
             }
 
             .btn-login:hover {
-                background: linear-gradient(135deg, #e04c32 0%, #b8351c 50%, #d93e24 100%);
+                background: linear-gradient(135deg, #ff1a22 0%, #d4141b 50%, #f0171e 100%);
                 transform: translateY(-2px);
-                box-shadow: 0 10px 22px rgba(193, 65, 45, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+                box-shadow: 0 10px 22px rgba(238, 25, 32, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
             }
 
             .btn-login:hover::before {
@@ -149,7 +150,7 @@
 
             .btn-login:active {
                 transform: translateY(1px);
-                box-shadow: 0 2px 8px rgba(193, 65, 45, 0.4);
+                box-shadow: 0 2px 8px rgba(238, 25, 32, 0.4);
             }
 
             .links-rodape {
@@ -168,8 +169,8 @@
             }
 
             .links-rodape a:hover {
-                color: #d4523a;
-                text-shadow: 0 0 2px rgba(212, 82, 58, 0.3);
+                color: #ee1920;
+                text-shadow: 0 0 2px rgba(238, 25, 32, 0.3);
             }
 
             .links-rodape span {
@@ -178,7 +179,7 @@
 
             /* Efeito metálico no hover do card */
             .login-card:hover {
-                border-color: rgba(212, 82, 58, 0.6);
+                border-color: rgba(238, 25, 32, 0.6);
                 transition: all 0.3s ease;
             }
     </style>
@@ -188,7 +189,7 @@
     <div class="login-container">
         <div class="login-card">
             <div class="logo-area">
-                <img src="~/img/Logo.jpg" alt="BulkingPro" />
+                <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
             </div>
 
             <p class="subtitulo">ACESSE SUA CONTA</p>
