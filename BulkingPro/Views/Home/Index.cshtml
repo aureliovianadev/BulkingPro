@@ -21,7 +21,6 @@
             min-height: 100vh;
         }
 
-        /* Hero Section */
         .hero {
             min-height: 100vh;
             background: radial-gradient(circle at 25% 40%, rgba(30,30,35,0.4) 0%, transparent 50%),
@@ -41,7 +40,6 @@
             align-items: center;
         }
 
-        /* Left side - Info */
         .info-area h1 {
             font-size: 48px;
             font-weight: 800;
@@ -80,7 +78,6 @@
             font-size: 18px;
         }
 
-        /* Right side - Login Card */
         .login-card {
             background: rgba(10,10,12,0.9);
             border-radius: 28px;
@@ -99,8 +96,9 @@
 
         .logo-area img {
             height: auto;
-            width: 180px;
+            width: 200px;
             max-width: 100%;
+            display: inline-block;
         }
 
         .subtitulo {
@@ -206,7 +204,6 @@
             color: #ee1920;
         }
 
-        /* Responsive */
         @@media (max-width: 900px) {
             .hero-content {
                 grid-template-columns: 1fr;
@@ -232,7 +229,6 @@
 <body>
     <div class="hero">
         <div class="hero-content">
-            <!-- Left side - Informações -->
             <div class="info-area">
                 <h1>BulkingPro</h1>
                 <p>Sua academia inteligente. Treine com os melhores profissionais e acompanhe sua evolução em tempo real.</p>
@@ -244,7 +240,6 @@
                 </div>
             </div>
 
-            <!-- Right side - Login -->
             <div class="login-card">
                 <div class="logo-area">
                     <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
@@ -252,17 +247,17 @@
 
                 <p class="subtitulo">ACESSE SUA CONTA</p>
 
+                @if (TempData["ErroLogin"] != null)
+                {
+                    <div class="erro-msg">@TempData["ErroLogin"]</div>
+                }
+
                 <form asp-controller="Account" asp-action="Login" method="post" class="login-form">
                     @Html.AntiForgeryToken()
 
-                    @if (ViewBag.Erro != null)
-                    {
-                        <div class="erro-msg">@ViewBag.Erro</div>
-                    }
-
                     <div class="input-group">
                         <label>E-MAIL</label>
-                        <input type="email" name="email" placeholder="seu@email.com" required />
+                        <input type="email" name="email" placeholder="seu@email.com" required autofocus />
                     </div>
 
                     <div class="input-group">

@@ -12,58 +12,51 @@ namespace BulkingPro.Controllers
         public AccountController(SignInManager<Usuario> signInManager, UserManager<Usuario> userManager)
         {
             _signInManager = signInManager;
-            _userManager   = userManager;
+            _userManager = userManager;
         }
 
-        // GET: /Account/Login
-        public IActionResult Login()
+        [HttpGet]
+        public IActionResult Login(string returnUrl = null)
         {
             if (_signInManager.IsSignedIn(User))
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Index", "Admin");
 
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
-        // POST: /Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string email, string senha)
+        public async Task<IActionResult> Login(string email, string senha, string returnUrl = null)
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(senha))
             {
-                ViewBag.Erro = "Preencha e-mail e senha.";
-                return View();
+                TempData["ErroLogin"] = "Preencha e-mail e senha.";
+                return RedirectToAction("Index", "Home");
             }
 
-            var result = await _signInManager.PasswordSignInAsync(
-                userName: email,
-                password: senha,
-                isPersistent: false,
-                lockoutOnFailure: false);
+            var result = await _signInManager.PasswordSignInAsync(email, senha, false, false);
 
             if (result.Succeeded)
             {
                 var user = await _userManager.FindByEmailAsync(email);
-                if (await _userManager.IsInRoleAsync(user!, "Administrador"))
+                
+                if (await _userManager.IsInRoleAsync(user, "Administrador"))
                     return RedirectToAction("Index", "Admin");
-
-                if (await _userManager.IsInRoleAsync(user!, "Moderador"))
-                    return RedirectToAction("Index", "Home"); // trocar pela área do personal quando existir
-
-                return RedirectToAction("Index", "Home"); // área do aluno
+                
+                return RedirectToAction("Index", "Home");
             }
 
-            ViewBag.Erro = "E-mail ou senha incorretos.";
-            return View();
+            TempData["ErroLogin"] = "E-mail ou senha incorretos.";
+            return RedirectToAction("Index", "Home");
         }
 
-        // POST: /Account/Logout
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            return RedirectToAction("Login", "Account");
+            return RedirectToAction("Index", "Home");
         }
     }
 }
