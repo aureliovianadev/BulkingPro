@@ -1,0 +1,101 @@
+@model List<BulkingPro.ViewModels.PersonalViewModel>
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"]      = "Personais";
+    ViewData["ActivePage"] = "Personais";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Personais</div>
+            <div class="topbar-sub">Gerenciar personal trainers</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-primary" asp-controller="Admin" asp-action="CriarPersonal">
+                <i class="ti ti-plus"></i> Novo personal
+            </a>
+        </div>
+    </div>
+}
+
+<div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" id="busca" placeholder="Buscar personal por nome ou e-mail..." />
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Alunos</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-body">
+            @{
+                var cores = new[] { "r", "g", "b", "p" };
+                int i = 0;
+            }
+            @foreach (var p in Model)
+            {
+                var cor   = cores[i % cores.Length];
+                var inics = p.NomeCompleto.Length >= 2
+                    ? p.NomeCompleto.Substring(0, 1).ToUpper() + p.NomeCompleto.Split(' ').Last().Substring(0, 1).ToUpper()
+                    : p.NomeCompleto.Substring(0, 1).ToUpper();
+                i++;
+                <tr>
+                    <td>
+                        <div class="td-user">
+                            <div class="tbl-av @cor">@inics</div>
+                            <span class="bold">@p.NomeCompleto</span>
+                        </div>
+                    </td>
+                    <td>@p.Email</td>
+                    <td>@p.TotalAlunos</td>
+                    <td>
+                        @if (p.Ativo)
+                        {
+                            <span class="badge badge-active">Ativo</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-inactive">Inativo</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="td-actions">
+                            <form asp-action="TogglePersonal" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@p.Id" />
+                                <button type="submit" class="btn btn-ghost btn-sm @(p.Ativo ? "btn-danger" : "")">
+                                    @(p.Ativo ? "Desativar" : "Ativar")
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+                        Nenhum personal cadastrado.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('busca').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#tabela-body tr').forEach(tr => {
+            tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+</script>

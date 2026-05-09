@@ -1,0 +1,74 @@
+@model List<BulkingPro.Models.PlanoTreino>
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"]      = "Planos de Treino";
+    ViewData["ActivePage"] = "Planos";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Planos de treino</div>
+            <div class="topbar-sub">Todos os planos cadastrados — @Model.Count total</div>
+        </div>
+    </div>
+}
+
+<div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" id="busca" placeholder="Buscar plano, aluno ou personal..." />
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Plano</th>
+                <th>Aluno</th>
+                <th>Personal</th>
+                <th>Início</th>
+                <th>Fim</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-body">
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td class="bold">@p.Titulo</td>
+                    <td>@p.Aluno?.NomeCompleto</td>
+                    <td>@p.Treinador?.NomeCompleto</td>
+                    <td>@p.DataInicio.ToString("dd/MM/yyyy")</td>
+                    <td>@(p.DataFim.HasValue ? p.DataFim.Value.ToString("dd/MM/yyyy") : "—")</td>
+                    <td>
+                        @if (p.Status == 1)
+                        {
+                            <span class="badge badge-active">Ativo</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-inactive">Encerrado</span>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="6" style="text-align:center;color:var(--muted);padding:24px">
+                        Nenhum plano cadastrado.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('busca').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#tabela-body tr').forEach(tr => {
+            tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+</script>

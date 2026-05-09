@@ -1,0 +1,82 @@
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"]      = "Permissões";
+    ViewData["ActivePage"] = "Permissoes";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Permissões e acessos</div>
+            <div class="topbar-sub">Controle de roles do sistema</div>
+        </div>
+    </div>
+}
+
+<!-- Administrador -->
+<div class="role-card">
+    <div class="role-header">
+        <div class="role-icon red"><i class="ti ti-crown"></i></div>
+        <div>
+            <div class="role-title">Administrador</div>
+            <div class="role-desc">Controle total da plataforma — role: <code style="color:var(--red)">Administrador</code></div>
+        </div>
+    </div>
+    <div class="perm-list">
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Gerenciar personais</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Gerenciar alunos</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Ver todos os treinos</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Gerenciar exercícios</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Controlar permissões</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Editar qualquer dado</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Criar novos treinos modelo</span>
+    </div>
+</div>
+
+<!-- Personal -->
+<div class="role-card">
+    <div class="role-header">
+        <div class="role-icon gold"><i class="ti ti-user-check"></i></div>
+        <div>
+            <div class="role-title">Personal Trainer</div>
+            <div class="role-desc">Acesso restrito aos próprios alunos — role: <code style="color:var(--gold)">Moderador</code></div>
+        </div>
+    </div>
+    <div class="perm-list">
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Cadastrar seus alunos</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Criar planos de treino</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Editar treinos dos alunos</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Registrar medidas físicas</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Acompanhar evolução</span>
+        <span class="perm-chip perm-off"><i class="ti ti-x"></i> Ver alunos de outros personais</span>
+        <span class="perm-chip perm-off"><i class="ti ti-x"></i> Configurações do sistema</span>
+        <span class="perm-chip perm-off"><i class="ti ti-x"></i> Gerenciar permissões</span>
+    </div>
+</div>
+
+<!-- Aluno -->
+<div class="role-card">
+    <div class="role-header">
+        <div class="role-icon blue"><i class="ti ti-user"></i></div>
+        <div>
+            <div class="role-title">Aluno</div>
+            <div class="role-desc">Apenas visualização das próprias informações — role: <code style="color:#388bfd">Usuario</code></div>
+        </div>
+    </div>
+    <div class="perm-list">
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Visualizar seus treinos</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Consultar exercícios</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Ver suas medidas físicas</span>
+        <span class="perm-chip perm-on"><i class="ti ti-check"></i> Acompanhar evolução</span>
+        <span class="perm-chip perm-off"><i class="ti ti-x"></i> Editar treinos</span>
+        <span class="perm-chip perm-off"><i class="ti ti-x"></i> Cadastrar exercícios</span>
+        <span class="perm-chip perm-off"><i class="ti ti-x"></i> Modificar avaliações</span>
+        <span class="perm-chip perm-off"><i class="ti ti-x"></i> Ver dados de outros alunos</span>
+    </div>
+</div>
+
+<div style="margin-top:16px;padding:16px 20px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;font-size:13px;color:var(--muted)">
+    <i class="ti ti-info-circle" style="color:var(--gold)"></i>
+    As roles são atribuídas automaticamente no cadastro. Para alterar a role de um usuário,
+    edite via <code>UserManager</code> no código ou use um endpoint de administração dedicado.
+</div>

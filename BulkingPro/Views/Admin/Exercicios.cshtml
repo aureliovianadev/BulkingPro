@@ -1,0 +1,70 @@
+@model List<BulkingPro.Models.Exercicio>
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"]      = "Exercícios";
+    ViewData["ActivePage"] = "Exercicios";
+
+    var grupos = Model.GroupBy(e => e.GrupoMuscular?.Nome ?? "Outros").OrderBy(g => g.Key);
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Exercícios</div>
+            <div class="topbar-sub">Base de exercícios — @Model.Count total</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-primary" asp-controller="Exercicios" asp-action="Create">
+                <i class="ti ti-plus"></i> Novo exercício
+            </a>
+        </div>
+    </div>
+}
+
+<div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" id="busca" placeholder="Buscar exercício ou grupo muscular..." />
+</div>
+
+<div id="exer-container">
+    @foreach (var grupo in grupos)
+    {
+        <div class="section-title" style="margin-bottom:10px;margin-top:20px">@grupo.Key</div>
+        <div class="exer-grid" style="margin-bottom:4px">
+            @foreach (var e in grupo)
+            {
+                <div class="exer-card">
+                    <div class="exer-tag">@e.GrupoMuscular?.CategoriaMuscular?.Nome</div>
+                    <div class="exer-name">@e.Nome</div>
+                    <div class="exer-meta">
+                        @if (e.Ativo)
+                        {
+                            <span class="dot-green"></span><span>Ativo</span>
+                        }
+                        else
+                        {
+                            <span style="color:var(--muted)">Inativo</span>
+                        }
+                    </div>
+                    <div style="margin-top:10px;display:flex;gap:6px">
+                        <a class="btn btn-ghost btn-sm" asp-controller="Exercicios" asp-action="Edit" asp-route-id="@e.Id">
+                            <i class="ti ti-edit"></i> Editar
+                        </a>
+                        <a class="btn btn-ghost btn-sm" asp-controller="Exercicios" asp-action="Details" asp-route-id="@e.Id">
+                            <i class="ti ti-eye"></i>
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<script>
+    document.getElementById('busca').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('.exer-card').forEach(card => {
+            card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+</script>

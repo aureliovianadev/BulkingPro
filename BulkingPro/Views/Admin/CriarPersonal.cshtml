@@ -1,0 +1,66 @@
+@model BulkingPro.ViewModels.CriarPersonalViewModel
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"]      = "Novo Personal";
+    ViewData["ActivePage"] = "Personais";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Novo Personal Trainer</div>
+            <div class="topbar-sub">Preencha os dados para criar o acesso</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-ghost" asp-controller="Admin" asp-action="Personais">
+                <i class="ti ti-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+}
+
+<div style="max-width:480px">
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="CriarPersonal" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label class="form-label" asp-for="NomeCompleto">Nome completo</label>
+                    <input class="form-control" asp-for="NomeCompleto" placeholder="Ex.: Marcos Oliveira" />
+                    <span asp-validation-for="NomeCompleto" class="field-validation-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" asp-for="Email">E-mail</label>
+                    <input class="form-control" asp-for="Email" type="email" placeholder="personal@academia.com" />
+                    <span asp-validation-for="Email" class="field-validation-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" asp-for="Senha">Senha inicial</label>
+                    <input class="form-control" asp-for="Senha" type="password" placeholder="Mínimo 6 caracteres" />
+                    <span asp-validation-for="Senha" class="field-validation-error"></span>
+                </div>
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey(""))
+                {
+                    <div class="alert alert-danger" style="margin-bottom:16px">
+                        @foreach (var erro in ViewData.ModelState[""]!.Errors)
+                        {
+                            <div>@erro.ErrorMessage</div>
+                        }
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+                    <i class="ti ti-user-plus"></i> Criar personal
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -4,217 +4,280 @@
 
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="utf-8" />
-    <title>BulkingPro - Login</title>
+    <title>BulkingPro - Academia</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-            body {
-                font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-                background: #0c0c0c;
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #0c0c0c;
+            min-height: 100vh;
+        }
 
-            .login-container {
-                min-height: 100vh;
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: radial-gradient(circle at 25% 40%, rgba(30, 30, 35, 0.4) 0%, transparent 50%),
-                    linear-gradient(135deg, #0a0a0a 0%, #121212 100%);
-                padding: 20px;
-            }
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: radial-gradient(circle at 25% 40%, rgba(30,30,35,0.4) 0%, transparent 50%),
+                        linear-gradient(135deg, #0a0a0a 0%, #121212 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
 
-            .login-card {
-                background: rgba(10, 10, 12, 0.9);
-                border-radius: 28px;
-                padding: 48px 40px;
-                width: 100%;
-                max-width: 420px;
-                border: 1px solid rgba(238, 25, 32, 0.4);
-                box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.6);
-            }
+        .hero-content {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
 
-            .logo-area {
+        /* Left side - Info */
+        .info-area h1 {
+            font-size: 48px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #c4a87a 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .info-area p {
+            color: rgba(255,255,255,0.7);
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
+
+        .feature::before {
+            content: "✓";
+            color: #ee1920;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Right side - Login Card */
+        .login-card {
+            background: rgba(10,10,12,0.9);
+            border-radius: 28px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            border: 1px solid rgba(238,25,32,0.4);
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.6);
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-area img {
+            height: auto;
+            width: 180px;
+            max-width: 100%;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #c4a87a;
+            font-size: 13px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+            font-weight: 500;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            color: #c4b5a0;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .input-group input {
+            background: rgba(20,18,16,0.8);
+            border: 1px solid #2a2520;
+            border-radius: 14px;
+            padding: 14px 18px;
+            color: #e8ddd0;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #ee1920;
+            background: rgba(28,24,20,0.9);
+            box-shadow: 0 0 0 2px rgba(238,25,32,0.2);
+        }
+
+        .input-group input::placeholder {
+            color: #4a423a;
+        }
+
+        .erro-msg {
+            background: rgba(238,25,32,0.1);
+            border: 1px solid rgba(238,25,32,0.3);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #ee1920;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #ee1920 0%, #c41218 50%, #d9151c 100%);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.25s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(238,25,32,0.5);
+        }
+
+        .btn-login:active {
+            transform: translateY(1px);
+        }
+
+        .links-rodape {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 28px;
+            font-size: 12px;
+        }
+
+        .links-rodape a {
+            color: #8a7a68;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .links-rodape a:hover {
+            color: #ee1920;
+        }
+
+        /* Responsive */
+        @@media (max-width: 900px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .info-area h1 {
+                font-size: 32px;
                 text-align: center;
-                margin-bottom: 32px;
             }
-
-            .logo-area img {
-                height: auto;
-                width: 180px;
-                max-width: 100%;
-            }
-
-            .subtitulo {
+            
+            .info-area p {
                 text-align: center;
-                color: #c4a87a;
-                font-size: 13px;
-                letter-spacing: 2px;
-                text-transform: uppercase;
-                margin-bottom: 32px;
-                font-weight: 500;
             }
-
-            .login-form {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
+            
+            .features {
+                align-items: center;
             }
-
-            .input-group {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .input-group label {
-                color: #c4b5a0;
-                font-size: 12px;
-                font-weight: 600;
-                letter-spacing: 1px;
-                text-transform: uppercase;
-            }
-
-            .input-group input {
-                background: rgba(20, 18, 16, 0.8);
-                border: 1px solid #2a2520;
-                border-radius: 14px;
-                padding: 14px 18px;
-                color: #e8ddd0;
-                font-size: 15px;
-                transition: all 0.2s;
-            }
-
-            .input-group input:focus {
-                outline: none;
-                border-color: #ee1920;
-                background: rgba(28, 24, 20, 0.9);
-                box-shadow: 0 0 0 2px rgba(238, 25, 32, 0.2);
-            }
-
-            .input-group input::placeholder {
-                color: #4a423a;
-            }
-
-            .btn-login {
-                background: linear-gradient(135deg, #ee1920 0%, #c41218 50%, #d9151c 100%);
-                color: white;
-                border: none;
-                border-radius: 40px;
-                padding: 14px;
-                font-size: 14px;
-                font-weight: 700;
-                letter-spacing: 2px;
-                text-transform: uppercase;
-                cursor: pointer;
-                margin-top: 8px;
-                position: relative;
-                overflow: hidden;
-                box-shadow: 0 4px 12px rgba(238, 25, 32, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
-                transition: all 0.25s ease;
-            }
-
-            .btn-login::before {
-                content: "";
-                position: absolute;
-                top: 0;
-                left: -100%;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-                transition: left 0.5s ease;
-            }
-
-            .btn-login:hover {
-                background: linear-gradient(135deg, #ff1a22 0%, #d4141b 50%, #f0171e 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 10px 22px rgba(238, 25, 32, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-            }
-
-            .btn-login:hover::before {
-                left: 100%;
-            }
-
-            .btn-login:active {
-                transform: translateY(1px);
-                box-shadow: 0 2px 8px rgba(238, 25, 32, 0.4);
-            }
-
-            .links-rodape {
-                display: flex;
-                justify-content: center;
-                gap: 16px;
-                margin-top: 28px;
-                font-size: 12px;
-            }
-
-            .links-rodape a {
-                color: #8a7a68;
-                text-decoration: none;
-                transition: all 0.2s;
-                font-weight: 500;
-            }
-
-            .links-rodape a:hover {
-                color: #ee1920;
-                text-shadow: 0 0 2px rgba(238, 25, 32, 0.3);
-            }
-
-            .links-rodape span {
-                color: #3a332c;
-            }
-
-            /* Efeito metálico no hover do card */
-            .login-card:hover {
-                border-color: rgba(238, 25, 32, 0.6);
-                transition: all 0.3s ease;
-            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="logo-area">
-                <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
+    <div class="hero">
+        <div class="hero-content">
+            <!-- Left side - Informações -->
+            <div class="info-area">
+                <h1>BulkingPro</h1>
+                <p>Sua academia inteligente. Treine com os melhores profissionais e acompanhe sua evolução em tempo real.</p>
+                <div class="features">
+                    <div class="feature">Planos de treino personalizados</div>
+                    <div class="feature">Acompanhamento de evolução</div>
+                    <div class="feature">Exercícios com vídeos demonstrativos</div>
+                    <div class="feature">Suporte 24/7 com seus personais</div>
+                </div>
             </div>
 
-            <p class="subtitulo">ACESSE SUA CONTA</p>
-
-            <form asp-action="Login" method="post" class="login-form">
-                <div class="input-group">
-                    <label>E-MAIL</label>
-                    <input type="email" name="email" placeholder="seu@email.com" required />
+            <!-- Right side - Login -->
+            <div class="login-card">
+                <div class="logo-area">
+                    <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
                 </div>
 
-                <div class="input-group">
-                    <label>SENHA</label>
-                    <input type="password" name="senha" placeholder="********" required />
-                </div>
+                <p class="subtitulo">ACESSE SUA CONTA</p>
 
-                <button type="submit" class="btn-login">ENTRAR</button>
+                <form asp-controller="Account" asp-action="Login" method="post" class="login-form">
+                    @Html.AntiForgeryToken()
 
-                <div class="links-rodape">
-                    <a href="/Identity/Account/Register">Criar nova conta</a>
-                    <span>|</span>
-                    <a href="#">Esqueceu a senha?</a>
-                </div>
-            </form>
+                    @if (ViewBag.Erro != null)
+                    {
+                        <div class="erro-msg">@ViewBag.Erro</div>
+                    }
+
+                    <div class="input-group">
+                        <label>E-MAIL</label>
+                        <input type="email" name="email" placeholder="seu@email.com" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label>SENHA</label>
+                        <input type="password" name="senha" placeholder="********" required />
+                    </div>
+
+                    <button type="submit" class="btn-login">ENTRAR</button>
+
+                    <div class="links-rodape">
+                        <a href="#">Esqueceu a senha?</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </body>
-
 </html>

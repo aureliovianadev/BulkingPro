@@ -1,0 +1,86 @@
+@model List<BulkingPro.ViewModels.AlunoViewModel>
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"]      = "Alunos";
+    ViewData["ActivePage"] = "Alunos";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Alunos</div>
+            <div class="topbar-sub">Todos os alunos cadastrados no sistema</div>
+        </div>
+    </div>
+}
+
+<div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" id="busca" placeholder="Buscar aluno por nome, e-mail ou personal..." />
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>Personal</th>
+                <th>Plano ativo</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-body">
+            @{
+                var cores = new[] { "r", "g", "b", "p" };
+                int i = 0;
+            }
+            @foreach (var a in Model)
+            {
+                var cor   = cores[i % cores.Length];
+                var inics = a.NomeCompleto.Length >= 2
+                    ? a.NomeCompleto.Substring(0, 1).ToUpper() + a.NomeCompleto.Split(' ').Last().Substring(0, 1).ToUpper()
+                    : a.NomeCompleto.Substring(0, 1).ToUpper();
+                i++;
+                <tr>
+                    <td>
+                        <div class="td-user">
+                            <div class="tbl-av @cor">@inics</div>
+                            <span class="bold">@a.NomeCompleto</span>
+                        </div>
+                    </td>
+                    <td>@a.Email</td>
+                    <td>@(a.NomePersonal ?? "—")</td>
+                    <td>@(a.NomePlanoAtivo ?? "—")</td>
+                    <td>
+                        @if (a.Ativo)
+                        {
+                            <span class="badge badge-active">Ativo</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-inactive">Inativo</span>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="5" style="text-align:center;color:var(--muted);padding:24px">
+                        Nenhum aluno cadastrado.
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('busca').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#tabela-body tr').forEach(tr => {
+            tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+</script>

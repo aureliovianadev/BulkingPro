@@ -1,0 +1,112 @@
+@model BulkingPro.ViewModels.AdminDashboardViewModel
+@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"]      = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Dashboard</div>
+            <div class="topbar-sub">Visão geral do sistema</div>
+        </div>
+    </div>
+}
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="ti ti-users"></i></div>
+        <div class="stat-val">@Model.TotalPersonais</div>
+        <div class="stat-label">Personais ativos</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon gold"><i class="ti ti-user"></i></div>
+        <div class="stat-val">@Model.TotalAlunos</div>
+        <div class="stat-label">Alunos cadastrados</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="ti ti-clipboard-list"></i></div>
+        <div class="stat-val">@Model.TotalPlanos</div>
+        <div class="stat-label">Planos de treino</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="ti ti-barbell"></i></div>
+        <div class="stat-val">@Model.TotalExercicios</div>
+        <div class="stat-label">Exercícios ativos</div>
+    </div>
+</div>
+
+<!-- Últimos planos + Personais -->
+<div class="two-col">
+
+    <div>
+        <div class="section-title">Planos recentes</div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Plano</th>
+                        <th>Aluno</th>
+                        <th>Personal</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.UltimosPlanos)
+                    {
+                        <tr>
+                            <td class="bold">@p.Titulo</td>
+                            <td>@p.Aluno?.NomeCompleto</td>
+                            <td>@p.Treinador?.NomeCompleto</td>
+                            <td>
+                                @if (p.Status == 1)
+                                {
+                                    <span class="badge badge-active">Ativo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-inactive">Inativo</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.UltimosPlanos.Any())
+                    {
+                        <tr><td colspan="4" style="color:var(--muted);text-align:center">Nenhum plano cadastrado</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div>
+        <div class="section-title">Personais — alunos vinculados</div>
+        <div class="card">
+            <div class="card-body" style="padding:0">
+                @foreach (var p in Model.PersonaisComAlunos)
+                {
+                    <div class="activity-item" style="padding:12px 18px">
+                        <div class="act-dot red"></div>
+                        <div>
+                            <div class="act-text"><b>@p.NomeCompleto</b></div>
+                            <div class="act-time">@p.TotalAlunos aluno(s) vinculado(s)</div>
+                        </div>
+                    </div>
+                }
+                @if (!Model.PersonaisComAlunos.Any())
+                {
+                    <div style="padding:16px 18px;font-size:13px;color:var(--muted)">Nenhum personal com alunos.</div>
+                }
+            </div>
+        </div>
+
+        <div style="margin-top:14px">
+            <a class="btn btn-primary" asp-controller="Admin" asp-action="CriarPersonal">
+                <i class="ti ti-plus"></i> Adicionar personal
+            </a>
+        </div>
+    </div>
+
+</div>
