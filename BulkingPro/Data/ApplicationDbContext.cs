@@ -11,13 +11,13 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     {
     }
 
-    // 🔥 Tabelas
+    // Tabelas
     public DbSet<Exercicio> Exercicios { get; set; }
     public DbSet<GrupoMuscular> GruposMusculares { get; set; }
     public DbSet<CategoriaMuscular> CategoriasMusculares { get; set; }
     public DbSet<PlanoTreino> PlanosTreino { get; set; }
     public DbSet<Treino> Treinos { get; set; }
-    public DbSet<TreinoExercicio> TreinoExercicios { get; set; }  // ← NOME CORRETO
+    public DbSet<TreinoExercicio> TreinoExercicios { get; set; }
     public DbSet<ExecucaoTreino> ExecucoesTreino { get; set; }
     public DbSet<ExecucaoTreinoExercicio> ExecucoesTreinoExercicios { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
@@ -26,198 +26,163 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     {
         base.OnModelCreating(builder);
 
-        // 🔥 PlanoTreino → Treinador
+        // ── Relacionamentos ──────────────────────────────────────
+
         builder.Entity<PlanoTreino>()
             .HasOne(p => p.Treinador)
             .WithMany(u => u.PlanosComoTreinador)
             .HasForeignKey(p => p.TreinadorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔥 PlanoTreino → Aluno
         builder.Entity<PlanoTreino>()
             .HasOne(p => p.Aluno)
             .WithMany(u => u.PlanosComoAluno)
             .HasForeignKey(p => p.AlunoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔹 Treino → PlanoTreino
         builder.Entity<Treino>()
             .HasOne(t => t.PlanoTreino)
             .WithMany(p => p.Treinos)
             .HasForeignKey(t => t.PlanoTreinoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔹 TreinoExercicio → Treino
         builder.Entity<TreinoExercicio>()
             .HasOne(te => te.Treino)
             .WithMany(t => t.TreinoExercicios)
             .HasForeignKey(te => te.TreinoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔹 TreinoExercicio → Exercicio
         builder.Entity<TreinoExercicio>()
             .HasOne(te => te.Exercicio)
             .WithMany(e => e.TreinoExercicios)
             .HasForeignKey(te => te.ExercicioId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔥 Exercicio → GrupoMuscular
         builder.Entity<Exercicio>()
             .HasOne(e => e.GrupoMuscular)
             .WithMany(g => g.Exercicios)
             .HasForeignKey(e => e.GrupoMuscularId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔥 GrupoMuscular → CategoriaMuscular
         builder.Entity<GrupoMuscular>()
             .HasOne(g => g.CategoriaMuscular)
             .WithMany(c => c.Grupos)
             .HasForeignKey(g => g.CategoriaMuscularId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔹 ExecucaoTreino → Treino
         builder.Entity<ExecucaoTreino>()
             .HasOne(et => et.Treino)
             .WithMany(t => t.Execucoes)
             .HasForeignKey(et => et.TreinoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔹 ExecucaoTreino → Aluno
         builder.Entity<ExecucaoTreino>()
             .HasOne(et => et.Aluno)
             .WithMany()
             .HasForeignKey(et => et.AlunoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔹 ExecucaoTreinoExercicio → ExecucaoTreino
         builder.Entity<ExecucaoTreinoExercicio>()
             .HasOne(ete => ete.ExecucaoTreino)
             .WithMany(et => et.Exercicios)
             .HasForeignKey(ete => ete.ExecucaoTreinoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // 🔹 ExecucaoTreinoExercicio → TreinoExercicio
         builder.Entity<ExecucaoTreinoExercicio>()
             .HasOne(ete => ete.TreinoExercicio)
             .WithMany(te => te.Execucoes)
             .HasForeignKey(ete => ete.TreinoExercicioId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ===================== SEED =====================
-
-        // 🔹 Categorias
-        var superiorId = 1;
-        var inferiorId = 2;
-        var aerobicoId = 3;
-
+        // ── SEED: Categorias ─────────────────────────────────────
         builder.Entity<CategoriaMuscular>().HasData(
-            new CategoriaMuscular { Id = superiorId, Nome = "Superior" },
-            new CategoriaMuscular { Id = inferiorId, Nome = "Inferior" },
-            new CategoriaMuscular { Id = aerobicoId, Nome = "Aeróbico" }
+            new CategoriaMuscular { Id = 1, Nome = "Superior" },
+            new CategoriaMuscular { Id = 2, Nome = "Inferior" },
+            new CategoriaMuscular { Id = 3, Nome = "Aeróbico" }
         );
 
-        // 🔹 Grupos
-        var peitoId = 1;
-        var costasId = 2;
-        var bicepsId = 3;
-        var tricepsId = 4;
-        var ombroId = 5;
-        var abdomenId = 6;
-        var pernaId = 7;
-        var gluteoId = 8;
-        var panturrilhaId = 9;
-        var cardioId = 10;
-
+        // ── SEED: Grupos musculares ───────────────────────────────
         builder.Entity<GrupoMuscular>().HasData(
-            // SUPERIOR
-            new GrupoMuscular { Id = peitoId, Nome = "Peito", CategoriaMuscularId = superiorId },
-            new GrupoMuscular { Id = costasId, Nome = "Costas", CategoriaMuscularId = superiorId },
-            new GrupoMuscular { Id = bicepsId, Nome = "Bíceps", CategoriaMuscularId = superiorId },
-            new GrupoMuscular { Id = tricepsId, Nome = "Tríceps", CategoriaMuscularId = superiorId },
-            new GrupoMuscular { Id = ombroId, Nome = "Ombro", CategoriaMuscularId = superiorId },
-            new GrupoMuscular { Id = abdomenId, Nome = "Abdômen", CategoriaMuscularId = superiorId },
-            // INFERIOR
-            new GrupoMuscular { Id = pernaId, Nome = "Perna", CategoriaMuscularId = inferiorId },
-            new GrupoMuscular { Id = gluteoId, Nome = "Glúteo", CategoriaMuscularId = inferiorId },
-            new GrupoMuscular { Id = panturrilhaId, Nome = "Panturrilha", CategoriaMuscularId = inferiorId },
-            // AERÓBICO
-            new GrupoMuscular { Id = cardioId, Nome = "Cardio", CategoriaMuscularId = aerobicoId }
+            new GrupoMuscular { Id = 1,  Nome = "Peito",       CategoriaMuscularId = 1 },
+            new GrupoMuscular { Id = 2,  Nome = "Costas",      CategoriaMuscularId = 1 },
+            new GrupoMuscular { Id = 3,  Nome = "Bíceps",      CategoriaMuscularId = 1 },
+            new GrupoMuscular { Id = 4,  Nome = "Tríceps",     CategoriaMuscularId = 1 },
+            new GrupoMuscular { Id = 5,  Nome = "Ombro",       CategoriaMuscularId = 1 },
+            new GrupoMuscular { Id = 6,  Nome = "Abdômen",     CategoriaMuscularId = 1 },
+            new GrupoMuscular { Id = 7,  Nome = "Perna",       CategoriaMuscularId = 2 },
+            new GrupoMuscular { Id = 8,  Nome = "Glúteo",      CategoriaMuscularId = 2 },
+            new GrupoMuscular { Id = 9,  Nome = "Panturrilha", CategoriaMuscularId = 2 },
+            new GrupoMuscular { Id = 10, Nome = "Cardio",      CategoriaMuscularId = 3 }
         );
 
-        // ===================== EXERCÍCIOS (mantenha seus 65 exercícios) =====================
-        // ... seus exercícios aqui (não vou repetir para não ficar enorme)
-        // ... mas mantenha TODO o seed de exercícios que você já tem
+        // ── SEED: Exercícios ─────────────────────────────────────
+        builder.Entity<Exercicio>().HasData(
+            // PEITO (GrupoId = 1)
+            new Exercicio { Id = 1,  Nome = "Supino Reto com Barra",      Descricao = "Exercício clássico para peitoral",    GrupoMuscularId = 1, InstrucoesExecucao = "Deite no banco, desça a barra até o peito e empurre.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 2,  Nome = "Supino Inclinado com Barra",  Descricao = "Foco na parte superior do peitoral", GrupoMuscularId = 1, InstrucoesExecucao = "Banco inclinado a 45°, mesmo movimento do supino reto.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 3,  Nome = "Supino com Halteres",         Descricao = "Maior amplitude de movimento",       GrupoMuscularId = 1, InstrucoesExecucao = "Desça os halteres até sentir o alongamento e empurre.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 4,  Nome = "Crossover",                   Descricao = "Isolamento do peitoral",              GrupoMuscularId = 1, InstrucoesExecucao = "Puxe os cabos em arco na frente do corpo.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 5,  Nome = "Peck Deck (Borboleta)",        Descricao = "Isolamento peitoral na máquina",      GrupoMuscularId = 1, InstrucoesExecucao = "Una os braços à frente contraindo o peitoral.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 6,  Nome = "Flexão de Braço",              Descricao = "Exercício com peso corporal",         GrupoMuscularId = 1, InstrucoesExecucao = "Corpo reto, desça o peito até próximo ao chão.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
 
-        // ===================== ROLES E USUÁRIOS =====================
+            // COSTAS (GrupoId = 2)
+            new Exercicio { Id = 7,  Nome = "Puxada Frente",               Descricao = "Dorsais e bíceps",                   GrupoMuscularId = 2, InstrucoesExecucao = "Puxe a barra até a altura do queixo.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 8,  Nome = "Remada Curvada",               Descricao = "Espessura das costas",                GrupoMuscularId = 2, InstrucoesExecucao = "Curvado, puxe a barra em direção ao abdômen.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 9,  Nome = "Remada Unilateral",            Descricao = "Trabalha os dorsais isoladamente",   GrupoMuscularId = 2, InstrucoesExecucao = "Apoie um joelho no banco, puxe o halter.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 10, Nome = "Puxada Triângulo",             Descricao = "Ênfase na parte baixa das costas",   GrupoMuscularId = 2, InstrucoesExecucao = "Use o triângulo no cabo e puxe até o abdômen.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 11, Nome = "Barra Fixa",                   Descricao = "Exercício com peso corporal",         GrupoMuscularId = 2, InstrucoesExecucao = "Puxe o corpo até o queixo ultrapassar a barra.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 12, Nome = "Levantamento Terra",           Descricao = "Exercício composto para costas",     GrupoMuscularId = 2, InstrucoesExecucao = "Levante a barra do chão com as costas retas.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
 
-        // 🔹 IDs FIXOS
-        var adminRoleId = "cc05b9bc-cc87-43ec-83f7-a889fd1de657";
-        var modRoleId = "8b22cffb-ec0e-4617-896e-364eb078f8b2";
-        var userRoleId = "c8d02904-cb9a-4242-90d9-a47c8b1cf750";
+            // BÍCEPS (GrupoId = 3)
+            new Exercicio { Id = 13, Nome = "Rosca Direta com Barra",       Descricao = "Exercício básico de bíceps",          GrupoMuscularId = 3, InstrucoesExecucao = "Curl com barra reta mantendo os cotovelos fixos.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 14, Nome = "Rosca Alternada",               Descricao = "Bíceps com halteres alternando",     GrupoMuscularId = 3, InstrucoesExecucao = "Curl com halteres alternando os braços.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 15, Nome = "Rosca Concentrada",             Descricao = "Isolamento do bíceps",                GrupoMuscularId = 3, InstrucoesExecucao = "Cotovelo apoiado na coxa, faça o curl.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 16, Nome = "Rosca Scott",                   Descricao = "Bíceps no banco scott",               GrupoMuscularId = 3, InstrucoesExecucao = "Braços apoiados no banco inclinado.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
 
-        var adminId = "6bd24189-05ed-4c32-80f8-85cb56e3d60b";
-        var moderadorId = "5579ffe6-8226-4fca-acb0-bf5b223ff429";
-        var usuarioId = "7f670255-b112-4737-ae61-2ea6ed4d9cbd";
+            // TRÍCEPS (GrupoId = 4)
+            new Exercicio { Id = 17, Nome = "Tríceps Corda",                 Descricao = "Isolamento do tríceps no cabo",      GrupoMuscularId = 4, InstrucoesExecucao = "Puxe a corda para baixo abrindo as pontas.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 18, Nome = "Tríceps Testa",                 Descricao = "Exercício com barra para tríceps",   GrupoMuscularId = 4, InstrucoesExecucao = "Deite, abaixe a barra até a testa e empurre.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 19, Nome = "Tríceps Francês",               Descricao = "Haltere sobre a cabeça",              GrupoMuscularId = 4, InstrucoesExecucao = "Segure halter, abaixe atrás da cabeça.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 20, Nome = "Mergulho (Paralelas)",          Descricao = "Peso corporal para tríceps",          GrupoMuscularId = 4, InstrucoesExecucao = "Desça entre as barras paralelas e empurre.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
 
-        // Roles
-        builder.Entity<IdentityRole>().HasData(
-            new IdentityRole { Id = adminRoleId, Name = "Administrador", NormalizedName = "ADMINISTRADOR" },
-            new IdentityRole { Id = modRoleId, Name = "Moderador", NormalizedName = "MODERADOR" },
-            new IdentityRole { Id = userRoleId, Name = "Usuario", NormalizedName = "USUARIO" }
+            // OMBRO (GrupoId = 5)
+            new Exercicio { Id = 21, Nome = "Desenvolvimento com Barra",    Descricao = "Exercício composto para ombros",     GrupoMuscularId = 5, InstrucoesExecucao = "Empurre a barra acima da cabeça.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 22, Nome = "Elevação Lateral",             Descricao = "Feixe médio do deltoide",             GrupoMuscularId = 5, InstrucoesExecucao = "Eleve os halteres lateralmente até a altura dos ombros.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 23, Nome = "Elevação Frontal",             Descricao = "Feixe anterior do deltoide",          GrupoMuscularId = 5, InstrucoesExecucao = "Eleve os halteres à frente até a altura dos ombros.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 24, Nome = "Crucifixo Invertido",          Descricao = "Feixe posterior do deltoide",         GrupoMuscularId = 5, InstrucoesExecucao = "Curvado, abra os braços para trás.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+
+            // ABDÔMEN (GrupoId = 6)
+            new Exercicio { Id = 25, Nome = "Prancha",                       Descricao = "Estabilização do core",               GrupoMuscularId = 6, InstrucoesExecucao = "Mantenha o corpo reto apoiado nos antebraços.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 26, Nome = "Abdominal Supra",               Descricao = "Crunch básico",                       GrupoMuscularId = 6, InstrucoesExecucao = "Eleve o tronco contraindo o abdômen.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 27, Nome = "Abdominal Infra",               Descricao = "Elevação de pernas",                  GrupoMuscularId = 6, InstrucoesExecucao = "Deitado, eleve as pernas estendidas.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 28, Nome = "Abdominal Máquina",             Descricao = "Abdominal em máquina",                GrupoMuscularId = 6, InstrucoesExecucao = "Flexione o tronco na máquina de forma controlada.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+
+            // PERNA (GrupoId = 7)
+            new Exercicio { Id = 29, Nome = "Agachamento Livre",             Descricao = "Exercício composto para pernas",     GrupoMuscularId = 7, InstrucoesExecucao = "Pés na largura dos ombros, desça até 90°.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 30, Nome = "Leg Press 45°",                 Descricao = "Quadríceps e glúteos",                GrupoMuscularId = 7, InstrucoesExecucao = "Empurre a plataforma sem travar os joelhos.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 31, Nome = "Cadeira Extensora",             Descricao = "Isolamento do quadríceps",           GrupoMuscularId = 7, InstrucoesExecucao = "Estenda os joelhos na máquina de forma controlada.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 32, Nome = "Mesa Flexora",                  Descricao = "Isquiotibiais",                       GrupoMuscularId = 7, InstrucoesExecucao = "Flexione os joelhos puxando os calcanhares.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 33, Nome = "Avanço (Lunge)",                Descricao = "Quadríceps e glúteos",                GrupoMuscularId = 7, InstrucoesExecucao = "Dê um passo à frente e desça o joelho traseiro.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 34, Nome = "Stiff",                         Descricao = "Isquiotibiais e glúteos",             GrupoMuscularId = 7, InstrucoesExecucao = "Incline o tronco com as pernas semi-estendidas.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+
+            // GLÚTEO (GrupoId = 8)
+            new Exercicio { Id = 35, Nome = "Elevação Pélvica (Hip Thrust)", Descricao = "Glúteo máximo",                       GrupoMuscularId = 8, InstrucoesExecucao = "Apoie os ombros no banco e empurre o quadril.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 36, Nome = "Abdução de Quadril",            Descricao = "Glúteo médio na máquina",             GrupoMuscularId = 8, InstrucoesExecucao = "Abra as pernas contra a resistência.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 37, Nome = "Glúteo no Cabo",                Descricao = "Isolamento do glúteo",                GrupoMuscularId = 8, InstrucoesExecucao = "Coloque o cabo no tornozelo e estenda a perna para trás.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+
+            // PANTURRILHA (GrupoId = 9)
+            new Exercicio { Id = 38, Nome = "Gêmeos em Pé",                  Descricao = "Panturrilha em pé",                   GrupoMuscularId = 9, InstrucoesExecucao = "Eleve os calcanhares o máximo possível.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 39, Nome = "Gêmeos Sentado",                Descricao = "Sóleo (panturrilha sentado)",         GrupoMuscularId = 9, InstrucoesExecucao = "Na máquina sentado, eleve os calcanhares.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+
+            // CARDIO (GrupoId = 10)
+            new Exercicio { Id = 40, Nome = "Esteira",                       Descricao = "Cardio na esteira",                   GrupoMuscularId = 10, InstrucoesExecucao = "Caminhe ou corra em ritmo moderado.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 41, Nome = "Bicicleta Ergométrica",         Descricao = "Cardio de baixo impacto",             GrupoMuscularId = 10, InstrucoesExecucao = "Pedale em cadência constante.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 42, Nome = "Elíptico",                      Descricao = "Cardio com baixo impacto articular", GrupoMuscularId = 10, InstrucoesExecucao = "Movimento elíptico contínuo.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
+            new Exercicio { Id = 43, Nome = "Corda (Jump Rope)",             Descricao = "Cardio de alta intensidade",          GrupoMuscularId = 10, InstrucoesExecucao = "Pule a corda em ritmo constante.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) }
         );
 
-        // Usuários
-        var hasher = new PasswordHasher<Usuario>();
-
-        var admin = new Usuario
-        {
-            Id = adminId,
-            NomeCompleto = "Administrador",
-            UserName = "admin@bulking.com",
-            NormalizedUserName = "ADMIN@BULKING.COM",
-            Email = "admin@bulking.com",
-            NormalizedEmail = "ADMIN@BULKING.COM",
-            EmailConfirmed = true,
-            LockoutEnabled = false,
-            SecurityStamp = Guid.NewGuid().ToString()
-        };
-        admin.PasswordHash = hasher.HashPassword(admin, "123456");
-
-        var moderador = new Usuario
-        {
-            Id = moderadorId,
-            NomeCompleto = "Moderador",
-            UserName = "moderador@bulking.com",
-            NormalizedUserName = "MODERADOR@BULKING.COM",
-            Email = "moderador@bulking.com",
-            NormalizedEmail = "MODERADOR@BULKING.COM",
-            EmailConfirmed = true,
-            LockoutEnabled = false,
-            SecurityStamp = Guid.NewGuid().ToString()
-        };
-        moderador.PasswordHash = hasher.HashPassword(moderador, "123456");
-
-        var usuario = new Usuario
-        {
-            Id = usuarioId,
-            NomeCompleto = "Usuario",
-            UserName = "usuario@bulking.com",
-            NormalizedUserName = "USUARIO@BULKING.COM",
-            Email = "usuario@bulking.com",
-            NormalizedEmail = "USUARIO@BULKING.COM",
-            EmailConfirmed = true,
-            LockoutEnabled = false,
-            SecurityStamp = Guid.NewGuid().ToString()
-        };
-        usuario.PasswordHash = hasher.HashPassword(usuario, "123456");
-
-        builder.Entity<Usuario>().HasData(admin, moderador, usuario);
-
-        // UserRoles
-        builder.Entity<IdentityUserRole<string>>().HasData(
-            new IdentityUserRole<string> { UserId = adminId, RoleId = adminRoleId },
-            new IdentityUserRole<string> { UserId = moderadorId, RoleId = modRoleId },
-            new IdentityUserRole<string> { UserId = usuarioId, RoleId = userRoleId }
-        );
+        // ── SEED: Roles ──────────────────────────────────────────
+        // Roles e usuários são criados via UserManager no Program.cs
+        // NÃO duplicar aqui para evitar conflito com o seed do Program.cs
     }
 }

@@ -5,12 +5,12 @@ using BulkingPro.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Banco de dados (CORRIGIDO para Pomelo) ──────────────────
+// ── Banco de dados (Pomelo MySQL) ────────────────────────────
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// ── Identity ────────────────────────────────────────────────
+// ── Identity ─────────────────────────────────────────────────
 builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
 {
     options.Password.RequireDigit           = false;
@@ -18,111 +18,61 @@ builder.Services.AddIdentity<Usuario, IdentityRole>(options =>
     options.Password.RequireUppercase       = false;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequiredLength         = 6;
-    options.SignIn.RequireConfirmedAccount = false;
-    options.SignIn.RequireConfirmedEmail = false;
-    options.User.RequireUniqueEmail = true;
+    options.SignIn.RequireConfirmedAccount  = false;
+    options.SignIn.RequireConfirmedEmail    = false;
+    options.User.RequireUniqueEmail         = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders()
-.AddRoles<IdentityRole>();
+.AddDefaultTokenProviders();
 
-// ── Redirecionar para login customizado ─────────────────────
+// ── Cookie / Redirecionamentos ───────────────────────────────
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath        = "/Account/Login";
-    options.AccessDeniedPath = "/Account/Login";
-    options.LogoutPath       = "/Account/Logout";
-    options.ExpireTimeSpan   = TimeSpan.FromDays(7);
+    options.LoginPath         = "/Account/Login";
+    options.AccessDeniedPath  = "/Account/Login";
+    options.LogoutPath        = "/Account/Logout";
+    options.ExpireTimeSpan    = TimeSpan.FromDays(7);
     options.SlidingExpiration = true;
 });
 
-// ── MVC + Razor Pages ───────────────────────────────────────
+// ── MVC + Razor Pages ────────────────────────────────────────
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
+// ─────────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// ── Seed / Garante banco e cria usuários padrão ─────────────
+// ── Seed: banco + roles + usuários padrão ────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        var dbContext = services.GetRequiredService<ApplicationDbContext>();
-        await dbContext.Database.EnsureCreatedAsync();
-        
+        var db = services.GetRequiredService<ApplicationDbContext>();
+        await db.Database.EnsureCreatedAsync();
+
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<Usuario>>();
-        
-        // Criar roles
+
+        // Roles
         string[] roles = { "Administrador", "Moderador", "Usuario" };
         foreach (var role in roles)
         {
             if (!await roleManager.RoleExistsAsync(role))
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
-        
-        // Criar Admin
-        var adminEmail = "admin@bulkingpro.com";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
-        {
-            adminUser = new Usuario
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                NomeCompleto = "Administrador Master",
-                Ativo = true,
-                DataCriacao = DateTime.Now,
-                EmailConfirmed = true
-            };
-            var result = await userManager.CreateAsync(adminUser, "admin123");
-            if (result.Succeeded)
-                await userManager.AddToRoleAsync(adminUser, "Administrador");
-        }
-        
-        // Criar Personal
-        var personalEmail = "personal@bulkingpro.com";
-        var personalUser = await userManager.FindByEmailAsync(personalEmail);
-        if (personalUser == null)
-        {
-            personalUser = new Usuario
-            {
-                UserName = personalEmail,
-                Email = personalEmail,
-                NomeCompleto = "Carlos Personal",
-                Ativo = true,
-                DataCriacao = DateTime.Now,
-                EmailConfirmed = true
-            };
-            var result = await userManager.CreateAsync(personalUser, "personal123");
-            if (result.Succeeded)
-                await userManager.AddToRoleAsync(personalUser, "Moderador");
-        }
-        
-        // Criar Aluno
-        var alunoEmail = "aluno@bulkingpro.com";
-        var alunoUser = await userManager.FindByEmailAsync(alunoEmail);
-        if (alunoUser == null)
-        {
-            alunoUser = new Usuario
-            {
-                UserName = alunoEmail,
-                Email = alunoEmail,
-                NomeCompleto = "João Aluno",
-                Ativo = true,
-                DataCriacao = DateTime.Now,
-                EmailConfirmed = true
-            };
-            var result = await userManager.CreateAsync(alunoUser, "aluno123");
-            if (result.Succeeded)
-                await userManager.AddToRoleAsync(alunoUser, "Usuario");
-        }
+
+        // Admin
+        await CriarUsuario(userManager, "admin@bulkingpro.com",    "Administrador Master", "admin123",    "Administrador");
+        // Personal
+        await CriarUsuario(userManager, "personal@bulkingpro.com", "Carlos Personal",      "personal123", "Moderador");
+        // Aluno
+        await CriarUsuario(userManager, "aluno@bulkingpro.com",    "João Aluno",           "aluno123",    "Usuario");
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Erro ao criar o banco de dados ou usuários padrão");
+        logger.LogError(ex, "Erro ao criar banco de dados ou usuários padrão.");
     }
 }
 
@@ -144,4 +94,27 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+app.MapRazorPages();
+
 app.Run();
+
+static async Task CriarUsuario(
+    UserManager<Usuario> userManager,
+    string email, string nome, string senha, string role)
+{
+    if (await userManager.FindByEmailAsync(email) != null) return;
+
+    var user = new Usuario
+    {
+        UserName       = email,
+        Email          = email,
+        NomeCompleto   = nome,
+        Ativo          = true,
+        DataCriacao    = DateTime.Now,
+        EmailConfirmed = true
+    };
+
+    var result = await userManager.CreateAsync(user, senha);
+    if (result.Succeeded)
+        await userManager.AddToRoleAsync(user, role);
+}

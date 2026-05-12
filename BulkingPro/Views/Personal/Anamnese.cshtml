@@ -1,7 +1,7 @@
 @model BulkingPro.ViewModels.AnamneseViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"] = "Anamnese";
+    ViewData["Title"]      = "Anamnese";
     ViewData["ActivePage"] = "Anamnese";
 }
 
@@ -9,129 +9,238 @@
     <div class="topbar">
         <div>
             <div class="topbar-title">Anamnese</div>
-            <div class="topbar-sub">Questionário de avaliação inicial</div>
+            <div class="topbar-sub">Questionário de avaliação inicial do aluno</div>
         </div>
     </div>
 }
 
-<div class="two-col">
-    <div class="card">
-        <div class="card-body">
-            <form asp-action="SalvarAnamnese" method="post">
-                @Html.AntiForgeryToken()
-                
-                <div class="form-group">
-                    <label class="form-label" asp-for="AlunoId">Aluno</label>
-                    <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
-                        <option value="">Selecione um aluno</option>
-                    </select>
-                    <span asp-validation-for="AlunoId"></span>
-                </div>
+<form asp-action="SalvarAnamnese" method="post">
+    @Html.AntiForgeryToken()
 
-                <div class="form-group">
-                    <label class="form-label" asp-for="DataAvaliacao">Data da Avaliação</label>
+    <!-- Identificação -->
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-body">
+            <div class="card-title"><i class="ti ti-user"></i> Identificação</div>
+            <div class="form-row">
+                <div class="form-group" style="flex:2">
+                    <label class="form-label">Aluno</label>
+                    <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
+                        <option value="">— selecione o aluno —</option>
+                    </select>
+                    <span asp-validation-for="AlunoId" class="field-validation-error"></span>
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label class="form-label">Data da avaliação</label>
                     <input class="form-control" asp-for="DataAvaliacao" type="date" />
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="section-title" style="margin:16px 0 12px">Histórico de Treino</div>
-                
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <!-- HISTÓRICO ESPORTIVO -->
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-trophy"></i> Histórico esportivo</div>
+
                 <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="JaTreinouAntes" /> Já treinou antes?</label>
+                    <label class="form-label">Já treinou antes?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt">
+                            <input type="radio" asp-for="JaTreinouAntes" value="true" /> Sim
+                        </label>
+                        <label class="radio-opt">
+                            <input type="radio" asp-for="JaTreinouAntes" value="false" checked /> Não
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Treina há quanto tempo?</label>
-                    <input class="form-control" asp-for="TempoTreinando" placeholder="Ex: 6 meses" />
+                    <input class="form-control" asp-for="TempoTreinando" placeholder="Ex.: 2 anos / 6 meses" />
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Tempo sem atividade física?</label>
-                    <input class="form-control" asp-for="TempoSemAtividade" placeholder="Ex: 2 anos" />
+                    <input class="form-control" asp-for="TempoSemAtividade" placeholder="Ex.: 3 meses / nunca parou" />
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Objetivo</label>
-                    <input class="form-control" asp-for="Objetivo" placeholder="Ex: Hipertrofia, Emagrecimento, Condicionamento" />
+                    <label class="form-label">Objetivo?</label>
+                    <select class="form-control" asp-for="Objetivo">
+                        <option value="">— selecione —</option>
+                        <option>Hipertrofia (ganho de massa)</option>
+                        <option>Emagrecimento</option>
+                        <option>Condicionamento físico</option>
+                        <option>Ganho de força</option>
+                        <option>Reabilitação</option>
+                        <option>Qualidade de vida</option>
+                        <option>Outro</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Frequência semanal desejada</label>
+                    <label class="form-label">Frequência semanal desejada?</label>
                     <select class="form-control" asp-for="FrequenciaSemanal">
-                        <option value="">Selecione</option>
-                        <option>1-2x por semana</option>
-                        <option>3-4x por semana</option>
-                        <option>5-6x por semana</option>
+                        <option value="">— selecione —</option>
+                        <option>2x por semana</option>
+                        <option>3x por semana</option>
+                        <option>4x por semana</option>
+                        <option>5x por semana</option>
+                        <option>6x por semana</option>
                         <option>Todos os dias</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Tempo de treino por dia</label>
+                    <label class="form-label">Tempo de treino por dia?</label>
                     <select class="form-control" asp-for="TempoPorDia">
-                        <option value="">Selecione</option>
+                        <option value="">— selecione —</option>
                         <option>30 minutos</option>
                         <option>45 minutos</option>
-                        <option>60 minutos</option>
-                        <option>90 minutos</option>
-                        <option>Mais de 90 minutos</option>
+                        <option>1 hora</option>
+                        <option>1h30</option>
+                        <option>2 horas ou mais</option>
                     </select>
                 </div>
-
-                <div class="section-title" style="margin:16px 0 12px">Saúde</div>
-
-                <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="TemDoenca" /> Possui alguma doença/problema de saúde?</label>
-                    <input class="form-control" asp-for="QualDoenca" placeholder="Qual?" />
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="TemLimitacaoMovimento" /> Limitação de movimento?</label>
-                    <input class="form-control" asp-for="QualLimitacao" placeholder="Qual?" />
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="TemDorMovimento" /> Sente dor em algum movimento?</label>
-                    <input class="form-control" asp-for="QualDor" placeholder="Onde/quando?" />
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="FezCirurgia" /> Já fez cirurgia?</label>
-                    <input class="form-control" asp-for="QualCirurgia" placeholder="Qual?" />
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="UsaMedicamento" /> Usa medicamento controlado?</label>
-                    <input class="form-control" asp-for="QualMedicamento" placeholder="Qual?" />
-                </div>
-
-                <div class="section-title" style="margin:16px 0 12px">Hábitos</div>
-
-                <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="FazDieta" /> Está fazendo dieta?</label>
-                    <input class="form-control" asp-for="TipoDieta" placeholder="Qual tipo?" />
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Consome álcool?</label>
-                    <select class="form-control" asp-for="ConsomeAlcool">
-                        <option value="">Selecione</option>
-                        <option>Não</option>
-                        <option>Socialmente</option>
-                        <option>Frequentemente</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label"><input type="checkbox" asp-for="Fuma" /> Fuma?</label>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Observações Gerais</label>
-                    <textarea class="form-control" asp-for="ObservacoesGerais" rows="3"></textarea>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width:100%"><i class="ti ti-device-floppy"></i> Salvar Anamnese</button>
-            </form>
+            </div>
         </div>
+
+        <!-- SAÚDE -->
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-heart-rate-monitor"></i> Saúde</div>
+
+                <div class="form-group">
+                    <label class="form-label">Possui doença ou problema de saúde?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt"><input type="radio" asp-for="TemDoenca" value="true" onclick="toggle('det-doenca',true)" /> Sim</label>
+                        <label class="radio-opt"><input type="radio" asp-for="TemDoenca" value="false" checked onclick="toggle('det-doenca',false)" /> Não</label>
+                    </div>
+                    <div id="det-doenca" class="detalhe-box" style="display:none">
+                        <input class="form-control" asp-for="QualDoenca" placeholder="Descreva a doença ou problema..." />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Limitação de movimento?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt"><input type="radio" asp-for="TemLimitacaoMovimento" value="true" onclick="toggle('det-limitacao',true)" /> Sim</label>
+                        <label class="radio-opt"><input type="radio" asp-for="TemLimitacaoMovimento" value="false" checked onclick="toggle('det-limitacao',false)" /> Não</label>
+                    </div>
+                    <div id="det-limitacao" class="detalhe-box" style="display:none">
+                        <input class="form-control" asp-for="QualLimitacao" placeholder="Qual movimento? Onde?" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Dor em algum movimento?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt"><input type="radio" asp-for="TemDorMovimento" value="true" onclick="toggle('det-dor',true)" /> Sim</label>
+                        <label class="radio-opt"><input type="radio" asp-for="TemDorMovimento" value="false" checked onclick="toggle('det-dor',false)" /> Não</label>
+                    </div>
+                    <div id="det-dor" class="detalhe-box" style="display:none">
+                        <input class="form-control" asp-for="QualDor" placeholder="Qual movimento causa dor?" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Realizou cirurgias?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt"><input type="radio" asp-for="FezCirurgia" value="true" onclick="toggle('det-cirurgia',true)" /> Sim</label>
+                        <label class="radio-opt"><input type="radio" asp-for="FezCirurgia" value="false" checked onclick="toggle('det-cirurgia',false)" /> Não</label>
+                    </div>
+                    <div id="det-cirurgia" class="detalhe-box" style="display:none">
+                        <input class="form-control" asp-for="QualCirurgia" placeholder="Qual cirurgia? Quando?" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Usa medicamento controlado?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt"><input type="radio" asp-for="UsaMedicamento" value="true" onclick="toggle('det-med',true)" /> Sim</label>
+                        <label class="radio-opt"><input type="radio" asp-for="UsaMedicamento" value="false" checked onclick="toggle('det-med',false)" /> Não</label>
+                    </div>
+                    <div id="det-med" class="detalhe-box" style="display:none">
+                        <input class="form-control" asp-for="QualMedicamento" placeholder="Qual medicamento?" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HÁBITOS -->
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-leaf"></i> Hábitos de vida</div>
+
+                <div class="form-group">
+                    <label class="form-label">Está fazendo dieta?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt"><input type="radio" asp-for="FazDieta" value="true" onclick="toggle('det-dieta',true)" /> Sim</label>
+                        <label class="radio-opt"><input type="radio" asp-for="FazDieta" value="false" checked onclick="toggle('det-dieta',false)" /> Não</label>
+                    </div>
+                    <div id="det-dieta" class="detalhe-box" style="display:none">
+                        <input class="form-control" asp-for="TipoDieta" placeholder="Qual tipo de dieta?" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Consumo de álcool?</label>
+                    <select class="form-control" asp-for="ConsomeAlcool">
+                        <option value="">— selecione —</option>
+                        <option>Não consome</option>
+                        <option>Socialmente (1-2x/mês)</option>
+                        <option>Moderado (1-2x/semana)</option>
+                        <option>Frequente (3+ vezes/semana)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Fuma?</label>
+                    <div class="radio-group">
+                        <label class="radio-opt"><input type="radio" asp-for="Fuma" value="true" /> Sim</label>
+                        <label class="radio-opt"><input type="radio" asp-for="Fuma" value="false" checked /> Não</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- OBSERVAÇÕES -->
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-notes"></i> Observações gerais</div>
+                <div class="form-group">
+                    <label class="form-label">Informações adicionais</label>
+                    <textarea class="form-control" asp-for="ObservacoesGerais" rows="8"
+                              placeholder="Anote aqui qualquer informação relevante não coberta acima..."></textarea>
+                </div>
+            </div>
+        </div>
+
     </div>
-</div>
+
+    <div style="display:flex;gap:10px;margin-top:16px">
+        <button type="submit" class="btn btn-primary">
+            <i class="ti ti-device-floppy"></i> Salvar anamnese
+        </button>
+        <a class="btn btn-ghost" asp-action="Index">Cancelar</a>
+    </div>
+</form>
+
+<style>
+    .radio-group { display: flex; gap: 16px; margin-top: 6px; }
+    .radio-opt   { display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,.65); cursor: pointer; }
+    .radio-opt input[type=radio] { accent-color: var(--red); width: 14px; height: 14px; cursor: pointer; }
+    .detalhe-box { margin-top: 8px; }
+</style>
+
+<script>
+    function toggle(id, show) {
+        document.getElementById(id).style.display = show ? '' : 'none';
+    }
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,7 +1,7 @@
 @model List<BulkingPro.ViewModels.AlunoViewModel>
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"] = "Meus Alunos";
+    ViewData["Title"]      = "Meus Alunos";
     ViewData["ActivePage"] = "Alunos";
 }
 
@@ -9,55 +9,81 @@
     <div class="topbar">
         <div>
             <div class="topbar-title">Meus Alunos</div>
-            <div class="topbar-sub">Alunos vinculados a você</div>
+            <div class="topbar-sub">@Model.Count aluno(s) vinculado(s) a você</div>
         </div>
         <div class="topbar-actions">
             <a class="btn btn-primary" asp-action="CadastrarAluno">
-                <i class="ti ti-user-plus"></i> Novo Aluno
+                <i class="ti ti-user-plus"></i> Cadastrar aluno
             </a>
         </div>
     </div>
 }
 
-<div class="search-bar" style="display:flex; gap:10px; margin-bottom:16px">
-    <i class="ti ti-search"></i>
-    <input type="text" id="busca" placeholder="Buscar aluno..." style="flex:1; background:none; border:none; outline:none; color:#fff" />
+<div class="search-bar" style="display:flex;align-items:center;gap:10px;background:#131316;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:9px 14px;margin-bottom:16px">
+    <i class="ti ti-search" style="color:var(--muted)"></i>
+    <input type="text" id="busca" placeholder="Buscar aluno..."
+           style="background:none;border:none;outline:none;color:rgba(255,255,255,.75);font-size:13px;flex:1" />
 </div>
 
 <div class="table-wrap">
     <table>
         <thead>
-            <tr><th>Aluno</th><th>Email</th><th>Plano Ativo</th><th>Status</th><th>Ações</th></tr>
+            <tr>
+                <th>Aluno</th>
+                <th>E-mail</th>
+                <th>Plano ativo</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
         </thead>
         <tbody id="tabela-body">
+            @{
+                var cores = new[] { "r", "g", "b" };
+                int i = 0;
+            }
             @foreach (var a in Model)
             {
+                var cor = cores[i % cores.Length];
+                var inics = a.NomeCompleto.Length >= 2
+                    ? a.NomeCompleto[0].ToString().ToUpper() + a.NomeCompleto.Split(' ').Last()[0].ToString().ToUpper()
+                    : a.NomeCompleto[0].ToString().ToUpper();
+                i++;
                 <tr>
-                    <td class="bold">@a.NomeCompleto</td>
-                    <td>@a.Email</td>
-                    <td>@(a.NomePlanoAtivo ?? "—")</td>
-                    <td>@(a.Ativo ? "<span class='badge badge-active'>Ativo</span>" : "<span class='badge badge-inactive'>Inativo</span>")</td>
                     <td>
-                        <div style="display:flex; gap:6px">
-                            <a class="btn btn-ghost btn-sm" asp-action="CriarPlano" asp-route-alunoId="@a.Id">
-                                <i class="ti ti-plus"></i> Plano
-                            </a>
-                            <a class="btn btn-ghost btn-sm" asp-action="Medidas" asp-route-alunoId="@a.Id">
-                                <i class="ti ti-ruler"></i> Medidas
-                            </a>
-                            <a class="btn btn-ghost btn-sm" asp-action="Anamnese" asp-route-alunoId="@a.Id">
-                                <i class="ti ti-notes"></i> Anamnese
-                            </a>
+                        <div class="td-user">
+                            <div class="tbl-av @cor">@inics</div>
+                            <span class="bold">@a.NomeCompleto</span>
                         </div>
                     </td>
+                    <td>@a.Email</td>
+                    <td>@(a.NomePlanoAtivo ?? "—")</td>
+                    <td>
+                        @if (a.Ativo) { <span class="badge badge-active">Ativo</span> }
+                        else          { <span class="badge badge-inactive">Inativo</span> }
+                    </td>
+                    <td style="display:flex;gap:6px">
+                        <a class="btn btn-ghost btn-sm" asp-action="CriarPlano" asp-route-alunoId="@a.Id">
+                            <i class="ti ti-clipboard-plus"></i> Plano
+                        </a>
+                        <a class="btn btn-ghost btn-sm" asp-action="Medidas" asp-route-alunoId="@a.Id">
+                            <i class="ti ti-ruler"></i>
+                        </a>
+                        <a class="btn btn-ghost btn-sm" asp-action="Anamnese" asp-route-alunoId="@a.Id">
+                            <i class="ti ti-clipboard-text"></i>
+                        </a>
+                    </td>
                 </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:28px">Nenhum aluno cadastrado ainda.</td></tr>
             }
         </tbody>
     </table>
 </div>
 
 <script>
-    document.getElementById('busca').addEventListener('input', function() {
+    document.getElementById('busca').addEventListener('input', function () {
         const q = this.value.toLowerCase();
         document.querySelectorAll('#tabela-body tr').forEach(tr => {
             tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';

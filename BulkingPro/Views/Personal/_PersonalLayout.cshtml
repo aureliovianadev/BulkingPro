@@ -3,11 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — BulkingPro Personal</title>
+    <title>@ViewData["Title"] — BulkingPro</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,105 +25,78 @@
 
         .personal-wrap { display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar Personal */
-        .sidebar {
-            width: 260px; flex-shrink: 0;
-            background: var(--bg2);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-        }
-        .sidebar-brand {
-            padding: 22px 18px 16px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .sidebar-brand-logo {
-            width: 40px;
-            height: 40px;
-            background: url('/images/logo.png') no-repeat center;
-            background-size: contain;
-        }
-        .sidebar-brand-name { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: .5px; }
-        .sidebar-brand-role { font-size: 10px; color: var(--red); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+        /* ── Sidebar ── */
+        .sidebar { width: 230px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+
+        .sidebar-brand { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .sidebar-brand img { height: 36px; width: auto; }
+        .sidebar-brand-role { font-size: 10px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
 
         .sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
-        .nav-section {
-            font-size: 10px; color: rgba(255,255,255,0.22);
-            letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 14px 18px 5px;
-        }
-        .nav-link {
-            display: flex; align-items: center; gap: 10px;
-            padding: 9px 18px;
-            color: var(--muted); font-size: 13px;
-            text-decoration: none;
-            border-left: 2px solid transparent;
-            transition: color .15s, background .15s;
-        }
+        .sidebar-nav::-webkit-scrollbar { width: 0; }
+
+        .nav-section { font-size: 10px; color: rgba(255,255,255,0.22); letter-spacing: 1.5px; text-transform: uppercase; padding: 14px 18px 5px; }
+        .nav-link { display: flex; align-items: center; gap: 10px; padding: 9px 18px; color: var(--muted); font-size: 13px; text-decoration: none; border-left: 2px solid transparent; transition: color .15s, background .15s; }
         .nav-link i { font-size: 17px; width: 20px; }
         .nav-link:hover { color: rgba(255,255,255,.8); background: rgba(255,255,255,.03); }
         .nav-link.active { color: #fff; background: var(--red-dim); border-left-color: var(--red); }
 
-        .sidebar-footer {
-            padding: 14px 18px;
-            border-top: 1px solid var(--border);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .avatar {
-            width: 34px; height: 34px; border-radius: 50%;
-            background: var(--red-dim);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 600; color: var(--red);
-            flex-shrink: 0;
-        }
+        .sidebar-footer { padding: 14px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(196,168,122,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--gold); flex-shrink: 0; }
+        .avatar-name  { font-size: 12px; color: #fff; font-weight: 500; }
+        .avatar-email { font-size: 10px; color: var(--muted); }
 
-        /* Main */
+        /* ── Main ── */
         .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-        .topbar {
-            padding: 14px 28px;
-            border-bottom: 1px solid var(--border);
-            background: var(--bg2);
-            display: flex; align-items: center; justify-content: space-between;
-            flex-shrink: 0;
-        }
+        .topbar { padding: 14px 28px; border-bottom: 1px solid var(--border); background: var(--bg2); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
         .topbar-title { font-size: 16px; font-weight: 600; color: #fff; }
         .topbar-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
         .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
         .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+        .content::-webkit-scrollbar { width: 4px; }
+        .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
 
-        /* Botões */
+        /* ── Botões ── */
         .btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 20px; padding: 8px 18px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: opacity .15s; }
         .btn:hover { opacity: .85; }
         .btn-primary { background: var(--red); color: #fff; }
+        .btn-gold    { background: rgba(196,168,122,0.15); color: var(--gold); border: 1px solid rgba(196,168,122,0.3); }
         .btn-ghost   { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
         .btn-danger  { background: rgba(238,25,32,.15); color: var(--red); border: 1px solid rgba(238,25,32,.25); }
-        .btn-sm { padding: 5px 12px; font-size: 11px; }
-        .btn-success { background: rgba(46,160,67,.15); color: #2ea043; border: 1px solid rgba(46,160,67,.25); }
+        .btn-sm      { padding: 5px 12px; font-size: 11px; }
 
-        /* Cards */
+        /* ── Cards ── */
         .card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; }
-        .card-body { padding: 18px; }
+        .card-body { padding: 20px; }
+        .card-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.7); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title i { color: var(--gold); }
 
-        /* Stats */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
-        .stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 18px; }
-        .stat-icon.red   { background: rgba(238,25,32,.15); color: var(--red); }
-        .stat-icon.gold  { background: rgba(196,168,122,.15); color: var(--gold); }
-        .stat-icon.blue  { background: rgba(56,139,253,.15); color: #388bfd; }
-        .stat-icon.green { background: rgba(46,160,67,.15); color: #2ea043; }
-        .stat-val   { font-size: 28px; font-weight: 600; color: #fff; line-height: 1; }
-        .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+        /* ── Form ── */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 7px; }
+        .form-control { width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: rgba(255,255,255,.85); font-size: 13px; outline: none; transition: border-color .2s; }
+        .form-control:focus { border-color: var(--red); box-shadow: 0 0 0 2px rgba(238,25,32,.12); }
+        .form-control::placeholder { color: rgba(255,255,255,.18); }
+        select.form-control { cursor: pointer; }
+        select.form-control option { background: #1a1a1e; }
+        textarea.form-control { resize: vertical; min-height: 80px; }
+        .form-row { display: flex; gap: 14px; }
+        .form-row .form-group { flex: 1; }
+        .field-validation-error { font-size: 11px; color: var(--red); margin-top: 4px; display: block; }
 
-        /* Tabelas */
+        /* ── Badge ── */
+        .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+        .badge-active   { background: rgba(46,160,67,.12); color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
+        .badge-inactive { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); }
+        .badge-gold     { background: rgba(196,168,122,.12); color: var(--gold); border: 1px solid rgba(196,168,122,.2); }
+
+        /* ── Tabela ── */
         .table-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
         thead th { font-size: 10px; color: rgba(255,255,255,.25); letter-spacing: 1px; text-transform: uppercase; padding: 12px 18px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 400; }
-        tbody td { padding: 12px 18px; font-size: 13px; color: rgba(255,255,255,.65); border-bottom: 1px solid rgba(255,255,255,.04); }
+        tbody td { padding: 12px 18px; font-size: 13px; color: rgba(255,255,255,.65); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
         tbody tr:last-child td { border-bottom: none; }
         tbody tr:hover td { background: rgba(255,255,255,.02); }
         td.bold { color: rgba(255,255,255,.9); font-weight: 500; }
@@ -134,122 +104,36 @@
         .tbl-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
         .tbl-av.r { background: rgba(238,25,32,.2); color: var(--red); }
         .tbl-av.g { background: rgba(196,168,122,.2); color: var(--gold); }
+        .tbl-av.b { background: rgba(56,139,253,.2); color: #388bfd; }
 
-        /* Badges */
-        .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
-        .badge-active   { background: rgba(46,160,67,.12); color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
-        .badge-inactive { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); }
-
-        /* Forms */
-        .form-group { margin-bottom: 18px; }
-        .form-label { display: block; font-size: 11px; color: rgba(255,255,255,.45); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 7px; }
-        .form-control, select.form-control {
-            width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--border);
-            border-radius: 10px; padding: 12px 16px; color: rgba(255,255,255,.85); font-size: 14px;
-            outline: none;
-        }
-        .form-control:focus, select.form-control:focus { border-color: var(--red); }
-        .field-validation-error { font-size: 11px; color: var(--red); margin-top: 4px; display: block; }
-
-        /* Dias da semana - grid */
-        .dias-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 20px;
-        }
-        .dia-card {
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .dia-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: rgba(255,255,255,.02);
-            border-bottom: 1px solid var(--border);
-            cursor: pointer;
-        }
-        .dia-header input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: var(--red);
-        }
-        .dia-nome {
-            font-weight: 600;
-            color: #fff;
-            font-size: 14px;
-        }
-        .dia-exercicios {
-            padding: 16px;
-            display: none;
-        }
-        .dia-card.expanded .dia-exercicios {
-            display: block;
-        }
-        .exercicio-row {
-            display: grid;
-            grid-template-columns: 2fr 0.8fr 1fr 1fr 1fr 1fr 0.5fr;
-            gap: 8px;
-            margin-bottom: 10px;
-            align-items: center;
-        }
-        .exercicio-header {
-            font-size: 10px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 12px;
-        }
-        .exercicio-row select, .exercicio-row input {
-            background: rgba(255,255,255,.04);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 6px 8px;
-            color: #fff;
-            font-size: 12px;
-        }
-        .add-exercicio-btn {
-            margin-top: 12px;
-            font-size: 11px;
-        }
-
-        /* Grid 2 colunas */
-        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
-        /* Alertas */
-        .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+        /* ── Alert ── */
+        .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .alert-success { background: rgba(46,160,67,.12); color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
-        
-        /* IMC Destaque */
-        .imc-card {
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-        .imc-valor {
-            font-size: 36px;
-            font-weight: 700;
-            color: #fff;
-        }
-        .imc-class {
-            font-size: 14px;
-            color: var(--gold);
-            margin-top: 4px;
-        }
+        .alert-danger  { background: rgba(238,25,32,.12); color: var(--red); border: 1px solid rgba(238,25,32,.25); }
+
+        /* ── Stats ── */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+        .stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 18px; }
+        .stat-icon.red   { background: rgba(238,25,32,.15); color: var(--red); }
+        .stat-icon.gold  { background: rgba(196,168,122,.15); color: var(--gold); }
+        .stat-icon.blue  { background: rgba(56,139,253,.15); color: #388bfd; }
+        .stat-icon.green { background: rgba(46,160,67,.15); color: #2ea043; }
+        .stat-val   { font-size: 26px; font-weight: 600; color: #fff; line-height: 1; }
+        .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        /* ── Toggle ── */
+        .toggle-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .toggle-input { display: none; }
+        .toggle-track { width: 40px; height: 22px; border-radius: 11px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); position: relative; transition: background .2s; flex-shrink: 0; }
+        .toggle-track::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.4); top: 2px; left: 2px; transition: all .2s; }
+        .toggle-input:checked + .toggle-track { background: rgba(46,160,67,.5); border-color: #2ea043; }
+        .toggle-input:checked + .toggle-track::after { left: 20px; background: #2ea043; }
+        .toggle-text { font-size: 13px; color: rgba(255,255,255,.6); }
 
         @@media (max-width: 900px) {
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .two-col { grid-template-columns: 1fr; }
-            .exercicio-row { grid-template-columns: 1fr; gap: 6px; }
+            .form-row   { flex-direction: column; }
         }
     </style>
 </head>
@@ -258,48 +142,43 @@
 
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <div class="sidebar-brand-logo"></div>
-            <div>
-                <div class="sidebar-brand-name">BulkingPro</div>
-                <div class="sidebar-brand-role">Personal Trainer</div>
-            </div>
+            <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
+        </div>
+        <div style="padding:8px 18px 6px;border-bottom:1px solid var(--border)">
+            <div class="sidebar-brand-role">Personal Trainer</div>
         </div>
 
         <nav class="sidebar-nav">
-            <div class="nav-section">Dashboard</div>
+            <div class="nav-section">Principal</div>
             <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Dashboard" ? "active" : "")"
                asp-controller="Personal" asp-action="Index">
-                <i class="ti ti-layout-dashboard"></i> Painel
+                <i class="ti ti-layout-dashboard"></i> Dashboard
             </a>
 
-            <div class="nav-section">Alunos</div>
+            <div class="nav-section">Meus Alunos</div>
             <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Alunos" ? "active" : "")"
                asp-controller="Personal" asp-action="Alunos">
-                <i class="ti ti-users"></i> Meus Alunos
+                <i class="ti ti-users"></i> Lista de alunos
             </a>
             <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "CadastrarAluno" ? "active" : "")"
                asp-controller="Personal" asp-action="CadastrarAluno">
-                <i class="ti ti-user-plus"></i> Cadastrar Aluno
+                <i class="ti ti-user-plus"></i> Cadastrar aluno
             </a>
 
-            <div class="nav-section">Treinos</div>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "PlanosTreino" ? "active" : "")"
+            <div class="nav-section">Treino</div>
+            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "PlanoTreino" ? "active" : "")"
                asp-controller="Personal" asp-action="PlanosTreino">
-                <i class="ti ti-clipboard-list"></i> Meus Planos
-            </a>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "CriarPlano" ? "active" : "")"
-               asp-controller="Personal" asp-action="CriarPlano">
-                <i class="ti ti-plus"></i> Novo Plano
+                <i class="ti ti-clipboard-list"></i> Planos de treino
             </a>
 
-            <div class="nav-section">Avaliações</div>
+            <div class="nav-section">Avaliação</div>
             <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Medidas" ? "active" : "")"
                asp-controller="Personal" asp-action="Medidas">
-                <i class="ti ti-ruler"></i> Medidas / IMC
+                <i class="ti ti-ruler"></i> Medidas e IMC
             </a>
             <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Anamnese" ? "active" : "")"
                asp-controller="Personal" asp-action="Anamnese">
-                <i class="ti ti-notes"></i> Anamnese
+                <i class="ti ti-clipboard-text"></i> Anamnese
             </a>
         </nav>
 
@@ -309,8 +188,8 @@
                 @(nome.Length >= 2 ? nome.Substring(0,2).ToUpper() : "PT")
             </div>
             <div>
-                <div class="avatar-name">@(User.Identity?.Name ?? "Personal")</div>
-                <div class="avatar-email" style="font-size:10px;color:var(--muted)">Personal Trainer</div>
+                <div class="avatar-name">@User.Identity?.Name</div>
+                <div class="avatar-email">Personal Trainer</div>
             </div>
         </div>
     </aside>
@@ -320,18 +199,16 @@
         <div class="content">
             @if (TempData["Sucesso"] != null)
             {
-                <div class="alert alert-success">
-                    <i class="ti ti-circle-check"></i> @TempData["Sucesso"]
-                </div>
+                <div class="alert alert-success"><i class="ti ti-circle-check"></i> @TempData["Sucesso"]</div>
+            }
+            @if (TempData["Erro"] != null)
+            {
+                <div class="alert alert-danger"><i class="ti ti-alert-circle"></i> @TempData["Erro"]</div>
             }
             @RenderBody()
         </div>
     </div>
 </div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation/1.19.5/jquery.validate.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
 @RenderSection("Scripts", required: false)
 </body>
 </html>

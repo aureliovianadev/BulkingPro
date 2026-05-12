@@ -1,70 +1,83 @@
 @model BulkingPro.ViewModels.PersonalDashboardViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"]      = "Dashboard";
     ViewData["ActivePage"] = "Dashboard";
 }
 
 @section Topbar {
     <div class="topbar">
         <div>
-            <div class="topbar-title">Meu Painel</div>
-            <div class="topbar-sub">Visão geral dos seus alunos e planos</div>
+            <div class="topbar-title">Meu painel</div>
+            <div class="topbar-sub">Bem-vindo, @User.Identity?.Name</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-primary" asp-action="CadastrarAluno">
+                <i class="ti ti-user-plus"></i> Novo aluno
+            </a>
         </div>
     </div>
 }
 
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon red"><i class="ti ti-users"></i></div>
+        <div class="stat-icon gold"><i class="ti ti-users"></i></div>
         <div class="stat-val">@Model.TotalAlunos</div>
-        <div class="stat-label">Total de Alunos</div>
+        <div class="stat-label">Meus alunos</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon gold"><i class="ti ti-clipboard-list"></i></div>
+        <div class="stat-icon red"><i class="ti ti-clipboard-list"></i></div>
         <div class="stat-val">@Model.TotalPlanos</div>
-        <div class="stat-label">Planos Criados</div>
+        <div class="stat-label">Planos criados</div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon green"><i class="ti ti-calendar-check"></i></div>
+        <div class="stat-icon green"><i class="ti ti-circle-check"></i></div>
         <div class="stat-val">@Model.PlanosAtivos</div>
-        <div class="stat-label">Planos Ativos</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon blue"><i class="ti ti-ruler"></i></div>
-        <div class="stat-val">—</div>
-        <div class="stat-label">Avaliações Hoje</div>
+        <div class="stat-label">Planos ativos</div>
     </div>
 </div>
 
-<div class="two-col">
-    <div>
-        <div class="section-title" style="margin-bottom:12px">Últimos Alunos</div>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr><th>Aluno</th><th>Email</th><th>Status</th></tr>
-                </thead>
-                <tbody>
-                    @foreach (var aluno in Model.UltimosAlunos)
-                    {
-                        <tr>
-                            <td class="bold">@aluno.NomeCompleto</td>
-                            <td>@aluno.Email</td>
-                            <td>@(aluno.Ativo ? "Ativo" : "Inativo")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title"><i class="ti ti-users"></i> Alunos recentes</div>
+            @foreach (var a in Model.UltimosAlunos)
+            {
+                var inics = a.NomeCompleto.Length >= 2
+                    ? a.NomeCompleto[0].ToString().ToUpper() + a.NomeCompleto.Split(' ').Last()[0].ToString().ToUpper()
+                    : a.NomeCompleto[0].ToString().ToUpper();
+                <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+                    <div class="tbl-av g">@inics</div>
+                    <div>
+                        <div style="font-size:13px;color:#fff;font-weight:500">@a.NomeCompleto</div>
+                        <div style="font-size:11px;color:var(--muted)">@a.Email</div>
+                    </div>
+                </div>
+            }
+            @if (!Model.UltimosAlunos.Any())
+            {
+                <div style="color:var(--muted);font-size:13px;padding:12px 0">Nenhum aluno cadastrado ainda.</div>
+            }
+            <a class="btn btn-ghost btn-sm" asp-action="Alunos" style="margin-top:14px">Ver todos</a>
         </div>
     </div>
-    <div>
-        <div class="section-title" style="margin-bottom:12px">Ações Rápidas</div>
-        <div class="card">
-            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-                <a class="btn btn-primary" asp-action="CadastrarAluno"><i class="ti ti-user-plus"></i> Cadastrar Novo Aluno</a>
-                <a class="btn btn-ghost" asp-action="CriarPlano"><i class="ti ti-plus"></i> Criar Novo Plano</a>
-                <a class="btn btn-ghost" asp-action="Medidas"><i class="ti ti-ruler"></i> Registrar Medidas</a>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title"><i class="ti ti-bolt"></i> Ações rápidas</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+                <a class="btn btn-ghost" asp-action="CadastrarAluno" style="justify-content:flex-start">
+                    <i class="ti ti-user-plus"></i> Cadastrar aluno
+                </a>
+                <a class="btn btn-ghost" asp-action="CriarPlano" style="justify-content:flex-start">
+                    <i class="ti ti-clipboard-plus"></i> Criar plano de treino
+                </a>
+                <a class="btn btn-ghost" asp-action="Medidas" style="justify-content:flex-start">
+                    <i class="ti ti-ruler"></i> Registrar medidas / IMC
+                </a>
+                <a class="btn btn-ghost" asp-action="Anamnese" style="justify-content:flex-start">
+                    <i class="ti ti-clipboard-text"></i> Preencher anamnese
+                </a>
             </div>
         </div>
     </div>

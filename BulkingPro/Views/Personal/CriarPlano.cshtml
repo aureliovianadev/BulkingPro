@@ -1,17 +1,18 @@
 @model BulkingPro.ViewModels.CriarPlanoViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"] = "Criar Plano de Treino";
-    ViewData["ActivePage"] = "CriarPlano";
-    var exercicios = ViewBag.Exercicios as List<BulkingPro.Models.Exercicio>;
-    var grupos = ViewBag.Grupos as List<BulkingPro.Models.GrupoMuscular>;
+    ViewData["Title"]      = "Criar Plano de Treino";
+    ViewData["ActivePage"] = "PlanoTreino";
+
+    var exercicios = ViewBag.Exercicios as List<BulkingPro.Models.Exercicio> ?? new();
+    var grupos     = exercicios.GroupBy(e => e.GrupoMuscular?.Nome ?? "Outros").OrderBy(g => g.Key);
 }
 
 @section Topbar {
     <div class="topbar">
         <div>
-            <div class="topbar-title">Criar Plano de Treino</div>
-            <div class="topbar-sub">Monte o treino semana por semana</div>
+            <div class="topbar-title">Novo Plano de Treino</div>
+            <div class="topbar-sub">Configure os dias e exercícios</div>
         </div>
         <div class="topbar-actions">
             <a class="btn btn-ghost" asp-action="PlanosTreino"><i class="ti ti-arrow-left"></i> Voltar</a>
@@ -19,137 +20,222 @@
     </div>
 }
 
-<form asp-action="CriarPlano" method="post" id="planoForm">
+<form asp-action="CriarPlano" method="post" id="form-plano">
     @Html.AntiForgeryToken()
-    
-    <div class="two-col" style="margin-bottom:24px">
-        <div>
-            <div class="form-group">
-                <label class="form-label" asp-for="AlunoId">Aluno</label>
-                <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
-                    <option value="">Selecione um aluno</option>
-                </select>
-                <span asp-validation-for="AlunoId"></span>
+
+    <!-- INFO GERAL -->
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-body">
+            <div class="card-title"><i class="ti ti-info-circle"></i> Informações do plano</div>
+            <div class="form-row">
+                <div class="form-group" style="flex:2">
+                    <label class="form-label">Aluno</label>
+                    <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
+                        <option value="">— selecione o aluno —</option>
+                    </select>
+                    <span asp-validation-for="AlunoId" class="field-validation-error"></span>
+                </div>
+                <div class="form-group" style="flex:3">
+                    <label class="form-label">Título do plano</label>
+                    <input class="form-control" asp-for="Titulo" placeholder="Ex.: Hipertrofia A — Ciclo 1" />
+                    <span asp-validation-for="Titulo" class="field-validation-error"></span>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label" asp-for="Titulo">Título do Plano</label>
-                <input class="form-control" asp-for="Titulo" placeholder="Ex: Treino ABCD - Hipertrofia" />
-                <span asp-validation-for="Titulo"></span>
-            </div>
-        </div>
-        <div>
-            <div class="form-group">
-                <label class="form-label" asp-for="Objetivo">Objetivo</label>
-                <input class="form-control" asp-for="Objetivo" placeholder="Ex: Ganho de massa muscular" />
-                <span asp-validation-for="Objetivo"></span>
-            </div>
-            <div class="two-col" style="gap:12px">
+            <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" asp-for="DataInicio">Data Início</label>
+                    <label class="form-label">Objetivo</label>
+                    <input class="form-control" asp-for="Objetivo" placeholder="Ex.: Ganho de massa muscular" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Data início</label>
                     <input class="form-control" asp-for="DataInicio" type="date" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label" asp-for="DataFim">Data Fim (opcional)</label>
+                    <label class="form-label">Data fim (opcional)</label>
                     <input class="form-control" asp-for="DataFim" type="date" />
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="section-title" style="margin-bottom:16px">Dias de Treino</div>
-    <div class="dias-grid" id="diasGrid">
-        @for (int i = 0; i < Model.DiasSemana.Count; i++)
-        {
-            var dia = Model.DiasSemana[i];
-            <div class="dia-card" data-dia-index="@i">
-                <div class="dia-header" onclick="toggleDia(this.parentElement)">
-                    <input type="checkbox" asp-for="DiasSemana[i].Selecionado" />
-                    <span class="dia-nome">@dia.Nome</span>
-                </div>
-                <div class="dia-exercicios">
-                    <div class="exercicio-header">
-                        <div class="exercicio-row">
-                            <span>Exercício</span><span>Séries</span><span>Repetições</span><span>Carga</span><span>Descanso(s)</span><span>Obs</span><span></span>
+    <!-- CALENDÁRIO SEMANAL -->
+    <div class="card" style="margin-bottom:16px">
+        <div class="card-body">
+            <div class="card-title"><i class="ti ti-calendar-week"></i> Dias de treino</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Selecione os dias ativos e adicione os exercícios de cada dia.</p>
+
+            <div class="semana-grid">
+                @for (int i = 0; i < Model.DiasSemana.Count; i++)
+                {
+                    var dia = Model.DiasSemana[i];
+                    <div class="dia-card" id="dia-card-@i">
+
+                        <!-- Cabeçalho do dia -->
+                        <div class="dia-header">
+                            <label class="toggle-label">
+                                <input type="checkbox" name="DiasSemana[@i].Selecionado"
+                                       class="toggle-input dia-toggle" data-dia="@i"
+                                       @(dia.Selecionado ? "checked" : "") />
+                                <span class="toggle-track"></span>
+                                <span class="toggle-text dia-nome">@dia.Nome</span>
+                            </label>
+                            <input type="hidden" name="DiasSemana[@i].Nome"  value="@dia.Nome" />
+                            <input type="hidden" name="DiasSemana[@i].Ordem" value="@dia.Ordem" />
+                        </div>
+
+                        <!-- Obs do dia -->
+                        <div class="dia-body" id="dia-body-@i" style="@(dia.Selecionado ? "" : "display:none")">
+                            <div class="form-group" style="margin-bottom:12px">
+                                <label class="form-label">Observações do dia</label>
+                                <input class="form-control" name="DiasSemana[@i].Observacoes"
+                                       value="@dia.Observacoes" placeholder="Ex.: Foco em peito e tríceps" />
+                            </div>
+
+                            <!-- Exercícios do dia -->
+                            <div class="card-title" style="font-size:11px;margin-bottom:10px">
+                                <i class="ti ti-barbell"></i> Exercícios
+                            </div>
+
+                            <div class="exer-lista" id="exer-lista-@i">
+                                @for (int j = 0; j < dia.Exercicios.Count; j++)
+                                {
+                                    var ex = dia.Exercicios[j];
+                                    <div class="exer-linha" id="exer-@i-@j">
+                                        <div class="exer-num">@(j+1)</div>
+                                        <div class="exer-campos">
+                                            <!-- Grupo / Exercício -->
+                                            <div class="form-row" style="margin-bottom:6px">
+                                                <div class="form-group" style="flex:1;margin-bottom:0">
+                                                    <label class="form-label" style="font-size:9px">Grupo muscular</label>
+                                                    <select class="form-control grupo-sel" data-dia="@i" data-ex="@j" style="font-size:12px">
+                                                        <option value="">— grupo —</option>
+                                                        @foreach (var g in grupos)
+                                                        {
+                                                            <option value="@g.Key">@g.Key</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="form-group" style="flex:2;margin-bottom:0">
+                                                    <label class="form-label" style="font-size:9px">Exercício</label>
+                                                    <select class="form-control exer-sel" data-dia="@i" data-ex="@j"
+                                                            name="DiasSemana[@i].Exercicios[@j].ExercicioId" style="font-size:12px">
+                                                        <option value="0">— selecione o grupo —</option>
+                                                        @foreach (var e in exercicios)
+                                                        {
+                                                            if (ex.ExercicioId == e.Id)
+                                                            {
+                                                                <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" selected>@e.Nome</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome">@e.Nome</option>
+                                                            }
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <!-- Séries / Reps / Carga / Descanso -->
+                                            <div class="form-row">
+                                                <div class="form-group" style="margin-bottom:0">
+                                                    <label class="form-label" style="font-size:9px">Séries</label>
+                                                    <input class="form-control" type="number" min="1"
+                                                           name="DiasSemana[@i].Exercicios[@j].Series"
+                                                           value="@ex.Series" style="font-size:12px" />
+                                                    <input type="hidden" name="DiasSemana[@i].Exercicios[@j].Ordem" value="@ex.Ordem" />
+                                                </div>
+                                                <div class="form-group" style="margin-bottom:0">
+                                                    <label class="form-label" style="font-size:9px">Repetições</label>
+                                                    <input class="form-control" type="text"
+                                                           name="DiasSemana[@i].Exercicios[@j].Repeticoes"
+                                                           value="@ex.Repeticoes" placeholder="12" style="font-size:12px" />
+                                                </div>
+                                                <div class="form-group" style="margin-bottom:0">
+                                                    <label class="form-label" style="font-size:9px">Carga (kg)</label>
+                                                    <input class="form-control" type="number" step="0.5"
+                                                           name="DiasSemana[@i].Exercicios[@j].Carga"
+                                                           value="@ex.Carga" placeholder="—" style="font-size:12px" />
+                                                </div>
+                                                <div class="form-group" style="margin-bottom:0">
+                                                    <label class="form-label" style="font-size:9px">Descanso (s)</label>
+                                                    <input class="form-control" type="number"
+                                                           name="DiasSemana[@i].Exercicios[@j].Descanso"
+                                                           value="@ex.Descanso" placeholder="60" style="font-size:12px" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     </div>
-                    <div id="exercicios-container-@i">
-                        @for (int j = 0; j < dia.Exercicios.Count; j++)
-                        {
-                            var ex = dia.Exercicios[j];
-                            <div class="exercicio-row" data-ex-index="@j">
-                                <select name="DiasSemana[@i].Exercicios[@j].ExercicioId" class="form-control-sm" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:6px">
-                                    <option value="0">Selecione</option>
-                                    @foreach (var grupo in grupos)
-                                    {
-                                        <optgroup label="@grupo.Nome">
-                                            @foreach (var exer in exercicios.Where(e => e.GrupoMuscularId == grupo.Id))
-                                            {
-                                                <option value="@exer.Id" selected="@(ex.ExercicioId == exer.Id)">@exer.Nome</option>
-                                            }
-                                        </optgroup>
-                                    }
-                                </select>
-                                <input type="number" name="DiasSemana[@i].Exercicios[@j].Series" value="@ex.Series" class="form-control-sm" style="width:70px" />
-                                <input type="text" name="DiasSemana[@i].Exercicios[@j].Repeticoes" value="@ex.Repeticoes" class="form-control-sm" style="width:80px" />
-                                <input type="text" name="DiasSemana[@i].Exercicios[@j].Carga" value="@ex.Carga" class="form-control-sm" style="width:70px" placeholder="kg" />
-                                <input type="number" name="DiasSemana[@i].Exercicios[@j].Descanso" value="@ex.Descanso" class="form-control-sm" style="width:70px" />
-                                <input type="text" name="DiasSemana[@i].Exercicios[@j].Observacoes" value="@ex.Observacoes" class="form-control-sm" style="width:100px" placeholder="obs" />
-                                <button type="button" class="btn btn-danger btn-sm" onclick="removerExercicio(this)"><i class="ti ti-trash"></i></button>
-                            </div>
-                        }
-                    </div>
-                    <button type="button" class="btn btn-ghost btn-sm add-exercicio-btn" onclick="adicionarExercicio(@i)">
-                        <i class="ti ti-plus"></i> Adicionar exercício
-                    </button>
-                    <div class="form-group" style="margin-top:12px">
-                        <label class="form-label">Observações do dia</label>
-                        <input type="text" class="form-control" name="DiasSemana[@i].Observacoes" value="@dia.Observacoes" placeholder="Ex: Treino A - Foco em peito e tríceps" />
-                    </div>
-                </div>
+                }
             </div>
-        }
+        </div>
     </div>
 
-    <div style="margin-top:24px; text-align:right">
-        <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i> Salvar Plano</button>
+    <div style="display:flex;gap:10px">
+        <button type="submit" class="btn btn-primary">
+            <i class="ti ti-device-floppy"></i> Salvar plano de treino
+        </button>
+        <a class="btn btn-ghost" asp-action="PlanosTreino">Cancelar</a>
     </div>
 </form>
 
+<style>
+    .semana-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap: 12px; }
+
+    .dia-card {
+        background: rgba(255,255,255,0.025);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 12px; overflow: hidden;
+    }
+    .dia-header {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        background: rgba(255,255,255,0.02);
+    }
+    .dia-body { padding: 14px 16px; }
+
+    .exer-linha {
+        display: flex; gap: 10px; align-items: flex-start;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .exer-linha:last-child { border-bottom: none; }
+    .exer-num {
+        width: 22px; height: 22px; border-radius: 50%;
+        background: rgba(196,168,122,0.15); color: var(--gold);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 20px;
+    }
+    .exer-campos { flex: 1; }
+</style>
+
 <script>
-    function toggleDia(card) {
-        card.classList.toggle('expanded');
-    }
+    // Mostrar/ocultar corpo do dia
+    document.querySelectorAll('.dia-toggle').forEach(cb => {
+        cb.addEventListener('change', function () {
+            const body = document.getElementById('dia-body-' + this.dataset.dia);
+            body.style.display = this.checked ? '' : 'none';
+        });
+    });
 
-    function adicionarExercicio(diaIndex) {
-        const container = document.getElementById(`exercicios-container-${diaIndex}`);
-        const index = container.children.length;
-        const newRow = document.createElement('div');
-        newRow.className = 'exercicio-row';
-        newRow.setAttribute('data-ex-index', index);
-        newRow.innerHTML = `
-            <select name="DiasSemana[${diaIndex}].Exercicios[${index}].ExercicioId" class="form-control-sm" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:6px">
-                <option value="0">Selecione</option>
-                @foreach (var grupo in grupos)
-                {
-                    <optgroup label="@grupo.Nome">
-                        @foreach (var exer in exercicios.Where(e => e.GrupoMuscularId == grupo.Id))
-                        {
-                            <option value="@exer.Id">@exer.Nome</option>
-                        }
-                    </optgroup>
-                }
-            </select>
-            <input type="number" name="DiasSemana[${diaIndex}].Exercicios[${index}].Series" value="3" class="form-control-sm" style="width:70px" />
-            <input type="text" name="DiasSemana[${diaIndex}].Exercicios[${index}].Repeticoes" value="12" class="form-control-sm" style="width:80px" />
-            <input type="text" name="DiasSemana[${diaIndex}].Exercicios[${index}].Carga" class="form-control-sm" style="width:70px" placeholder="kg" />
-            <input type="number" name="DiasSemana[${diaIndex}].Exercicios[${index}].Descanso" value="60" class="form-control-sm" style="width:70px" />
-            <input type="text" name="DiasSemana[${diaIndex}].Exercicios[${index}].Observacoes" class="form-control-sm" style="width:100px" placeholder="obs" />
-            <button type="button" class="btn btn-danger btn-sm" onclick="removerExercicio(this)"><i class="ti ti-trash"></i></button>
-        `;
-        container.appendChild(newRow);
-    }
-
-    function removerExercicio(btn) {
-        btn.closest('.exercicio-row').remove();
-    }
+    // Filtrar exercícios por grupo
+    document.querySelectorAll('.grupo-sel').forEach(sel => {
+        sel.addEventListener('change', function () {
+            const grupo  = this.value;
+            const exSel  = document.querySelector(
+                `.exer-sel[data-dia="${this.dataset.dia}"][data-ex="${this.dataset.ex}"]`);
+            if (!exSel) return;
+            exSel.querySelectorAll('option').forEach(opt => {
+                if (!opt.value || opt.value === '0') { opt.style.display = ''; return; }
+                opt.style.display = (!grupo || opt.dataset.grupo === grupo) ? '' : 'none';
+            });
+            exSel.value = '0';
+        });
+    });
 </script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
