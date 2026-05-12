@@ -180,6 +180,12 @@
                asp-controller="Personal" asp-action="Anamnese">
                 <i class="ti ti-clipboard-text"></i> Anamnese
             </a>
+
+            <div class="nav-section">Conta</div>
+            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Configuracoes" ? "active" : "")"
+               asp-controller="Account" asp-action="Configuracoes">
+                <i class="ti ti-settings"></i> Minha conta
+            </a>
         </nav>
 
         <div class="sidebar-footer">
@@ -187,10 +193,19 @@
                 @{ var nome = User.Identity?.Name ?? "PT"; }
                 @(nome.Length >= 2 ? nome.Substring(0,2).ToUpper() : "PT")
             </div>
-            <div>
+            <div style="flex:1;min-width:0">
                 <div class="avatar-name">@User.Identity?.Name</div>
                 <div class="avatar-email">Personal Trainer</div>
             </div>
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <button type="submit" title="Sair"
+                        style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:4px;border-radius:6px;transition:color .15s"
+                        onmouseover="this.style.color='#ee1920'"
+                        onmouseout="this.style.color='rgba(255,255,255,0.3)'">
+                    <i class="ti ti-logout" style="font-size:18px"></i>
+                </button>
+            </form>
         </div>
     </aside>
 
