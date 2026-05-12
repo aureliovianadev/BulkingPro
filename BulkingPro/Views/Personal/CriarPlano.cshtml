@@ -1,0 +1,155 @@
+@model BulkingPro.ViewModels.CriarPlanoViewModel
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"] = "Criar Plano de Treino";
+    ViewData["ActivePage"] = "CriarPlano";
+    var exercicios = ViewBag.Exercicios as List<BulkingPro.Models.Exercicio>;
+    var grupos = ViewBag.Grupos as List<BulkingPro.Models.GrupoMuscular>;
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Criar Plano de Treino</div>
+            <div class="topbar-sub">Monte o treino semana por semana</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-ghost" asp-action="PlanosTreino"><i class="ti ti-arrow-left"></i> Voltar</a>
+        </div>
+    </div>
+}
+
+<form asp-action="CriarPlano" method="post" id="planoForm">
+    @Html.AntiForgeryToken()
+    
+    <div class="two-col" style="margin-bottom:24px">
+        <div>
+            <div class="form-group">
+                <label class="form-label" asp-for="AlunoId">Aluno</label>
+                <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
+                    <option value="">Selecione um aluno</option>
+                </select>
+                <span asp-validation-for="AlunoId"></span>
+            </div>
+            <div class="form-group">
+                <label class="form-label" asp-for="Titulo">Título do Plano</label>
+                <input class="form-control" asp-for="Titulo" placeholder="Ex: Treino ABCD - Hipertrofia" />
+                <span asp-validation-for="Titulo"></span>
+            </div>
+        </div>
+        <div>
+            <div class="form-group">
+                <label class="form-label" asp-for="Objetivo">Objetivo</label>
+                <input class="form-control" asp-for="Objetivo" placeholder="Ex: Ganho de massa muscular" />
+                <span asp-validation-for="Objetivo"></span>
+            </div>
+            <div class="two-col" style="gap:12px">
+                <div class="form-group">
+                    <label class="form-label" asp-for="DataInicio">Data Início</label>
+                    <input class="form-control" asp-for="DataInicio" type="date" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" asp-for="DataFim">Data Fim (opcional)</label>
+                    <input class="form-control" asp-for="DataFim" type="date" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title" style="margin-bottom:16px">Dias de Treino</div>
+    <div class="dias-grid" id="diasGrid">
+        @for (int i = 0; i < Model.DiasSemana.Count; i++)
+        {
+            var dia = Model.DiasSemana[i];
+            <div class="dia-card" data-dia-index="@i">
+                <div class="dia-header" onclick="toggleDia(this.parentElement)">
+                    <input type="checkbox" asp-for="DiasSemana[i].Selecionado" />
+                    <span class="dia-nome">@dia.Nome</span>
+                </div>
+                <div class="dia-exercicios">
+                    <div class="exercicio-header">
+                        <div class="exercicio-row">
+                            <span>Exercício</span><span>Séries</span><span>Repetições</span><span>Carga</span><span>Descanso(s)</span><span>Obs</span><span></span>
+                        </div>
+                    </div>
+                    <div id="exercicios-container-@i">
+                        @for (int j = 0; j < dia.Exercicios.Count; j++)
+                        {
+                            var ex = dia.Exercicios[j];
+                            <div class="exercicio-row" data-ex-index="@j">
+                                <select name="DiasSemana[@i].Exercicios[@j].ExercicioId" class="form-control-sm" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:6px">
+                                    <option value="0">Selecione</option>
+                                    @foreach (var grupo in grupos)
+                                    {
+                                        <optgroup label="@grupo.Nome">
+                                            @foreach (var exer in exercicios.Where(e => e.GrupoMuscularId == grupo.Id))
+                                            {
+                                                <option value="@exer.Id" selected="@(ex.ExercicioId == exer.Id)">@exer.Nome</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                                <input type="number" name="DiasSemana[@i].Exercicios[@j].Series" value="@ex.Series" class="form-control-sm" style="width:70px" />
+                                <input type="text" name="DiasSemana[@i].Exercicios[@j].Repeticoes" value="@ex.Repeticoes" class="form-control-sm" style="width:80px" />
+                                <input type="text" name="DiasSemana[@i].Exercicios[@j].Carga" value="@ex.Carga" class="form-control-sm" style="width:70px" placeholder="kg" />
+                                <input type="number" name="DiasSemana[@i].Exercicios[@j].Descanso" value="@ex.Descanso" class="form-control-sm" style="width:70px" />
+                                <input type="text" name="DiasSemana[@i].Exercicios[@j].Observacoes" value="@ex.Observacoes" class="form-control-sm" style="width:100px" placeholder="obs" />
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removerExercicio(this)"><i class="ti ti-trash"></i></button>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-ghost btn-sm add-exercicio-btn" onclick="adicionarExercicio(@i)">
+                        <i class="ti ti-plus"></i> Adicionar exercício
+                    </button>
+                    <div class="form-group" style="margin-top:12px">
+                        <label class="form-label">Observações do dia</label>
+                        <input type="text" class="form-control" name="DiasSemana[@i].Observacoes" value="@dia.Observacoes" placeholder="Ex: Treino A - Foco em peito e tríceps" />
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div style="margin-top:24px; text-align:right">
+        <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i> Salvar Plano</button>
+    </div>
+</form>
+
+<script>
+    function toggleDia(card) {
+        card.classList.toggle('expanded');
+    }
+
+    function adicionarExercicio(diaIndex) {
+        const container = document.getElementById(`exercicios-container-${diaIndex}`);
+        const index = container.children.length;
+        const newRow = document.createElement('div');
+        newRow.className = 'exercicio-row';
+        newRow.setAttribute('data-ex-index', index);
+        newRow.innerHTML = `
+            <select name="DiasSemana[${diaIndex}].Exercicios[${index}].ExercicioId" class="form-control-sm" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:6px">
+                <option value="0">Selecione</option>
+                @foreach (var grupo in grupos)
+                {
+                    <optgroup label="@grupo.Nome">
+                        @foreach (var exer in exercicios.Where(e => e.GrupoMuscularId == grupo.Id))
+                        {
+                            <option value="@exer.Id">@exer.Nome</option>
+                        }
+                    </optgroup>
+                }
+            </select>
+            <input type="number" name="DiasSemana[${diaIndex}].Exercicios[${index}].Series" value="3" class="form-control-sm" style="width:70px" />
+            <input type="text" name="DiasSemana[${diaIndex}].Exercicios[${index}].Repeticoes" value="12" class="form-control-sm" style="width:80px" />
+            <input type="text" name="DiasSemana[${diaIndex}].Exercicios[${index}].Carga" class="form-control-sm" style="width:70px" placeholder="kg" />
+            <input type="number" name="DiasSemana[${diaIndex}].Exercicios[${index}].Descanso" value="60" class="form-control-sm" style="width:70px" />
+            <input type="text" name="DiasSemana[${diaIndex}].Exercicios[${index}].Observacoes" class="form-control-sm" style="width:100px" placeholder="obs" />
+            <button type="button" class="btn btn-danger btn-sm" onclick="removerExercicio(this)"><i class="ti ti-trash"></i></button>
+        `;
+        container.appendChild(newRow);
+    }
+
+    function removerExercicio(btn) {
+        btn.closest('.exercicio-row').remove();
+    }
+</script>

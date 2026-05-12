@@ -1,0 +1,125 @@
+@model BulkingPro.ViewModels.MedidasViewModel
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"] = "Medidas e IMC";
+    ViewData["ActivePage"] = "Medidas";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Medidas e Avaliação Física</div>
+            <div class="topbar-sub">Registre medidas e calcule o IMC</div>
+        </div>
+    </div>
+}
+
+<div class="two-col">
+    <div>
+        <div class="card">
+            <div class="card-body">
+                <form asp-action="SalvarMedidas" method="post" id="medidasForm">
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="form-group">
+                        <label class="form-label" asp-for="AlunoId">Aluno</label>
+                        <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos" id="alunoSelect">
+                            <option value="">Selecione um aluno</option>
+                        </select>
+                        <span asp-validation-for="AlunoId"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" asp-for="DataAvaliacao">Data da Avaliação</label>
+                        <input class="form-control" asp-for="DataAvaliacao" type="date" />
+                    </div>
+
+                    <div class="two-col" style="gap:12px">
+                        <div class="form-group">
+                            <label class="form-label" asp-for="Altura">Altura (metros)</label>
+                            <input class="form-control" asp-for="Altura" id="altura" step="0.01" type="number" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" asp-for="Peso">Peso (kg)</label>
+                            <input class="form-control" asp-for="Peso" id="peso" step="0.1" type="number" />
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="margin:16px 0 12px">Circunferências (cm)</div>
+                    <div class="two-col" style="gap:12px">
+                        <div class="form-group"><label class="form-label">Pescoço</label><input class="form-control" asp-for="Pescoco" /></div>
+                        <div class="form-group"><label class="form-label">Ombro</label><input class="form-control" asp-for="Ombro" /></div>
+                        <div class="form-group"><label class="form-label">Tórax Contraído</label><input class="form-control" asp-for="ToraxContrai" /></div>
+                        <div class="form-group"><label class="form-label">Tórax Relaxado</label><input class="form-control" asp-for="ToraxRelax" /></div>
+                        <div class="form-group"><label class="form-label">Bíceps Direito</label><input class="form-control" asp-for="BicepsDireito" /></div>
+                        <div class="form-group"><label class="form-label">Bíceps Esquerdo</label><input class="form-control" asp-for="BicepsEsquerdo" /></div>
+                        <div class="form-group"><label class="form-label">Cintura</label><input class="form-control" asp-for="Cintura" /></div>
+                        <div class="form-group"><label class="form-label">Abdômen</label><input class="form-control" asp-for="Abdomen" /></div>
+                        <div class="form-group"><label class="form-label">Quadril</label><input class="form-control" asp-for="Quadril" /></div>
+                        <div class="form-group"><label class="form-label">Coxa Direita</label><input class="form-control" asp-for="CoxaDireita" /></div>
+                        <div class="form-group"><label class="form-label">Coxa Esquerda</label><input class="form-control" asp-for="CoxaEsquerda" /></div>
+                        <div class="form-group"><label class="form-label">Panturrilha Direita</label><input class="form-control" asp-for="PanturrilhaDireita" /></div>
+                        <div class="form-group"><label class="form-label">Panturrilha Esquerda</label><input class="form-control" asp-for="PanturrilhaEsquerda" /></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" asp-for="Observacoes" rows="3"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width:100%"><i class="ti ti-device-floppy"></i> Salvar Medidas</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="imc-card">
+            <div class="section-title">Cálculo do IMC</div>
+            <div class="imc-valor" id="imcValor">—</div>
+            <div class="imc-class" id="imcClass">Preencha altura e peso</div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+            <div class="card-body">
+                <div class="section-title">Tabela de Referência IMC</div>
+                <table style="width:100%; font-size:12px">
+                    <tr><td>Abaixo do peso</td><td>&lt; 18,5</td></tr>
+                    <tr><td>Peso normal</td><td>18,5 – 24,9</td></tr>
+                    <tr><td>Sobrepeso</td><td>25,0 – 29,9</td></tr>
+                    <tr><td>Obesidade Grau I</td><td>30,0 – 34,9</td></tr>
+                    <tr><td>Obesidade Grau II</td><td>35,0 – 39,9</td></tr>
+                    <tr><td>Obesidade Grau III</td><td>≥ 40,0</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calcularIMC() {
+        const altura = parseFloat(document.getElementById('altura').value);
+        const peso = parseFloat(document.getElementById('peso').value);
+        
+        if (altura && peso && altura > 0) {
+            const imc = peso / (altura * altura);
+            document.getElementById('imcValor').innerHTML = imc.toFixed(2);
+            
+            let classificacao = '';
+            if (imc < 18.5) classificacao = 'Abaixo do peso';
+            else if (imc < 25) classificacao = 'Peso normal';
+            else if (imc < 30) classificacao = 'Sobrepeso';
+            else if (imc < 35) classificacao = 'Obesidade grau I';
+            else if (imc < 40) classificacao = 'Obesidade grau II';
+            else classificacao = 'Obesidade grau III';
+            
+            document.getElementById('imcClass').innerHTML = classificacao;
+        } else {
+            document.getElementById('imcValor').innerHTML = '—';
+            document.getElementById('imcClass').innerHTML = 'Preencha altura e peso';
+        }
+    }
+    
+    document.getElementById('altura').addEventListener('input', calcularIMC);
+    document.getElementById('peso').addEventListener('input', calcularIMC);
+</script>

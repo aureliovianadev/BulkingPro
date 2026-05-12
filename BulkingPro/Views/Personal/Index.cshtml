@@ -1,0 +1,71 @@
+@model BulkingPro.ViewModels.PersonalDashboardViewModel
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Meu Painel</div>
+            <div class="topbar-sub">Visão geral dos seus alunos e planos</div>
+        </div>
+    </div>
+}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="ti ti-users"></i></div>
+        <div class="stat-val">@Model.TotalAlunos</div>
+        <div class="stat-label">Total de Alunos</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon gold"><i class="ti ti-clipboard-list"></i></div>
+        <div class="stat-val">@Model.TotalPlanos</div>
+        <div class="stat-label">Planos Criados</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="ti ti-calendar-check"></i></div>
+        <div class="stat-val">@Model.PlanosAtivos</div>
+        <div class="stat-label">Planos Ativos</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="ti ti-ruler"></i></div>
+        <div class="stat-val">—</div>
+        <div class="stat-label">Avaliações Hoje</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div>
+        <div class="section-title" style="margin-bottom:12px">Últimos Alunos</div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Aluno</th><th>Email</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var aluno in Model.UltimosAlunos)
+                    {
+                        <tr>
+                            <td class="bold">@aluno.NomeCompleto</td>
+                            <td>@aluno.Email</td>
+                            <td>@(aluno.Ativo ? "Ativo" : "Inativo")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div>
+        <div class="section-title" style="margin-bottom:12px">Ações Rápidas</div>
+        <div class="card">
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+                <a class="btn btn-primary" asp-action="CadastrarAluno"><i class="ti ti-user-plus"></i> Cadastrar Novo Aluno</a>
+                <a class="btn btn-ghost" asp-action="CriarPlano"><i class="ti ti-plus"></i> Criar Novo Plano</a>
+                <a class="btn btn-ghost" asp-action="Medidas"><i class="ti ti-ruler"></i> Registrar Medidas</a>
+            </div>
+        </div>
+    </div>
+</div>

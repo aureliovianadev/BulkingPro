@@ -1,0 +1,66 @@
+@model List<BulkingPro.ViewModels.AlunoViewModel>
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"] = "Meus Alunos";
+    ViewData["ActivePage"] = "Alunos";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Meus Alunos</div>
+            <div class="topbar-sub">Alunos vinculados a você</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-primary" asp-action="CadastrarAluno">
+                <i class="ti ti-user-plus"></i> Novo Aluno
+            </a>
+        </div>
+    </div>
+}
+
+<div class="search-bar" style="display:flex; gap:10px; margin-bottom:16px">
+    <i class="ti ti-search"></i>
+    <input type="text" id="busca" placeholder="Buscar aluno..." style="flex:1; background:none; border:none; outline:none; color:#fff" />
+</div>
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr><th>Aluno</th><th>Email</th><th>Plano Ativo</th><th>Status</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="tabela-body">
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td class="bold">@a.NomeCompleto</td>
+                    <td>@a.Email</td>
+                    <td>@(a.NomePlanoAtivo ?? "—")</td>
+                    <td>@(a.Ativo ? "<span class='badge badge-active'>Ativo</span>" : "<span class='badge badge-inactive'>Inativo</span>")</td>
+                    <td>
+                        <div style="display:flex; gap:6px">
+                            <a class="btn btn-ghost btn-sm" asp-action="CriarPlano" asp-route-alunoId="@a.Id">
+                                <i class="ti ti-plus"></i> Plano
+                            </a>
+                            <a class="btn btn-ghost btn-sm" asp-action="Medidas" asp-route-alunoId="@a.Id">
+                                <i class="ti ti-ruler"></i> Medidas
+                            </a>
+                            <a class="btn btn-ghost btn-sm" asp-action="Anamnese" asp-route-alunoId="@a.Id">
+                                <i class="ti ti-notes"></i> Anamnese
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('busca').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#tabela-body tr').forEach(tr => {
+            tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+</script>

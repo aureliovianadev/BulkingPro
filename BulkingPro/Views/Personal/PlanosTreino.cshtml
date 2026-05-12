@@ -1,0 +1,64 @@
+@model List<BulkingPro.Models.PlanoTreino>
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"] = "Meus Planos";
+    ViewData["ActivePage"] = "PlanosTreino";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Meus Planos de Treino</div>
+            <div class="topbar-sub">Gerencie todos os planos criados</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-primary" asp-action="CriarPlano">
+                <i class="ti ti-plus"></i> Novo Plano
+            </a>
+            <div>
+                <select id="filtroAluno" class="form-control-sm" style="background:var(--bg3); border:1px solid var(--border); border-radius:20px; padding:6px 12px">
+                    <option value="">Todos os alunos</option>
+                    @foreach (var aluno in ViewBag.Alunos)
+                    {
+                        <option value="@aluno.Id" selected="@(ViewBag.AlunoIdFiltro == aluno.Id)">@aluno.NomeCompleto</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>Plano</th><th>Aluno</th><th>Objetivo</th><th>Início</th><th>Fim</th><th>Status</th><th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td class="bold">@p.Titulo</td>
+                    <td>@p.Aluno?.NomeCompleto</td>
+                    <td>@p.Objetivo</td>
+                    <td>@p.DataInicio.ToString("dd/MM/yyyy")</td>
+                    <td>@(p.DataFim?.ToString("dd/MM/yyyy") ?? "—")</td>
+                    <td>@(p.Status == 1 ? "<span class='badge badge-active'>Ativo</span>" : "<span class='badge badge-inactive'>Inativo</span>")</td>
+                    <td>
+                        <div style="display:flex; gap:6px">
+                            <a class="btn btn-ghost btn-sm" href="#"><i class="ti ti-eye"></i> Ver</a>
+                            <a class="btn btn-ghost btn-sm" href="#"><i class="ti ti-edit"></i> Editar</a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('filtroAluno').addEventListener('change', function() {
+        window.location.href = '@Url.Action("PlanosTreino")?alunoId=' + this.value;
+    });
+</script>
