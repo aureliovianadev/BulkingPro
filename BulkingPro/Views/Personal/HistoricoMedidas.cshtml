@@ -1,0 +1,158 @@
+@model List<BulkingPro.Models.AvaliacaoFisica>
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"] = "Histórico de Medidas";
+    ViewData["ActivePage"] = "Medidas";
+    string? alunoId = ViewBag.AlunoId;
+    string? alunoNome = ViewBag.AlunoNome;
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Histórico de Medidas</div>
+            <div class="topbar-sub">@(alunoNome ?? "Selecione um aluno")</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-primary" asp-action="Medidas" asp-route-alunoId="@alunoId">
+                <i class="ti ti-plus"></i> Nova avaliação
+            </a>
+        </div>
+    </div>
+}
+
+<!-- Filtro de aluno -->
+<form method="get" style="display:flex;gap:10px;align-items:center;margin-bottom:20px">
+    <select name="alunoId" class="form-control" style="max-width:280px" onchange="this.form.submit()">
+        <option value="">— selecione o aluno —</option>
+        @foreach (var item in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Alunos)
+        {
+            if (item.Value == alunoId)
+            {
+                <option value="@item.Value" selected>@item.Text</option>
+            }
+            else
+            {
+                <option value="@item.Value">@item.Text</option>
+            }
+        }
+    </select>
+</form>
+
+@if (!Model.Any())
+{
+    <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+        <i class="ti ti-ruler" style="font-size:48px;display:block;margin-bottom:12px;color:rgba(196,168,122,0.3)"></i>
+        <p>@(alunoId == null ? "Selecione um aluno para ver o histórico." : "Nenhuma avaliação registrada ainda.")</p>
+        @if (alunoId != null)
+        {
+            <a class="btn btn-primary" asp-action="Medidas" asp-route-alunoId="@alunoId" style="margin-top:16px">
+                <i class="ti ti-plus"></i> Registrar primeira avaliação
+            </a>
+        }
+    </div>
+}
+else
+{
+    @foreach (var av in Model)
+    {
+        decimal? imc = (av.Peso.HasValue && av.Altura.HasValue && av.Altura > 0)
+            ? Math.Round(av.Peso.Value / (av.Altura.Value * av.Altura.Value), 2)
+            : null;
+
+        string imcClass = imc switch
+        {
+            < 18.5m => "Abaixo do peso",
+            < 25.0m => "Peso normal",
+            < 30.0m => "Sobrepeso",
+            < 35.0m => "Obesidade I",
+            < 40.0m => "Obesidade II",
+            >= 40.0m => "Obesidade III",
+            _ => "—"
+        };
+        string imcCor = imc switch
+        {
+            < 18.5m => "#388bfd",
+            < 25.0m => "#2ea043",
+            < 30.0m => "#c4a87a",
+            < 35.0m => "#ee7719",
+            < 40.0m => "#ee1920",
+            >= 40.0m => "#9a1020",
+            _ => "rgba(255,255,255,0.4)"
+        };
+
+        <div class="card" style="margin-bottom:14px">
+            <div class="card-body">
+                <!-- Header -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                    <div>
+                        <div style="font-size:14px;font-weight:600;color:#fff">
+                            Avaliação — @av.DataAvaliacao.ToString("dd/MM/yyyy")
+                        </div>
+                        @if (imc.HasValue)
+                        {
+                            <div style="font-size:12px;margin-top:3px">
+                                IMC: <span style="color:@imcCor;font-weight:600">@imc.Value.ToString("F1")</span>
+                                <span style="color:var(--muted)"> — @imcClass</span>
+                            </div>
+                        }
+                    </div>
+                    <a class="btn btn-ghost btn-sm" asp-action="EditarMedida" asp-route-id="@av.Id">
+                        <i class="ti ti-edit"></i> Editar
+                    </a>
+                </div>
+
+                <!-- Principais -->
+                <div class="medidas-grid">
+                    @if (av.Altura.HasValue) { <div class="medida-item"><div class="medida-label">Altura</div><div class="medida-val">@av.Altura.Value.ToString("F2") m</div></div> }
+                    @if (av.Peso.HasValue) { <div class="medida-item"><div class="medida-label">Peso</div><div class="medida-val">@av.Peso.Value.ToString("F1") kg</div></div> }
+                    @if (av.Pescoco.HasValue) { <div class="medida-item"><div class="medida-label">Pescoço</div><div class="medida-val">@av.Pescoco.Value.ToString("F1") cm</div></div> }
+                    @if (av.Ombro.HasValue) { <div class="medida-item"><div class="medida-label">Ombro</div><div class="medida-val">@av.Ombro.Value.ToString("F1") cm</div></div> }
+                    @if (av.ToraxContrai.HasValue) { <div class="medida-item"><div class="medida-label">Tórax (cont.)</div><div class="medida-val">@av.ToraxContrai.Value.ToString("F1") cm</div></div> }
+                    @if (av.ToraxRelax.HasValue) { <div class="medida-item"><div class="medida-label">Tórax (relax.)</div><div class="medida-val">@av.ToraxRelax.Value.ToString("F1") cm</div></div> }
+                    @if (av.BicepsDireito.HasValue) { <div class="medida-item"><div class="medida-label">Bíceps D</div><div class="medida-val">@av.BicepsDireito.Value.ToString("F1") cm</div></div> }
+                    @if (av.BicepsEsquerdo.HasValue) { <div class="medida-item"><div class="medida-label">Bíceps E</div><div class="medida-val">@av.BicepsEsquerdo.Value.ToString("F1") cm</div></div> }
+                    @if (av.Cintura.HasValue) { <div class="medida-item"><div class="medida-label">Cintura</div><div class="medida-val">@av.Cintura.Value.ToString("F1") cm</div></div> }
+                    @if (av.Abdomen.HasValue) { <div class="medida-item"><div class="medida-label">Abdômen</div><div class="medida-val">@av.Abdomen.Value.ToString("F1") cm</div></div> }
+                    @if (av.Quadril.HasValue) { <div class="medida-item"><div class="medida-label">Quadril</div><div class="medida-val">@av.Quadril.Value.ToString("F1") cm</div></div> }
+                    @if (av.CoxaDireita.HasValue) { <div class="medida-item"><div class="medida-label">Coxa D</div><div class="medida-val">@av.CoxaDireita.Value.ToString("F1") cm</div></div> }
+                    @if (av.CoxaEsquerda.HasValue) { <div class="medida-item"><div class="medida-label">Coxa E</div><div class="medida-val">@av.CoxaEsquerda.Value.ToString("F1") cm</div></div> }
+                    @if (av.PanturrilhaDireita.HasValue) { <div class="medida-item"><div class="medida-label">Panturrilha D</div><div class="medida-val">@av.PanturrilhaDireita.Value.ToString("F1") cm</div></div> }
+                    @if (av.PanturrilhaEsquerda.HasValue) { <div class="medida-item"><div class="medida-label">Panturrilha E</div><div class="medida-val">@av.PanturrilhaEsquerda.Value.ToString("F1") cm</div></div> }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(av.Observacoes))
+                {
+                    <div style="margin-top:12px;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:12px;color:var(--muted)">
+                        <i class="ti ti-notes"></i> @av.Observacoes
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+<style>
+    .medidas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+    }
+    .medida-item {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        padding: 10px 12px;
+    }
+    .medida-label {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.3);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+    .medida-val {
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+    }
+</style>

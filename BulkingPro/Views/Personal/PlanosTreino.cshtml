@@ -46,6 +46,9 @@
                         else                { <span class="badge badge-inactive">Encerrado</span> }
                     </td>
                     <td>
+                        <a class="btn btn-ghost btn-sm" asp-action="VisualizarPlano" asp-route-id="@p.Id">
+                            <i class="ti ti-eye"></i> Ver
+                        </a>
                         <a class="btn btn-ghost btn-sm" asp-action="CriarPlano" asp-route-alunoId="@p.AlunoId">
                             <i class="ti ti-copy"></i> Novo
                         </a>

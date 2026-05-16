@@ -22,6 +22,10 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     public DbSet<ExecucaoTreinoExercicio> ExecucoesTreinoExercicios { get; set; }
     public DbSet<Usuario> Usuarios { get; set; }
 
+    // Novas tabelas
+    public DbSet<AvaliacaoFisica> AvaliacoesFisicas { get; set; }
+    public DbSet<AnamneseAluno>   Anamneses          { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -92,6 +96,32 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .HasOne(ete => ete.TreinoExercicio)
             .WithMany(te => te.Execucoes)
             .HasForeignKey(ete => ete.TreinoExercicioId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // AvaliacaoFisica
+        builder.Entity<AvaliacaoFisica>()
+            .HasOne(a => a.Aluno)
+            .WithMany()
+            .HasForeignKey(a => a.AlunoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<AvaliacaoFisica>()
+            .HasOne(a => a.Treinador)
+            .WithMany()
+            .HasForeignKey(a => a.TreinadorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // AnamneseAluno
+        builder.Entity<AnamneseAluno>()
+            .HasOne(a => a.Aluno)
+            .WithMany()
+            .HasForeignKey(a => a.AlunoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<AnamneseAluno>()
+            .HasOne(a => a.Treinador)
+            .WithMany()
+            .HasForeignKey(a => a.TreinadorId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // ── SEED: Categorias ─────────────────────────────────────

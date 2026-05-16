@@ -53,13 +53,14 @@ namespace BulkingPro.ViewModels
 
     public class ExercicioDiaViewModel
     {
-        public int      Ordem       { get; set; }
-        public int      ExercicioId { get; set; }
-        public int      Series      { get; set; } = 3;
-        public string   Repeticoes  { get; set; } = "12";
-        public decimal? Carga       { get; set; }
-        public int?     Descanso    { get; set; } = 60;
-        public string?  Observacoes { get; set; }
+        public int      Ordem          { get; set; }
+        public int      ExercicioId    { get; set; }
+        public int      Series         { get; set; } = 3;
+        public string   Repeticoes     { get; set; } = "12";
+        public int?     TempoExecucao  { get; set; }
+        public decimal? Carga          { get; set; }
+        public int?     Descanso       { get; set; } = 60;
+        public string?  Observacoes    { get; set; }
     }
 
     // ── Medidas ──────────────────────────────────────────────────
@@ -71,12 +72,11 @@ namespace BulkingPro.ViewModels
         public DateTime DataAvaliacao { get; set; } = DateTime.Today;
 
         [Range(0.5, 2.5, ErrorMessage = "Altura inválida")]
-        public decimal? Altura { get; set; }        // metros
+        public decimal? Altura { get; set; }
 
         [Range(1, 500, ErrorMessage = "Peso inválido")]
-        public decimal? Peso   { get; set; }        // kg
+        public decimal? Peso   { get; set; }
 
-        // Circunferências (cm)
         public decimal? Pescoco      { get; set; }
         public decimal? Ombro        { get; set; }
         public decimal? ToraxContrai { get; set; }
@@ -91,7 +91,6 @@ namespace BulkingPro.ViewModels
         public decimal? PanturrilhaDireita  { get; set; }
         public decimal? PanturrilhaEsquerda { get; set; }
 
-        // Calculado
         public decimal? IMC => (Peso.HasValue && Altura.HasValue && Altura > 0)
             ? Math.Round(Peso.Value / (Altura.Value * Altura.Value), 2)
             : null;
@@ -116,7 +115,6 @@ namespace BulkingPro.ViewModels
         [Required(ErrorMessage = "Selecione o aluno")]
         public string AlunoId { get; set; } = "";
 
-        // Histórico esportivo
         public bool    JaTreinouAntes     { get; set; }
         public string? TempoTreinando     { get; set; }
         public string? TempoSemAtividade  { get; set; }
@@ -124,7 +122,6 @@ namespace BulkingPro.ViewModels
         public string? FrequenciaSemanal  { get; set; }
         public string? TempoPorDia        { get; set; }
 
-        // Saúde
         public bool    TemDoenca          { get; set; }
         public string? QualDoenca         { get; set; }
         public bool    TemLimitacaoMovimento { get; set; }
@@ -136,10 +133,9 @@ namespace BulkingPro.ViewModels
         public bool    UsaMedicamento     { get; set; }
         public string? QualMedicamento    { get; set; }
 
-        // Hábitos
         public bool    FazDieta           { get; set; }
         public string? TipoDieta          { get; set; }
-        public string? ConsomeAlcool      { get; set; }   // Não / Socialmente / Frequentemente
+        public string? ConsomeAlcool      { get; set; }
         public bool    Fuma               { get; set; }
 
         public string? ObservacoesGerais  { get; set; }

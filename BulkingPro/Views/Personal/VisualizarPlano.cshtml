@@ -1,0 +1,130 @@
+@model BulkingPro.Models.PlanoTreino
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"]      = "Plano de Treino";
+    ViewData["ActivePage"] = "PlanoTreino";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">@Model.Titulo</div>
+            <div class="topbar-sub">@Model.Aluno?.NomeCompleto · @Model.Objetivo</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-ghost" asp-action="PlanosTreino"><i class="ti ti-arrow-left"></i> Voltar</a>
+            <a class="btn btn-primary" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
+                <i class="ti ti-plus"></i> Novo plano
+            </a>
+        </div>
+    </div>
+}
+
+<!-- Info geral -->
+<div class="card" style="margin-bottom:16px">
+    <div class="card-body">
+        <div style="display:flex;flex-wrap:wrap;gap:24px">
+            <div><div class="detail-label">Aluno</div><div class="detail-val">@Model.Aluno?.NomeCompleto</div></div>
+            <div><div class="detail-label">Objetivo</div><div class="detail-val">@Model.Objetivo</div></div>
+            <div><div class="detail-label">Início</div><div class="detail-val">@Model.DataInicio.ToString("dd/MM/yyyy")</div></div>
+            @if (Model.DataFim.HasValue)
+            {
+                <div><div class="detail-label">Fim</div><div class="detail-val">@Model.DataFim.Value.ToString("dd/MM/yyyy")</div></div>
+            }
+            <div>
+                <div class="detail-label">Status</div>
+                <div class="detail-val">
+                    @if (Model.Status == 1) { <span class="badge badge-active">Ativo</span> }
+                    else                    { <span class="badge badge-inactive">Encerrado</span> }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dias de treino -->
+@foreach (var treino in Model.Treinos.OrderBy(t => t.OrdemDia))
+{
+    <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+            <div class="card-title">
+                <i class="ti ti-calendar-event"></i> @treino.Nome
+                @if (!string.IsNullOrWhiteSpace(treino.Observacoes))
+                {
+                    <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">— @treino.Observacoes</span>
+                }
+            </div>
+
+            @if (!treino.TreinoExercicios.Any())
+            {
+                <div style="color:var(--muted);font-size:13px">Nenhum exercício cadastrado neste dia.</div>
+            }
+            else
+            {
+                <div style="display:flex;flex-direction:column;gap:0">
+                    @foreach (var te in treino.TreinoExercicios.OrderBy(te => te.Ordem))
+                    {
+                        <div class="exer-linha-view">
+                            <div class="exer-num-view">@te.Ordem</div>
+                            <div style="flex:1">
+                                <div style="font-size:13px;font-weight:600;color:#fff">@te.Exercicio?.Nome</div>
+                                <div style="font-size:11px;color:var(--muted)">@te.Exercicio?.GrupoMuscular?.Nome</div>
+                            </div>
+                            <div class="exer-badges">
+                                <span class="info-chip"><i class="ti ti-repeat"></i> @te.SeriesPlanejadas séries</span>
+
+                                @if (te.Exercicio?.TipoExecucao == BulkingPro.Models.TipoExecucao.Tempo && te.TempoExecucaoSegundos.HasValue)
+                                {
+                                    var min = te.TempoExecucaoSegundos.Value / 60;
+                                    var seg = te.TempoExecucaoSegundos.Value % 60;
+                                    var tempo = min > 0 ? $"{min}min {seg}s" : $"{seg}s";
+                                    <span class="info-chip"><i class="ti ti-clock"></i> @tempo</span>
+                                }
+                                else
+                                {
+                                    <span class="info-chip"><i class="ti ti-refresh"></i> @te.RepeticoesPlanejadas reps</span>
+                                }
+
+                                @if (te.CargaPlanejada.HasValue)
+                                {
+                                    <span class="info-chip"><i class="ti ti-barbell"></i> @te.CargaPlanejada kg</span>
+                                }
+                                @if (te.TempoDescanso.HasValue)
+                                {
+                                    <span class="info-chip"><i class="ti ti-hourglass"></i> @te.TempoDescanso s</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<style>
+    .detail-label { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+    .detail-val   { font-size: 14px; font-weight: 500; color: #fff; }
+
+    .exer-linha-view {
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .exer-linha-view:last-child { border-bottom: none; }
+    .exer-num-view {
+        width: 26px; height: 26px; border-radius: 50%;
+        background: rgba(196,168,122,0.15); color: var(--gold);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .exer-badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+    .info-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px; padding: 3px 10px;
+        font-size: 11px; color: rgba(255,255,255,0.6);
+        white-space: nowrap;
+    }
+</style>

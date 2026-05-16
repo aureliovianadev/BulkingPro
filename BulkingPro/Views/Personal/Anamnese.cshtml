@@ -1,21 +1,28 @@
 @model BulkingPro.ViewModels.AnamneseViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"]      = "Anamnese";
+    ViewData["Title"] = "Anamnese";
     ViewData["ActivePage"] = "Anamnese";
+    var anamneseId = ViewBag.AnamneseId as int?;
+    var isEditing = anamneseId.HasValue;
 }
 
 @section Topbar {
     <div class="topbar">
         <div>
-            <div class="topbar-title">Anamnese</div>
+            <div class="topbar-title">@(isEditing ? "Editar Anamnese" : "Nova Anamnese")</div>
             <div class="topbar-sub">Questionário de avaliação inicial do aluno</div>
         </div>
     </div>
 }
 
-<form asp-action="SalvarAnamnese" method="post">
+<form asp-action="@(isEditing ? "AtualizarAnamnese" : "SalvarAnamnese")" method="post">
     @Html.AntiForgeryToken()
+
+    @if (isEditing)
+    {
+        <input type="hidden" name="id" value="@anamneseId" />
+    }
 
     <!-- Identificação -->
     <div class="card" style="margin-bottom:16px">
@@ -222,9 +229,9 @@
 
     <div style="display:flex;gap:10px;margin-top:16px">
         <button type="submit" class="btn btn-primary">
-            <i class="ti ti-device-floppy"></i> Salvar anamnese
+            <i class="ti ti-device-floppy"></i> @(isEditing ? "Atualizar anamnese" : "Salvar anamnese")
         </button>
-        <a class="btn btn-ghost" asp-action="Index">Cancelar</a>
+        <a class="btn btn-ghost" asp-action="VisualizarAnamnese" asp-route-alunoId="@Model.AlunoId">Cancelar</a>
     </div>
 </form>
 

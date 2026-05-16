@@ -34,11 +34,12 @@
             display: flex; flex-direction: column;
         }
         .sidebar-brand {
-            padding: 22px 18px 16px;
+            padding: 14px 18px;
             border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
         }
-        .sidebar-brand-name { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: .5px; }
-        .sidebar-brand-role { font-size: 10px; color: var(--red); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; }
+        .sidebar-brand img { height: 56px; width: auto; object-fit: contain; }
+        .sidebar-brand-role { font-size: 10px; color: var(--red); letter-spacing: 2px; text-transform: uppercase; }
 
         .sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
         .sidebar-nav::-webkit-scrollbar { width: 0; }
@@ -207,7 +208,7 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <div class="sidebar-brand-name">BulkingPro</div>
+            <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
             <div class="sidebar-brand-role">Administrador</div>
         </div>
 
@@ -250,13 +251,19 @@
         </nav>
 
         <div class="sidebar-footer">
-            <div class="avatar">
-                @{ var nome = User.Identity?.Name ?? "AD"; }
-                @(nome.Length >= 2 ? nome.Substring(0,2).ToUpper() : "AD")
-            </div>
+            @{
+                var nomeAdmin = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                             ?? User.FindFirst("NomeCompleto")?.Value
+                             ?? User.Identity?.Name
+                             ?? "Admin";
+                var iniciaisAdmin = nomeAdmin.Length >= 2
+                    ? nomeAdmin[0].ToString().ToUpper() + nomeAdmin.Split(' ').Last()[0].ToString().ToUpper()
+                    : nomeAdmin[0].ToString().ToUpper();
+            }
+            <div class="avatar">@iniciaisAdmin</div>
             <div style="flex:1;min-width:0">
-                <div class="avatar-name">Administrador</div>
-                <div class="avatar-email">@User.Identity?.Name</div>
+                <div class="avatar-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@nomeAdmin</div>
+                <div class="avatar-email">Administrador</div>
             </div>
             <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
                 @Html.AntiForgeryToken()

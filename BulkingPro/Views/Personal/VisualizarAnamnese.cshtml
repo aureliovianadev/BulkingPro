@@ -1,0 +1,122 @@
+@model BulkingPro.Models.AnamneseAluno
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"]      = "Anamnese";
+    ViewData["ActivePage"] = "Anamnese";
+    var alunoId   = (string)(ViewBag.AlunoId   ?? "");
+    var alunoNome = (string)(ViewBag.AlunoNome  ?? "");
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Anamnese</div>
+            <div class="topbar-sub">@(alunoNome == "" ? "Selecione um aluno" : alunoNome)</div>
+        </div>
+        <div class="topbar-actions">
+            @if (Model != null)
+            {
+                <a class="btn btn-ghost" asp-action="EditarAnamnese" asp-route-id="@Model.Id">
+                    <i class="ti ti-edit"></i> Editar
+                </a>
+            }
+            <a class="btn btn-primary" asp-action="Anamnese" asp-route-alunoId="@alunoId">
+                <i class="ti ti-plus"></i> Nova anamnese
+            </a>
+        </div>
+    </div>
+}
+
+<form method="get" style="margin-bottom:20px">
+    <select name="alunoId" class="form-control" style="max-width:280px" onchange="this.form.submit()">
+        <option value="">— selecione o aluno —</option>
+        @foreach (var item in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Alunos)
+        {
+            if (item.Value == alunoId)
+            {
+                <option value="@item.Value" selected>@item.Text</option>
+            }
+            else
+            {
+                <option value="@item.Value">@item.Text</option>
+            }
+        }
+    </select>
+</form>
+
+@if (Model == null)
+{
+    <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+        <i class="ti ti-clipboard-text" style="font-size:48px;display:block;margin-bottom:12px;color:rgba(196,168,122,0.3)"></i>
+        <p>@(alunoId == "" ? "Selecione um aluno." : "Nenhuma anamnese registrada ainda.")</p>
+        @if (alunoId != "")
+        {
+            <a class="btn btn-primary" asp-action="Anamnese" asp-route-alunoId="@alunoId" style="margin-top:16px">
+                <i class="ti ti-plus"></i> Preencher anamnese
+            </a>
+        }
+    </div>
+}
+else
+{
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-trophy"></i> Histórico esportivo</div>
+                <div class="ai">
+                    <span>Já treinou antes?</span><span>@(Model.JaTreinouAntes ? "Sim" : "Não")</span>
+                </div>
+                <div class="ai"><span>Treina há quanto tempo?</span><span>@(Model.TempoTreinando ?? "—")</span></div>
+                <div class="ai"><span>Tempo sem atividade?</span><span>@(Model.TempoSemAtividade ?? "—")</span></div>
+                <div class="ai"><span>Objetivo</span><span>@(Model.Objetivo ?? "—")</span></div>
+                <div class="ai"><span>Frequência semanal</span><span>@(Model.FrequenciaSemanal ?? "—")</span></div>
+                <div class="ai"><span>Tempo por dia</span><span>@(Model.TempoPorDia ?? "—")</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-heart-rate-monitor"></i> Saúde</div>
+                <div class="ai"><span>Doença/problema</span><span>@(Model.TemDoenca ? (Model.QualDoenca ?? "Sim") : "Não")</span></div>
+                <div class="ai"><span>Limitação de movimento</span><span>@(Model.TemLimitacaoMovimento ? (Model.QualLimitacao ?? "Sim") : "Não")</span></div>
+                <div class="ai"><span>Dor em movimento</span><span>@(Model.TemDorMovimento ? (Model.QualDor ?? "Sim") : "Não")</span></div>
+                <div class="ai"><span>Cirurgias</span><span>@(Model.FezCirurgia ? (Model.QualCirurgia ?? "Sim") : "Não")</span></div>
+                <div class="ai"><span>Medicamento controlado</span><span>@(Model.UsaMedicamento ? (Model.QualMedicamento ?? "Sim") : "Não")</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-leaf"></i> Hábitos</div>
+                <div class="ai"><span>Faz dieta?</span><span>@(Model.FazDieta ? (Model.TipoDieta ?? "Sim") : "Não")</span></div>
+                <div class="ai"><span>Consumo de álcool</span><span>@(Model.ConsomeAlcool ?? "—")</span></div>
+                <div class="ai"><span>Fuma?</span><span>@(Model.Fuma ? "Sim" : "Não")</span></div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ObservacoesGerais))
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="card-title"><i class="ti ti-notes"></i> Observações</div>
+                    <p style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.7">@Model.ObservacoesGerais</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div style="margin-top:12px;font-size:11px;color:var(--muted)">
+        Avaliação de @Model.DataAvaliacao.ToString("dd/MM/yyyy") · Registrado em @Model.DataCriacao.ToString("dd/MM/yyyy HH:mm")
+    </div>
+}
+
+<style>
+    .ai {
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .ai:last-child { border-bottom: none; }
+    .ai span:first-child { font-size: 12px; color: rgba(255,255,255,0.4); }
+    .ai span:last-child  { font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; text-align: right; max-width: 55%; }
+</style>
