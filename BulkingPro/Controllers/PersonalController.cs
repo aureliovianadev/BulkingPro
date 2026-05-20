@@ -131,6 +131,75 @@ namespace BulkingPro.Controllers
             return RedirectToAction(nameof(Alunos));
         }
 
+        // ── Inativar Aluno ────────────────────────────────────────
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> InativarAluno(string id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var alunoVinculado = await _context.PlanosTreino
+                .AnyAsync(p => p.TreinadorId == personal.Id && p.AlunoId == id);
+            
+            if (!alunoVinculado) return Forbid();
+
+            var aluno = await _userManager.FindByIdAsync(id);
+            if (aluno == null) return NotFound();
+
+            aluno.Ativo = false;
+            aluno.DataAtualizacao = DateTime.Now;
+            await _userManager.UpdateAsync(aluno);
+
+            TempData["Sucesso"] = $"Aluno {aluno.NomeCompleto} foi inativado.";
+            return RedirectToAction(nameof(Alunos));
+        }
+
+        // ── Reativar Aluno ────────────────────────────────────────
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReativarAluno(string id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var alunoVinculado = await _context.PlanosTreino
+                .AnyAsync(p => p.TreinadorId == personal.Id && p.AlunoId == id);
+            
+            if (!alunoVinculado) return Forbid();
+
+            var aluno = await _userManager.FindByIdAsync(id);
+            if (aluno == null) return NotFound();
+
+            aluno.Ativo = true;
+            aluno.DataAtualizacao = DateTime.Now;
+            await _userManager.UpdateAsync(aluno);
+
+            TempData["Sucesso"] = $"Aluno {aluno.NomeCompleto} foi reativado.";
+            return RedirectToAction(nameof(Alunos));
+        }
+
+        // ── Desvincular Aluno ─────────────────────────────────────
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DesvincularAluno(string id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var planos = await _context.PlanosTreino
+                .Where(p => p.TreinadorId == personal.Id && p.AlunoId == id)
+                .ToListAsync();
+
+            if (!planos.Any()) return NotFound();
+
+            var aluno = await _userManager.FindByIdAsync(id);
+            var alunoNome = aluno?.NomeCompleto ?? "Aluno";
+
+            _context.PlanosTreino.RemoveRange(planos);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Aluno {alunoNome} foi desvinculado de você. Ele ainda existe no sistema, mas não está mais sob sua orientação.";
+            return RedirectToAction(nameof(Alunos));
+        }
+
         // ── Planos de Treino ──────────────────────────────────────
         public async Task<IActionResult> PlanosTreino(string? alunoId)
         {
@@ -558,6 +627,183 @@ namespace BulkingPro.Controllers
             if (plano == null) return NotFound();
 
             return View(plano);
+        }
+
+        // ── Agenda / Horários de Atendimento ───────────────────────
+        public async Task<IActionResult> Agenda(DateTime? data)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var dataSelecionada = data ?? DateTime.Today;
+            
+            var horarios = await _context.HorariosAtendimento
+                .Where(h => h.PersonalId == personal.Id && h.Ativo)
+                .OrderBy(h => h.DiaSemana)
+                .ThenBy(h => h.HoraInicio)
+                .ToListAsync();
+
+            var agendamentos = await _context.Agendamentos
+                .Include(a => a.Aluno)
+                .Where(a => a.PersonalId == personal.Id && a.DataAgendamento.Date == dataSelecionada)
+                .OrderBy(a => a.HoraInicio)
+                .ToListAsync();
+
+            var alunosIds = await _context.PlanosTreino
+                .Where(p => p.TreinadorId == personal.Id)
+                .Select(p => p.AlunoId)
+                .Distinct()
+                .ToListAsync();
+            
+            var alunos = await _userManager.Users
+                .Where(u => alunosIds.Contains(u.Id) && u.Ativo)
+                .ToListAsync();
+
+            ViewBag.DataSelecionada = dataSelecionada;
+            ViewBag.Horarios = horarios;
+            ViewBag.Agendamentos = agendamentos;
+            ViewBag.Alunos = alunos;
+            
+            return View();
+        }
+
+        public IActionResult DefinirHorarios()
+        {
+            return View(new DefinirHorarioViewModel());
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DefinirHorarios(DefinirHorarioViewModel vm)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            if (!ModelState.IsValid) return View(vm);
+
+            var existe = await _context.HorariosAtendimento
+                .AnyAsync(h => h.PersonalId == personal.Id && h.DiaSemana == vm.DiaSemana);
+
+            if (existe)
+            {
+                ModelState.AddModelError("", "Já existe um horário definido para este dia da semana.");
+                return View(vm);
+            }
+
+            var horario = new HorarioAtendimento
+            {
+                PersonalId = personal.Id,
+                DiaSemana = vm.DiaSemana,
+                HoraInicio = vm.HoraInicio,
+                HoraFim = vm.HoraFim,
+                Ativo = vm.Ativo,
+                DataCriacao = DateTime.Now
+            };
+
+            _context.HorariosAtendimento.Add(horario);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Horário de atendimento adicionado com sucesso!";
+            return RedirectToAction(nameof(Agenda));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoverHorario(int id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var horario = await _context.HorariosAtendimento
+                .FirstOrDefaultAsync(h => h.Id == id && h.PersonalId == personal.Id);
+            
+            if (horario == null) return NotFound();
+
+            _context.HorariosAtendimento.Remove(horario);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Horário removido com sucesso!";
+            return RedirectToAction(nameof(Agenda));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AgendarAula(AgendarAulaViewModel vm)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            if (!ModelState.IsValid)
+            {
+                TempData["Erro"] = "Preencha todos os campos corretamente.";
+                return RedirectToAction(nameof(Agenda));
+            }
+
+            var conflito = await _context.Agendamentos
+                .AnyAsync(a => a.PersonalId == personal.Id && 
+                               a.DataAgendamento.Date == vm.DataAgendamento.Date &&
+                               a.Status != 3 &&
+                               ((vm.HoraInicio >= a.HoraInicio && vm.HoraInicio < a.HoraFim) ||
+                                (vm.HoraFim > a.HoraInicio && vm.HoraFim <= a.HoraFim)));
+
+            if (conflito)
+            {
+                TempData["Erro"] = "Já existe um agendamento neste horário.";
+                return RedirectToAction(nameof(Agenda));
+            }
+
+            var agendamento = new AgendamentoAluno
+            {
+                PersonalId = personal.Id,
+                AlunoId = vm.AlunoId,
+                DataAgendamento = vm.DataAgendamento,
+                HoraInicio = vm.HoraInicio,
+                HoraFim = vm.HoraFim,
+                Status = 1,
+                Observacoes = vm.Observacoes,
+                DataCriacao = DateTime.Now
+            };
+
+            _context.Agendamentos.Add(agendamento);
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Aula agendada com sucesso para {vm.DataAgendamento:dd/MM/yyyy} às {vm.HoraInicio:hh\\:mm}";
+            return RedirectToAction(nameof(Agenda));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelarAgendamento(int id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var agendamento = await _context.Agendamentos
+                .FirstOrDefaultAsync(a => a.Id == id && a.PersonalId == personal.Id);
+            
+            if (agendamento == null) return NotFound();
+
+            agendamento.Status = 3;
+            agendamento.DataAtualizacao = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Agendamento cancelado com sucesso!";
+            return RedirectToAction(nameof(Agenda));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConcluirAgendamento(int id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var agendamento = await _context.Agendamentos
+                .FirstOrDefaultAsync(a => a.Id == id && a.PersonalId == personal.Id);
+            
+            if (agendamento == null) return NotFound();
+
+            agendamento.Status = 2;
+            agendamento.DataAtualizacao = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = "Atendimento concluído!";
+            return RedirectToAction(nameof(Agenda));
         }
 
         // ── Helpers ───────────────────────────────────────────────

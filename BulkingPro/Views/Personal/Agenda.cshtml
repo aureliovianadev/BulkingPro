@@ -1,0 +1,283 @@
+@{
+    Layout = "~/Views/Personal/_PersonalLayout.cshtml";
+    ViewData["Title"] = "Minha Agenda";
+    ViewData["ActivePage"] = "Agenda";
+    
+    var horarios = ViewBag.Horarios as List<BulkingPro.Models.HorarioAtendimento> ?? new();
+    var agendamentos = ViewBag.Agendamentos as List<BulkingPro.Models.AgendamentoAluno> ?? new();
+    var alunos = ViewBag.Alunos as List<BulkingPro.Models.Usuario> ?? new();
+    var dataSelecionada = (DateTime)ViewBag.DataSelecionada;
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Minha Agenda</div>
+            <div class="topbar-sub">Gerencie seus horários de atendimento</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-primary" asp-action="DefinirHorarios">
+                <i class="ti ti-clock-plus"></i> Definir horários
+            </a>
+        </div>
+    </div>
+}
+
+<div style="display:grid;grid-template-columns: 1fr 1.5fr; gap: 20px;">
+
+    <!-- COLUNA ESQUERDA: Horários Fixos -->
+    <div>
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-calendar-clock"></i> Meus Horários de Atendimento</div>
+                
+                @if (!horarios.Any())
+                {
+                    <div style="text-align:center;padding:30px;color:var(--muted)">
+                        <i class="ti ti-clock" style="font-size:40px;display:block;margin-bottom:12px"></i>
+                        <p>Nenhum horário definido ainda.</p>
+                        <a class="btn btn-primary btn-sm" asp-action="DefinirHorarios" style="margin-top:12px">
+                            <i class="ti ti-plus"></i> Definir horários
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        @foreach (var h in horarios.OrderBy(h => h.DiaSemana))
+                        {
+                            var diaNome = h.DiaSemana switch
+                            {
+                                DayOfWeek.Sunday => "Domingo",
+                                DayOfWeek.Monday => "Segunda-feira",
+                                DayOfWeek.Tuesday => "Terça-feira",
+                                DayOfWeek.Wednesday => "Quarta-feira",
+                                DayOfWeek.Thursday => "Quinta-feira",
+                                DayOfWeek.Friday => "Sexta-feira",
+                                DayOfWeek.Saturday => "Sábado",
+                                _ => ""
+                            };
+                            <div class="horario-item">
+                                <div>
+                                    <div class="dia-semana">@diaNome</div>
+                                    <div class="horario-hora">@h.HoraInicio.ToString(@"hh\:mm") - @h.HoraFim.ToString(@"hh\:mm")</div>
+                                </div>
+                                <form asp-action="RemoverHorario" method="post" onsubmit="return confirm('Remover este horário?')">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@h.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUNA DIREITA: Agenda do Dia -->
+    <div>
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-calendar"></i> Agendamentos</div>
+                
+                <!-- Seletor de data -->
+                <form method="get" style="margin-bottom:20px">
+                    <div style="display:flex;gap:10px">
+                        <input type="date" name="data" value="@dataSelecionada.ToString("yyyy-MM-dd")" 
+                               class="form-control" style="flex:1" onchange="this.form.submit()" />
+                    </div>
+                </form>
+
+                <!-- Data atual -->
+                <div style="text-align:center;margin-bottom:16px">
+                    <div style="font-size:16px;font-weight:600;color:#fff">
+                        @dataSelecionada.ToString("dddd, dd/MM/yyyy")
+                    </div>
+                </div>
+
+                <!-- Lista de agendamentos -->
+                @if (!agendamentos.Any())
+                {
+                    <div style="text-align:center;padding:40px;color:var(--muted)">
+                        <i class="ti ti-calendar-off" style="font-size:40px;display:block;margin-bottom:12px"></i>
+                        <p>Nenhum agendamento para este dia.</p>
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                        @foreach (var a in agendamentos)
+                        {
+                            var statusClass = a.Status switch
+                            {
+                                1 => "status-confirmado",
+                                2 => "status-concluido",
+                                3 => "status-cancelado",
+                                _ => ""
+                            };
+                            var statusText = a.Status switch
+                            {
+                                1 => "Confirmado",
+                                2 => "Concluído",
+                                3 => "Cancelado",
+                                _ => ""
+                            };
+                            
+                            <div class="agendamento-item @statusClass">
+                                <div style="display:flex;align-items:center;gap:12px;flex:1">
+                                    <div class="horario-badge">@a.HoraInicio.ToString(@"hh\:mm")</div>
+                                    <div style="flex:1">
+                                        <div class="aluno-nome">@a.Aluno?.NomeCompleto</div>
+                                        <div class="aluno-obs">@(string.IsNullOrEmpty(a.Observacoes) ? "Sem observações" : a.Observacoes)</div>
+                                    </div>
+                                    <div class="status-badge @statusClass">@statusText</div>
+                                </div>
+                                <div style="display:flex;gap:6px;margin-top:8px;margin-left:48px">
+                                    @if (a.Status == 1)
+                                    {
+                                        <form asp-action="ConcluirAgendamento" method="post" style="display:inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@a.Id" />
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="ti ti-check"></i> Concluir
+                                            </button>
+                                        </form>
+                                        <form asp-action="CancelarAgendamento" method="post" style="display:inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@a.Id" />
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="ti ti-x"></i> Cancelar
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- Formulário de novo agendamento -->
+                <div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.07)">
+                    <div class="card-title"><i class="ti ti-plus"></i> Novo Agendamento</div>
+                    
+                    <form asp-action="AgendarAula" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="form-row">
+                            <div class="form-group" style="flex:2">
+                                <label class="form-label">Aluno</label>
+                                <select name="AlunoId" class="form-control" required>
+                                    <option value="">Selecione</option>
+                                    @foreach (var a in alunos)
+                                    {
+                                        <option value="@a.Id">@a.NomeCompleto</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label">Data</label>
+                                <input type="date" name="DataAgendamento" class="form-control" 
+                                       value="@dataSelecionada.ToString("yyyy-MM-dd")" required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label">Horário início</label>
+                                <input type="time" name="HoraInicio" class="form-control" required />
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label class="form-label">Horário fim</label>
+                                <input type="time" name="HoraFim" class="form-control" required />
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Observações</label>
+                            <textarea name="Observacoes" class="form-control" rows="2" 
+                                      placeholder="Anotações sobre o treino..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary" style="width:100%">
+                            <i class="ti ti-calendar-plus"></i> Agendar aula
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .horario-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.06);
+    }
+    .dia-semana {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+    }
+    .horario-hora {
+        font-size: 11px;
+        color: var(--gold);
+        margin-top: 2px;
+    }
+    
+    .agendamento-item {
+        padding: 12px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 10px;
+        border-left: 3px solid var(--gold);
+    }
+    .agendamento-item.status-concluido {
+        border-left-color: #2ea043;
+        opacity: 0.7;
+    }
+    .agendamento-item.status-cancelado {
+        border-left-color: #ee1920;
+        opacity: 0.5;
+    }
+    .horario-badge {
+        width: 60px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gold);
+    }
+    .aluno-nome {
+        font-size: 13px;
+        font-weight: 500;
+        color: #fff;
+    }
+    .aluno-obs {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 2px;
+    }
+    .status-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 20px;
+    }
+    .status-badge.status-confirmado {
+        background: rgba(196,168,122,0.15);
+        color: var(--gold);
+    }
+    .status-badge.status-concluido {
+        background: rgba(46,160,67,0.15);
+        color: #2ea043;
+    }
+    .status-badge.status-cancelado {
+        background: rgba(238,25,32,0.15);
+        color: #ee1920;
+    }
+</style>

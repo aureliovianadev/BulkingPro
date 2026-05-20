@@ -1,233 +1,695 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — BulkingPro</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-        :root {
-            --red:     #ee1920;
-            --red-dim: rgba(238,25,32,0.12);
-            --gold:    #c4a87a;
-            --bg:      #0a0a0a;
-            --bg2:     #0e0e10;
-            --bg3:     #131316;
-            --border:  rgba(255,255,255,0.07);
-            --text:    rgba(255,255,255,0.85);
-            --muted:   rgba(255,255,255,0.4);
-            --faint:   rgba(255,255,255,0.15);
-        }
+            :root {
+                --red: #ee1920;
+                --red-dim: rgba(238, 25, 32, 0.12);
+                --gold: #c4a87a;
+                --bg: #0a0a0a;
+                --bg2: #0e0e10;
+                --bg3: #131316;
+                --border: rgba(255, 255, 255, 0.07);
+                --text: rgba(255, 255, 255, 0.85);
+                --muted: rgba(255, 255, 255, 0.4);
+                --faint: rgba(255, 255, 255, 0.15);
+            }
 
-        html, body { height: 100%; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+            html,
+            body {
+                height: 100%;
+                font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+                background: var(--bg);
+                color: var(--text);
+                font-size: 14px;
+            }
 
-        .personal-wrap { display: flex; height: 100vh; overflow: hidden; }
+            .personal-wrap {
+                display: flex;
+                height: 100vh;
+                overflow: hidden;
+            }
 
-        /* ── Sidebar ── */
-        .sidebar { width: 230px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+            /* ── Sidebar ── */
+            .sidebar {
+                width: 230px;
+                flex-shrink: 0;
+                background: var(--bg2);
+                border-right: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+            }
 
-        .sidebar-brand { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
-        .sidebar-brand img { height: 100px; width: auto; object-fit: contain; mix-blend-mode: normal; }
-        .sidebar-brand-role { font-size: 10px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+            .sidebar-brand {
+                padding: 14px 18px;
+                border-bottom: 1px solid var(--border);
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
 
-        .sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
-        .sidebar-nav::-webkit-scrollbar { width: 0; }
+            .sidebar-brand img {
+                height: 100px;
+                width: auto;
+                object-fit: contain;
+                mix-blend-mode: normal;
+            }
 
-        .nav-section { font-size: 10px; color: rgba(255,255,255,0.22); letter-spacing: 1.5px; text-transform: uppercase; padding: 14px 18px 5px; }
-        .nav-link { display: flex; align-items: center; gap: 10px; padding: 9px 18px; color: var(--muted); font-size: 13px; text-decoration: none; border-left: 2px solid transparent; transition: color .15s, background .15s; }
-        .nav-link i { font-size: 17px; width: 20px; }
-        .nav-link:hover { color: rgba(255,255,255,.8); background: rgba(255,255,255,.03); }
-        .nav-link.active { color: #fff; background: var(--red-dim); border-left-color: var(--red); }
+            .sidebar-brand-role {
+                font-size: 10px;
+                color: var(--gold);
+                letter-spacing: 2px;
+                text-transform: uppercase;
+            }
 
-        .sidebar-footer { padding: 14px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(196,168,122,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--gold); flex-shrink: 0; }
-        .avatar-name  { font-size: 12px; color: #fff; font-weight: 500; }
-        .avatar-email { font-size: 10px; color: var(--muted); }
+            .sidebar-nav {
+                flex: 1;
+                overflow-y: auto;
+                padding: 8px 0;
+            }
 
-        /* ── Main ── */
-        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+            .sidebar-nav::-webkit-scrollbar {
+                width: 0;
+            }
 
-        .topbar { padding: 14px 28px; border-bottom: 1px solid var(--border); background: var(--bg2); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-        .topbar-title { font-size: 16px; font-weight: 600; color: #fff; }
-        .topbar-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
-        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+            .nav-section {
+                font-size: 10px;
+                color: rgba(255, 255, 255, 0.22);
+                letter-spacing: 1.5px;
+                text-transform: uppercase;
+                padding: 14px 18px 5px;
+            }
 
-        .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
-        .content::-webkit-scrollbar { width: 4px; }
-        .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+            .nav-link {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 9px 18px;
+                color: var(--muted);
+                font-size: 13px;
+                text-decoration: none;
+                border-left: 2px solid transparent;
+                transition: color .15s, background .15s;
+            }
 
-        /* ── Botões ── */
-        .btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 20px; padding: 8px 18px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: opacity .15s; }
-        .btn:hover { opacity: .85; }
-        .btn-primary { background: var(--red); color: #fff; }
-        .btn-gold    { background: rgba(196,168,122,0.15); color: var(--gold); border: 1px solid rgba(196,168,122,0.3); }
-        .btn-ghost   { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
-        .btn-danger  { background: rgba(238,25,32,.15); color: var(--red); border: 1px solid rgba(238,25,32,.25); }
-        .btn-sm      { padding: 5px 12px; font-size: 11px; }
+            .nav-link i {
+                font-size: 17px;
+                width: 20px;
+            }
 
-        /* ── Cards ── */
-        .card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; }
-        .card-body { padding: 20px; }
-        .card-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.7); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .card-title i { color: var(--gold); }
+            .nav-link:hover {
+                color: rgba(255, 255, 255, .8);
+                background: rgba(255, 255, 255, .03);
+            }
 
-        /* ── Form ── */
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 7px; }
-        .form-control { width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: rgba(255,255,255,.85); font-size: 13px; outline: none; transition: border-color .2s; }
-        .form-control:focus { border-color: var(--red); box-shadow: 0 0 0 2px rgba(238,25,32,.12); }
-        .form-control::placeholder { color: rgba(255,255,255,.18); }
-        select.form-control { cursor: pointer; }
-        select.form-control option { background: #1a1a1e; }
-        textarea.form-control { resize: vertical; min-height: 80px; }
-        .form-row { display: flex; gap: 14px; }
-        .form-row .form-group { flex: 1; }
-        .field-validation-error { font-size: 11px; color: var(--red); margin-top: 4px; display: block; }
+            .nav-link.active {
+                color: #fff;
+                background: var(--red-dim);
+                border-left-color: var(--red);
+            }
 
-        /* ── Badge ── */
-        .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
-        .badge-active   { background: rgba(46,160,67,.12); color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
-        .badge-inactive { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); }
-        .badge-gold     { background: rgba(196,168,122,.12); color: var(--gold); border: 1px solid rgba(196,168,122,.2); }
+            .sidebar-footer {
+                padding: 14px 18px;
+                border-top: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
 
-        /* ── Tabela ── */
-        .table-wrap { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
-        thead th { font-size: 10px; color: rgba(255,255,255,.25); letter-spacing: 1px; text-transform: uppercase; padding: 12px 18px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 400; }
-        tbody td { padding: 12px 18px; font-size: 13px; color: rgba(255,255,255,.65); border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: middle; }
-        tbody tr:last-child td { border-bottom: none; }
-        tbody tr:hover td { background: rgba(255,255,255,.02); }
-        td.bold { color: rgba(255,255,255,.9); font-weight: 500; }
-        .td-user { display: flex; align-items: center; gap: 10px; }
-        .tbl-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
-        .tbl-av.r { background: rgba(238,25,32,.2); color: var(--red); }
-        .tbl-av.g { background: rgba(196,168,122,.2); color: var(--gold); }
-        .tbl-av.b { background: rgba(56,139,253,.2); color: #388bfd; }
+            .avatar {
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                background: rgba(196, 168, 122, 0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--gold);
+                flex-shrink: 0;
+            }
 
-        /* ── Alert ── */
-        .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .alert-success { background: rgba(46,160,67,.12); color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
-        .alert-danger  { background: rgba(238,25,32,.12); color: var(--red); border: 1px solid rgba(238,25,32,.25); }
+            .avatar-name {
+                font-size: 12px;
+                color: #fff;
+                font-weight: 500;
+            }
 
-        /* ── Stats ── */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
-        .stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 18px; }
-        .stat-icon.red   { background: rgba(238,25,32,.15); color: var(--red); }
-        .stat-icon.gold  { background: rgba(196,168,122,.15); color: var(--gold); }
-        .stat-icon.blue  { background: rgba(56,139,253,.15); color: #388bfd; }
-        .stat-icon.green { background: rgba(46,160,67,.15); color: #2ea043; }
-        .stat-val   { font-size: 26px; font-weight: 600; color: #fff; line-height: 1; }
-        .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+            .avatar-email {
+                font-size: 10px;
+                color: var(--muted);
+            }
 
-        /* ── Toggle ── */
-        .toggle-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .toggle-input { display: none; }
-        .toggle-track { width: 40px; height: 22px; border-radius: 11px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); position: relative; transition: background .2s; flex-shrink: 0; }
-        .toggle-track::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,.4); top: 2px; left: 2px; transition: all .2s; }
-        .toggle-input:checked + .toggle-track { background: rgba(46,160,67,.5); border-color: #2ea043; }
-        .toggle-input:checked + .toggle-track::after { left: 20px; background: #2ea043; }
-        .toggle-text { font-size: 13px; color: rgba(255,255,255,.6); }
+            /* ── Main ── */
+            .main {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
 
-        @@media (max-width: 900px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .form-row   { flex-direction: column; }
-        }
+            .topbar {
+                padding: 14px 28px;
+                border-bottom: 1px solid var(--border);
+                background: var(--bg2);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-shrink: 0;
+            }
+
+            .topbar-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: #fff;
+            }
+
+            .topbar-sub {
+                font-size: 12px;
+                color: var(--muted);
+                margin-top: 2px;
+            }
+
+            .topbar-actions {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .content {
+                flex: 1;
+                overflow-y: auto;
+                padding: 24px 28px;
+            }
+
+            .content::-webkit-scrollbar {
+                width: 4px;
+            }
+
+            .content::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, .1);
+                border-radius: 4px;
+            }
+
+            /* ── Botões ── */
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                border-radius: 20px;
+                padding: 8px 18px;
+                font-size: 12px;
+                font-weight: 500;
+                cursor: pointer;
+                border: none;
+                text-decoration: none;
+                transition: opacity .15s;
+            }
+
+            .btn:hover {
+                opacity: .85;
+            }
+
+            .btn-primary {
+                background: var(--red);
+                color: #fff;
+            }
+
+            .btn-gold {
+                background: rgba(196, 168, 122, 0.15);
+                color: var(--gold);
+                border: 1px solid rgba(196, 168, 122, 0.3);
+            }
+
+            .btn-ghost {
+                background: rgba(255, 255, 255, .05);
+                color: var(--muted);
+                border: 1px solid var(--border);
+            }
+
+            .btn-danger {
+                background: rgba(238, 25, 32, .15);
+                color: var(--red);
+                border: 1px solid rgba(238, 25, 32, .25);
+            }
+
+            .btn-sm {
+                padding: 5px 12px;
+                font-size: 11px;
+            }
+
+            /* ── Cards ── */
+            .card {
+                background: var(--bg3);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+            }
+
+            .card-body {
+                padding: 20px;
+            }
+
+            .card-title {
+                font-size: 13px;
+                font-weight: 600;
+                color: rgba(255, 255, 255, .7);
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .card-title i {
+                color: var(--gold);
+            }
+
+            /* ── Form ── */
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            .form-label {
+                display: block;
+                font-size: 10px;
+                color: rgba(255, 255, 255, .4);
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                margin-bottom: 7px;
+            }
+
+            .form-control {
+                width: 100%;
+                background: rgba(255, 255, 255, .04);
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 11px 14px;
+                color: rgba(255, 255, 255, .85);
+                font-size: 13px;
+                outline: none;
+                transition: border-color .2s;
+            }
+
+            .form-control:focus {
+                border-color: var(--red);
+                box-shadow: 0 0 0 2px rgba(238, 25, 32, .12);
+            }
+
+            .form-control::placeholder {
+                color: rgba(255, 255, 255, .18);
+            }
+
+            select.form-control {
+                cursor: pointer;
+            }
+
+            select.form-control option {
+                background: #1a1a1e;
+            }
+
+            textarea.form-control {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+            .form-row {
+                display: flex;
+                gap: 14px;
+            }
+
+            .form-row .form-group {
+                flex: 1;
+            }
+
+            .field-validation-error {
+                font-size: 11px;
+                color: var(--red);
+                margin-top: 4px;
+                display: block;
+            }
+
+            /* ── Badge ── */
+            .badge {
+                display: inline-block;
+                font-size: 10px;
+                font-weight: 500;
+                padding: 3px 10px;
+                border-radius: 20px;
+            }
+
+            .badge-active {
+                background: rgba(46, 160, 67, .12);
+                color: #2ea043;
+                border: 1px solid rgba(46, 160, 67, .2);
+            }
+
+            .badge-inactive {
+                background: rgba(255, 255, 255, .06);
+                color: var(--muted);
+                border: 1px solid var(--border);
+            }
+
+            .badge-gold {
+                background: rgba(196, 168, 122, .12);
+                color: var(--gold);
+                border: 1px solid rgba(196, 168, 122, .2);
+            }
+
+            /* ── Tabela ── */
+            .table-wrap {
+                background: var(--bg3);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                overflow: hidden;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            thead th {
+                font-size: 10px;
+                color: rgba(255, 255, 255, .25);
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                padding: 12px 18px;
+                text-align: left;
+                border-bottom: 1px solid var(--border);
+                font-weight: 400;
+            }
+
+            tbody td {
+                padding: 12px 18px;
+                font-size: 13px;
+                color: rgba(255, 255, 255, .65);
+                border-bottom: 1px solid rgba(255, 255, 255, .04);
+                vertical-align: middle;
+            }
+
+            tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            tbody tr:hover td {
+                background: rgba(255, 255, 255, .02);
+            }
+
+            td.bold {
+                color: rgba(255, 255, 255, .9);
+                font-weight: 500;
+            }
+
+            .td-user {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .tbl-av {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 600;
+                flex-shrink: 0;
+            }
+
+            .tbl-av.r {
+                background: rgba(238, 25, 32, .2);
+                color: var(--red);
+            }
+
+            .tbl-av.g {
+                background: rgba(196, 168, 122, .2);
+                color: var(--gold);
+            }
+
+            .tbl-av.b {
+                background: rgba(56, 139, 253, .2);
+                color: #388bfd;
+            }
+
+            /* ── Alert ── */
+            .alert {
+                padding: 12px 16px;
+                border-radius: 8px;
+                font-size: 13px;
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .alert-success {
+                background: rgba(46, 160, 67, .12);
+                color: #2ea043;
+                border: 1px solid rgba(46, 160, 67, .2);
+            }
+
+            .alert-danger {
+                background: rgba(238, 25, 32, .12);
+                color: var(--red);
+                border: 1px solid rgba(238, 25, 32, .25);
+            }
+
+            /* ── Stats ── */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 14px;
+                margin-bottom: 22px;
+            }
+
+            .stat-card {
+                background: var(--bg3);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 18px;
+            }
+
+            .stat-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 12px;
+                font-size: 18px;
+            }
+
+            .stat-icon.red {
+                background: rgba(238, 25, 32, .15);
+                color: var(--red);
+            }
+
+            .stat-icon.gold {
+                background: rgba(196, 168, 122, .15);
+                color: var(--gold);
+            }
+
+            .stat-icon.blue {
+                background: rgba(56, 139, 253, .15);
+                color: #388bfd;
+            }
+
+            .stat-icon.green {
+                background: rgba(46, 160, 67, .15);
+                color: #2ea043;
+            }
+
+            .stat-val {
+                font-size: 26px;
+                font-weight: 600;
+                color: #fff;
+                line-height: 1;
+            }
+
+            .stat-label {
+                font-size: 11px;
+                color: var(--muted);
+                margin-top: 4px;
+            }
+
+            /* ── Toggle ── */
+            .toggle-label {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+            }
+
+            .toggle-input {
+                display: none;
+            }
+
+            .toggle-track {
+                width: 40px;
+                height: 22px;
+                border-radius: 11px;
+                background: rgba(255, 255, 255, .1);
+                border: 1px solid rgba(255, 255, 255, .15);
+                position: relative;
+                transition: background .2s;
+                flex-shrink: 0;
+            }
+
+            .toggle-track::after {
+                content: '';
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, .4);
+                top: 2px;
+                left: 2px;
+                transition: all .2s;
+            }
+
+            .toggle-input:checked+.toggle-track {
+                background: rgba(46, 160, 67, .5);
+                border-color: #2ea043;
+            }
+
+            .toggle-input:checked+.toggle-track::after {
+                left: 20px;
+                background: #2ea043;
+            }
+
+            .toggle-text {
+                font-size: 13px;
+                color: rgba(255, 255, 255, .6);
+            }
+
+            @@media (max-width: 900px) {
+                .stats-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+                .form-row {
+                    flex-direction: column;
+                }
+            }
     </style>
 </head>
+
 <body>
-<div class="personal-wrap">
+    <div class="personal-wrap">
 
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
-            <div class="sidebar-brand-role">Personal Trainer</div>
-        </div>
-
-        <nav class="sidebar-nav">
-            <div class="nav-section">Principal</div>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Dashboard" ? "active" : "")"
-               asp-controller="Personal" asp-action="Index">
-                <i class="ti ti-layout-dashboard"></i> Dashboard
-            </a>
-
-            <div class="nav-section">Meus Alunos</div>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Alunos" ? "active" : "")"
-               asp-controller="Personal" asp-action="Alunos">
-                <i class="ti ti-users"></i> Lista de alunos
-            </a>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "CadastrarAluno" ? "active" : "")"
-               asp-controller="Personal" asp-action="CadastrarAluno">
-                <i class="ti ti-user-plus"></i> Cadastrar aluno
-            </a>
-
-            <div class="nav-section">Treino</div>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "PlanoTreino" ? "active" : "")"
-               asp-controller="Personal" asp-action="PlanosTreino">
-                <i class="ti ti-clipboard-list"></i> Planos de treino
-            </a>
-
-            <div class="nav-section">Avaliação</div>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "HistoricoMedidas" ? "active" : "")"
-               asp-controller="Personal" asp-action="HistoricoMedidas">
-                <i class="ti ti-ruler"></i> Medidas e IMC
-            </a>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "VisualizarAnamnese" ? "active" : "")"
-               asp-controller="Personal" asp-action="VisualizarAnamnese">
-                <i class="ti ti-clipboard-text"></i> Anamnese
-            </a>
-
-            <div class="nav-section">Conta</div>
-            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Configuracoes" ? "active" : "")"
-               asp-controller="Account" asp-action="Configuracoes">
-                <i class="ti ti-settings"></i> Minha conta
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            @{
-                var nomeCompleto = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
-                               ?? User.FindFirst("NomeCompleto")?.Value
-                               ?? User.Identity?.Name
-                               ?? "Personal";
-                var iniciais = nomeCompleto.Length >= 2
-                    ? nomeCompleto[0].ToString().ToUpper() + nomeCompleto.Split(' ').Last()[0].ToString().ToUpper()
-                    : nomeCompleto[0].ToString().ToUpper();
-            }
-            <div class="avatar">@iniciais</div>
-            <div style="flex:1;min-width:0">
-                <div class="avatar-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@nomeCompleto</div>
-                <div class="avatar-email">Personal Trainer</div>
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
+                <div class="sidebar-brand-role">Personal Trainer</div>
             </div>
-            <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
-                @Html.AntiForgeryToken()
-                <button type="submit" title="Sair"
-                        style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:4px;border-radius:6px;transition:color .15s"
-                        onmouseover="this.style.color='#ee1920'"
-                        onmouseout="this.style.color='rgba(255,255,255,0.3)'">
-                    <i class="ti ti-logout" style="font-size:18px"></i>
-                </button>
-            </form>
-        </div>
-    </aside>
 
-    <div class="main">
-        @RenderSection("Topbar", required: false)
-        <div class="content">
-            @if (TempData["Sucesso"] != null)
-            {
-                <div class="alert alert-success"><i class="ti ti-circle-check"></i> @TempData["Sucesso"]</div>
-            }
-            @if (TempData["Erro"] != null)
-            {
-                <div class="alert alert-danger"><i class="ti ti-alert-circle"></i> @TempData["Erro"]</div>
-            }
-            @RenderBody()
+            <nav class="sidebar-nav">
+                <div class="nav-section">Principal</div>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Dashboard" ? "active" : "")"
+                   asp-controller="Personal" asp-action="Index">
+                    <i class="ti ti-layout-dashboard"></i> Dashboard
+                </a>
+
+                <div class="nav-section">Agenda</div>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Agenda" ? "active" : "")"
+                   asp-controller="Personal" asp-action="Agenda">
+                    <i class="ti ti-calendar"></i> Minha Agenda
+                </a>
+
+                <div class="nav-section">Meus Alunos</div>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Alunos" ? "active" : "")"
+                   asp-controller="Personal" asp-action="Alunos">
+                    <i class="ti ti-users"></i> Lista de alunos
+                </a>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "CadastrarAluno" ? "active" : "")"
+                   asp-controller="Personal" asp-action="CadastrarAluno">
+                    <i class="ti ti-user-plus"></i> Cadastrar aluno
+                </a>
+
+                <div class="nav-section">Treino</div>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "PlanoTreino" ? "active" : "")"
+                   asp-controller="Personal" asp-action="PlanosTreino">
+                    <i class="ti ti-clipboard-list"></i> Planos de treino
+                </a>
+
+                <div class="nav-section">Avaliação</div>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "HistoricoMedidas" ? "active" : "")"
+                   asp-controller="Personal" asp-action="HistoricoMedidas">
+                    <i class="ti ti-ruler"></i> Medidas e IMC
+                </a>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "VisualizarAnamnese" ? "active" : "")"
+                   asp-controller="Personal" asp-action="VisualizarAnamnese">
+                    <i class="ti ti-clipboard-text"></i> Anamnese
+                </a>
+
+                <div class="nav-section">Conta</div>
+                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Configuracoes" ? "active" : "")"
+                   asp-controller="Account" asp-action="Configuracoes">
+                    <i class="ti ti-settings"></i> Minha conta
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                @{
+                    var nomeCompleto = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                                   ?? User.FindFirst("NomeCompleto")?.Value
+                                   ?? User.Identity?.Name
+                                   ?? "Personal";
+                    var iniciais = nomeCompleto.Length >= 2
+                        ? nomeCompleto[0].ToString().ToUpper() + nomeCompleto.Split(' ').Last()[0].ToString().ToUpper()
+                        : nomeCompleto[0].ToString().ToUpper();
+                }
+                <div class="avatar">@iniciais</div>
+                <div style="flex:1;min-width:0">
+                    <div class="avatar-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        @nomeCompleto</div>
+                        <div class="avatar-email">Personal Trainer</div>
+                    </div>
+                    <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" title="Sair"
+                                style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:4px;border-radius:6px;transition:color .15s"
+                                onmouseover="this.style.color='#ee1920'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">
+                            <i class="ti ti-logout" style="font-size:18px"></i>
+                        </button>
+                    </form>
+                </div>
+            </aside>
+
+            <div class="main">
+                @RenderSection("Topbar", required: false)
+                <div class="content">
+                    @if (TempData["Sucesso"] != null)
+                    {
+                        <div class="alert alert-success"><i class="ti ti-circle-check"></i> @TempData["Sucesso"]</div>
+                    }
+                    @if (TempData["Erro"] != null)
+                    {
+                        <div class="alert alert-danger"><i class="ti ti-alert-circle"></i> @TempData["Erro"]</div>
+                    }
+                    @RenderBody()
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-@RenderSection("Scripts", required: false)
-</body>
+        @RenderSection("Scripts", required: false)
+    </body>
+
 </html>

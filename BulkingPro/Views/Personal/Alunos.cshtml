@@ -61,7 +61,7 @@
                         @if (a.Ativo) { <span class="badge badge-active">Ativo</span> }
                         else          { <span class="badge badge-inactive">Inativo</span> }
                     </td>
-                    <td style="display:flex;gap:6px">
+                    <td style="display:flex;gap:6px;flex-wrap:wrap">
                         <a class="btn btn-ghost btn-sm" asp-action="CriarPlano" asp-route-alunoId="@a.Id">
                             <i class="ti ti-clipboard-plus"></i> Plano
                         </a>
@@ -71,6 +71,37 @@
                         <a class="btn btn-ghost btn-sm" asp-action="Anamnese" asp-route-alunoId="@a.Id">
                             <i class="ti ti-clipboard-text"></i>
                         </a>
+                        
+                        @if (a.Ativo)
+                        {
+                            <form asp-action="InativarAluno" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm" 
+                                        onclick="return confirm('Inativar @a.NomeCompleto? O aluno não poderá mais acessar o sistema até ser reativado.')">
+                                    <i class="ti ti-user-x"></i> Inativar
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form asp-action="ReativarAluno" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="ti ti-user-check"></i> Reativar
+                                </button>
+                            </form>
+                        }
+                        
+                        <form asp-action="DesvincularAluno" method="post" style="display:inline"
+                              onsubmit="return confirm('Desvincular @a.NomeCompleto? O aluno será removido da sua lista, mas continuará existindo no sistema.')">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--gold)">
+                                <i class="ti ti-link-off"></i> Desvincular
+                            </button>
+                        </form>
                     </td>
                 </tr>
             }
@@ -81,6 +112,17 @@
         </tbody>
     </table>
 </div>
+
+<style>
+    .btn-success {
+        background: rgba(46,160,67,.15);
+        color: #2ea043;
+        border: 1px solid rgba(46,160,67,.25);
+    }
+    .btn-success:hover {
+        background: rgba(46,160,67,.25);
+    }
+</style>
 
 <script>
     document.getElementById('busca').addEventListener('input', function () {
