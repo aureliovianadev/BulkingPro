@@ -55,5 +55,57 @@ namespace BulkingPro.ViewModels
         [MinLength(6, ErrorMessage = "Mínimo 6 caracteres")]
         [DataType(DataType.Password)]
         public string Senha { get; set; } = null!;
+
+        public string? Cpf { get; set; }
+        
+        [Phone(ErrorMessage = "Telefone inválido")]
+        public string? Telefone { get; set; }
+
+        public List<HorarioAtendimentoViewModel> HorariosAtendimento { get; set; } = new();
+    }
+
+    public class HorarioAtendimentoViewModel
+    {
+        [Required(ErrorMessage = "Selecione o dia")]
+        public DayOfWeek? DiaSemana { get; set; }
+        
+        [Required(ErrorMessage = "Informe o horário de início")]
+        public TimeSpan? HoraInicio { get; set; }
+        
+        [Required(ErrorMessage = "Informe o horário de fim")]
+        public TimeSpan? HoraFim { get; set; }
+    }
+
+    // ===================== NOVOS VIEWMODELS PARA EDIÇÃO =====================
+
+    public class EditarAlunoViewModel
+    {
+        public string Id { get; set; } = null!;
+        
+        [Required(ErrorMessage = "Nome obrigatório")]
+        public string NomeCompleto { get; set; } = null!;
+
+        [Required(ErrorMessage = "E-mail obrigatório")]
+        [EmailAddress(ErrorMessage = "E-mail inválido")]
+        public string Email { get; set; } = null!;
+
+        public string? Cpf { get; set; }
+        
+        [Phone(ErrorMessage = "Telefone inválido")]
+        public string? Telefone { get; set; }
+
+        public bool Ativo { get; set; } = true;
+
+        public List<HorarioAtendimentoEditViewModel> HorariosAtendimento { get; set; } = new();
+        public List<int> HorariosParaRemover { get; set; } = new();
+    }
+
+    public class HorarioAtendimentoEditViewModel
+    {
+        public int Id { get; set; }
+        public DayOfWeek? DiaSemana { get; set; }
+        public TimeSpan? HoraInicio { get; set; }
+        public TimeSpan? HoraFim { get; set; }
+        public bool Remover { get; set; }
     }
 }

@@ -23,9 +23,9 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<AvaliacaoFisica> AvaliacoesFisicas { get; set; }
     public DbSet<AnamneseAluno> Anamneses { get; set; }
-    public DbSet<HorarioAtendimento> HorariosAtendimento { get; set; }
-    public DbSet<AgendamentoAluno> Agendamentos { get; set; }
-
+    public DbSet<HorarioTrabalhoPersonal> HorariosTrabalhoPersonal { get; set; }
+    public DbSet<AgendamentoAluno> AgendamentosAlunos { get; set; }
+    public DbSet<AlunoHorarioAtendimento> AlunosHorariosAtendimento { get; set; }
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -124,8 +124,8 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .HasForeignKey(a => a.TreinadorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // HorarioAtendimento → Personal
-        builder.Entity<HorarioAtendimento>()
+        // HorarioTrabalhoPersonal → Personal
+        builder.Entity<HorarioTrabalhoPersonal>()
             .HasOne(h => h.Personal)
             .WithMany()
             .HasForeignKey(h => h.PersonalId)
@@ -144,6 +144,25 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .WithMany()
             .HasForeignKey(a => a.AlunoId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // AgendamentoAluno → HorarioTrabalhoPersonal
+        builder.Entity<AgendamentoAluno>()
+            .HasOne(a => a.HorarioTrabalho)
+            .WithMany()
+            .HasForeignKey(a => a.HorarioTrabalhoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<AlunoHorarioAtendimento>()
+    .HasOne(h => h.Personal)
+    .WithMany()
+    .HasForeignKey(h => h.PersonalId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+builder.Entity<AlunoHorarioAtendimento>()
+    .HasOne(h => h.Aluno)
+    .WithMany(u => u.HorariosAtendimento)
+    .HasForeignKey(h => h.AlunoId)
+    .OnDelete(DeleteBehavior.Restrict);
 
         // ── SEED: Categorias ─────────────────────────────────────
         builder.Entity<CategoriaMuscular>().HasData(

@@ -1,20 +1,18 @@
 #nullable enable
 namespace BulkingPro.Models;
 
-public class AgendamentoAluno
+public class AlunoHorarioAtendimento
 {
     public int Id { get; set; }
     public string PersonalId { get; set; } = null!;
     public string AlunoId { get; set; } = null!;
-    public int HorarioTrabalhoId { get; set; }
     public DayOfWeek DiaSemana { get; set; }
     public TimeSpan HoraInicio { get; set; }
     public TimeSpan HoraFim { get; set; }
-    public int Status { get; set; } // 1=Ativo, 0=Inativo
+    public bool Ativo { get; set; } = true;
     public DateTime DataCriacao { get; set; }
     public DateTime? DataAtualizacao { get; set; }
     
     public Usuario Personal { get; set; } = null!;
     public Usuario Aluno { get; set; } = null!;
-    public HorarioTrabalhoPersonal HorarioTrabalho { get; set; } = null!;
 }

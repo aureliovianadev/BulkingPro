@@ -1,7 +1,7 @@
 @model List<BulkingPro.ViewModels.AlunoViewModel>
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"]      = "Meus Alunos";
+    ViewData["Title"] = "Meus Alunos";
     ViewData["ActivePage"] = "Alunos";
 }
 
@@ -59,7 +59,7 @@
                     <td>@(a.NomePlanoAtivo ?? "—")</td>
                     <td>
                         @if (a.Ativo) { <span class="badge badge-active">Ativo</span> }
-                        else          { <span class="badge badge-inactive">Inativo</span> }
+                        else { <span class="badge badge-inactive">Inativo</span> }
                     </td>
                     <td style="display:flex;gap:6px;flex-wrap:wrap">
                         <a class="btn btn-ghost btn-sm" asp-action="CriarPlano" asp-route-alunoId="@a.Id">
@@ -70,6 +70,9 @@
                         </a>
                         <a class="btn btn-ghost btn-sm" asp-action="Anamnese" asp-route-alunoId="@a.Id">
                             <i class="ti ti-clipboard-text"></i>
+                        </a>
+                        <a class="btn btn-ghost btn-sm" asp-action="EditarAluno" asp-route-id="@a.Id">
+                            <i class="ti ti-edit"></i> Editar
                         </a>
                         
                         @if (a.Ativo)

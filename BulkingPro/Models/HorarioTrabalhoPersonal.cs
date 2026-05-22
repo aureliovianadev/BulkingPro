@@ -1,7 +1,7 @@
 #nullable enable
 namespace BulkingPro.Models;
 
-public class HorarioAtendimento
+public class HorarioTrabalhoPersonal
 {
     public int Id { get; set; }
     public string PersonalId { get; set; } = null!;

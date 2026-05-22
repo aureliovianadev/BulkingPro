@@ -1,3 +1,4 @@
+#nullable enable
 using System.ComponentModel.DataAnnotations;
 using BulkingPro.Models;
 
@@ -5,7 +6,7 @@ namespace BulkingPro.ViewModels
 {
     public class AgendaViewModel
     {
-        public List<HorarioAtendimento> Horarios { get; set; } = new();
+        public List<HorarioTrabalhoPersonal> Horarios { get; set; } = new();
         public List<AgendamentoAluno> Agendamentos { get; set; } = new();
         public DateTime DataSelecionada { get; set; } = DateTime.Today;
         public List<Usuario> Alunos { get; set; } = new();

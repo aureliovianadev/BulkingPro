@@ -1,7 +1,7 @@
 @model BulkingPro.ViewModels.CriarPersonalViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"]      = "Cadastrar Aluno";
+    ViewData["Title"] = "Cadastrar Aluno";
     ViewData["ActivePage"] = "CadastrarAluno";
 }
 
@@ -9,7 +9,7 @@
     <div class="topbar">
         <div>
             <div class="topbar-title">Cadastrar Aluno</div>
-            <div class="topbar-sub">Crie o acesso do aluno na plataforma</div>
+            <div class="topbar-sub">Preencha os dados e os horários de atendimento</div>
         </div>
         <div class="topbar-actions">
             <a class="btn btn-ghost" asp-action="Alunos"><i class="ti ti-arrow-left"></i> Voltar</a>
@@ -17,42 +17,140 @@
     </div>
 }
 
-<div style="max-width:480px">
-    <div class="card">
-        <div class="card-body">
-            <form asp-action="CadastrarAluno" method="post">
-                @Html.AntiForgeryToken()
+<div class="card">
+    <div class="card-body">
+        <form asp-action="CadastrarAluno" method="post" id="form-cadastro">
+            @Html.AntiForgeryToken()
 
-                <div class="form-group">
+            <!-- Dados Pessoais -->
+            <div class="card-title"><i class="ti ti-user"></i> Dados Pessoais</div>
+            <div class="form-row">
+                <div class="form-group" style="flex:2">
                     <label class="form-label" asp-for="NomeCompleto">Nome completo</label>
                     <input class="form-control" asp-for="NomeCompleto" placeholder="Nome do aluno" />
                     <span asp-validation-for="NomeCompleto" class="field-validation-error"></span>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="flex:1">
+                    <label class="form-label" asp-for="Cpf">CPF</label>
+                    <input class="form-control" asp-for="Cpf" placeholder="000.000.000-00" id="cpf" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:2">
                     <label class="form-label" asp-for="Email">E-mail</label>
                     <input class="form-control" asp-for="Email" type="email" placeholder="aluno@email.com" />
                     <span asp-validation-for="Email" class="field-validation-error"></span>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="flex:1">
+                    <label class="form-label" asp-for="Telefone">Telefone (WhatsApp)</label>
+                    <input class="form-control" asp-for="Telefone" placeholder="(00) 00000-0000" id="telefone" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1">
                     <label class="form-label" asp-for="Senha">Senha inicial</label>
                     <input class="form-control" asp-for="Senha" type="password" placeholder="Mínimo 6 caracteres" />
                     <span asp-validation-for="Senha" class="field-validation-error"></span>
                 </div>
+            </div>
 
-                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey(""))
-                {
-                    <div class="alert alert-danger">
-                        @foreach (var e in ViewData.ModelState[""]!.Errors) { <div>@e.ErrorMessage</div> }
-                    </div>
-                }
+            <!-- Horários de Atendimento -->
+            <div class="card-title" style="margin-top:24px"><i class="ti ti-calendar-clock"></i> Horários de Atendimento</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Defina os dias e horários que este aluno irá treinar</p>
 
-                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
-                    <i class="ti ti-user-plus"></i> Cadastrar aluno
-                </button>
-            </form>
-        </div>
+            <div id="horarios-container">
+                <div class="horario-row" style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
+                    <select name="HorariosAtendimento[0].DiaSemana" class="form-control" style="flex:1" required>
+                        <option value="">Selecione o dia</option>
+                        <option value="0">Domingo</option>
+                        <option value="1">Segunda-feira</option>
+                        <option value="2">Terça-feira</option>
+                        <option value="3">Quarta-feira</option>
+                        <option value="4">Quinta-feira</option>
+                        <option value="5">Sexta-feira</option>
+                        <option value="6">Sábado</option>
+                    </select>
+                    <input type="time" name="HorariosAtendimento[0].HoraInicio" class="form-control" style="flex:1" placeholder="Início" required />
+                    <input type="time" name="HorariosAtendimento[0].HoraFim" class="form-control" style="flex:1" placeholder="Fim" required />
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this)" style="display:none">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="adicionarHorario()" style="margin-top:8px">
+                <i class="ti ti-plus"></i> Adicionar outro horário
+            </button>
+
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey(""))
+            {
+                <div class="alert alert-danger" style="margin-top:16px">
+                    @foreach (var e in ViewData.ModelState[""]!.Errors) { <div>@e.ErrorMessage</div> }
+                </div>
+            }
+
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:24px">
+                <i class="ti ti-user-plus"></i> Cadastrar aluno
+            </button>
+        </form>
     </div>
 </div>
+
+<script>
+    let horarioIndex = 1;
+
+    function adicionarHorario() {
+        const container = document.getElementById('horarios-container');
+        const newRow = document.createElement('div');
+        newRow.className = 'horario-row';
+        newRow.style.display = 'flex';
+        newRow.style.gap = '10px';
+        newRow.style.marginBottom = '10px';
+        newRow.style.alignItems = 'center';
+        newRow.innerHTML = `
+            <select name="HorariosAtendimento[${horarioIndex}].DiaSemana" class="form-control" style="flex:1" required>
+                <option value="">Selecione o dia</option>
+                <option value="0">Domingo</option>
+                <option value="1">Segunda-feira</option>
+                <option value="2">Terça-feira</option>
+                <option value="3">Quarta-feira</option>
+                <option value="4">Quinta-feira</option>
+                <option value="5">Sexta-feira</option>
+                <option value="6">Sábado</option>
+            </select>
+            <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraInicio" class="form-control" style="flex:1" placeholder="Início" required />
+            <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraFim" class="form-control" style="flex:1" placeholder="Fim" required />
+            <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this)">
+                <i class="ti ti-trash"></i>
+            </button>
+        `;
+        container.appendChild(newRow);
+        horarioIndex++;
+    }
+
+    function removerHorario(btn) {
+        btn.closest('.horario-row').remove();
+    }
+
+    // Máscara para CPF e Telefone
+    document.getElementById('cpf')?.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        }
+    });
+
+    document.getElementById('telefone')?.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            value = value.replace(/(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            e.target.value = value;
+        }
+    });
+</script>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
