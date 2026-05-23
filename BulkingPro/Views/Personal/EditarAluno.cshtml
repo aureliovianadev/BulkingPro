@@ -57,33 +57,45 @@
 
             <!-- Horários de Atendimento -->
             <div class="card-title" style="margin-top:24px"><i class="ti ti-calendar-clock"></i> Horários de Atendimento</div>
-            <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Defina os dias e horários que este aluno irá treinar</p>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Defina os horários e selecione os dias da semana</p>
 
             <div id="horarios-container">
                 @for (int i = 0; i < Model.HorariosAtendimento.Count; i++)
                 {
                     var h = Model.HorariosAtendimento[i];
-                    <div class="horario-row" style="display:flex;gap:10px;margin-bottom:10px;align-items:center">
-                        <input type="hidden" name="HorariosAtendimento[@i].Id" value="@h.Id" />
-                        <select name="HorariosAtendimento[@i].DiaSemana" class="form-control" style="flex:1">
-                            <option value="">Selecione o dia</option>
-                            <option value="0" selected="@(h.DiaSemana == DayOfWeek.Sunday)">Domingo</option>
-                            <option value="1" selected="@(h.DiaSemana == DayOfWeek.Monday)">Segunda-feira</option>
-                            <option value="2" selected="@(h.DiaSemana == DayOfWeek.Tuesday)">Terça-feira</option>
-                            <option value="3" selected="@(h.DiaSemana == DayOfWeek.Wednesday)">Quarta-feira</option>
-                            <option value="4" selected="@(h.DiaSemana == DayOfWeek.Thursday)">Quinta-feira</option>
-                            <option value="5" selected="@(h.DiaSemana == DayOfWeek.Friday)">Sexta-feira</option>
-                            <option value="6" selected="@(h.DiaSemana == DayOfWeek.Saturday)">Sábado</option>
-                        </select>
-                        <input type="time" name="HorariosAtendimento[@i].HoraInicio" class="form-control" style="flex:1" value="@(h.HoraInicio.HasValue ? h.HoraInicio.Value.ToString(@"hh\:mm") : "")" />
-                        <input type="time" name="HorariosAtendimento[@i].HoraFim" class="form-control" style="flex:1" value="@(h.HoraFim.HasValue ? h.HoraFim.Value.ToString(@"hh\:mm") : "")" />
-                        <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this, @i)">
-                            <i class="ti ti-trash"></i>
-                        </button>
+                    <div class="horario-card" data-index="@i">
+                        <div class="horario-header">
+                            <div class="form-row" style="align-items:center">
+                                <div class="form-group" style="flex:1">
+                                    <label class="form-label">Horário início</label>
+                                    <input type="time" name="HorariosAtendimento[@i].HoraInicio" class="form-control" value="@(h.HoraInicio.HasValue ? h.HoraInicio.Value.ToString(@"hh\:mm") : "")" />
+                                </div>
+                                <div class="form-group" style="flex:1">
+                                    <label class="form-label">Horário fim</label>
+                                    <input type="time" name="HorariosAtendimento[@i].HoraFim" class="form-control" value="@(h.HoraFim.HasValue ? h.HoraFim.Value.ToString(@"hh\:mm") : "")" />
+                                </div>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this, @i)">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="horario-dias">
+                            <label class="dias-label">Dias da semana:</label>
+                            <div class="dias-grid">
+                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Domingo" @(h.Domingo ? "checked" : "") /> Dom</label>
+                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Segunda" @(h.Segunda ? "checked" : "") /> Seg</label>
+                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Terca" @(h.Terca ? "checked" : "") /> Ter</label>
+                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Quarta" @(h.Quarta ? "checked" : "") /> Qua</label>
+                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Quinta" @(h.Quinta ? "checked" : "") /> Qui</label>
+                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Sexta" @(h.Sexta ? "checked" : "") /> Sex</label>
+                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Sabado" @(h.Sabado ? "checked" : "") /> Sáb</label>
+                            </div>
+                        </div>
                     </div>
                 }
             </div>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="adicionarHorario()" style="margin-top:8px">
+
+            <button type="button" class="btn btn-ghost btn-sm" onclick="adicionarHorario()" style="margin-top:16px">
                 <i class="ti ti-plus"></i> Adicionar outro horário
             </button>
 
@@ -106,46 +118,44 @@
 
     function adicionarHorario() {
         const container = document.getElementById('horarios-container');
-        const newRow = document.createElement('div');
-        newRow.className = 'horario-row';
-        newRow.style.display = 'flex';
-        newRow.style.gap = '10px';
-        newRow.style.marginBottom = '10px';
-        newRow.style.alignItems = 'center';
-        newRow.innerHTML = `
-            <input type="hidden" name="HorariosAtendimento[${horarioIndex}].Id" value="0" />
-            <select name="HorariosAtendimento[${horarioIndex}].DiaSemana" class="form-control" style="flex:1">
-                <option value="">Selecione o dia</option>
-                <option value="0">Domingo</option>
-                <option value="1">Segunda-feira</option>
-                <option value="2">Terça-feira</option>
-                <option value="3">Quarta-feira</option>
-                <option value="4">Quinta-feira</option>
-                <option value="5">Sexta-feira</option>
-                <option value="6">Sábado</option>
-            </select>
-            <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraInicio" class="form-control" style="flex:1" />
-            <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraFim" class="form-control" style="flex:1" />
-            <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this, ${horarioIndex})">
-                <i class="ti ti-trash"></i>
-            </button>
+        const newCard = document.createElement('div');
+        newCard.className = 'horario-card';
+        newCard.setAttribute('data-index', horarioIndex);
+        newCard.innerHTML = `
+            <div class="horario-header">
+                <div class="form-row" style="align-items:center">
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Horário início</label>
+                        <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraInicio" class="form-control" />
+                    </div>
+                    <div class="form-group" style="flex:1">
+                        <label class="form-label">Horário fim</label>
+                        <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraFim" class="form-control" />
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this, ${horarioIndex})">
+                        <i class="ti ti-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="horario-dias">
+                <label class="dias-label">Dias da semana:</label>
+                <div class="dias-grid">
+                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Domingo" /> Dom</label>
+                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Segunda" /> Seg</label>
+                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Terca" /> Ter</label>
+                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Quarta" /> Qua</label>
+                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Quinta" /> Qui</label>
+                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Sexta" /> Sex</label>
+                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Sabado" /> Sáb</label>
+                </div>
+            </div>
         `;
-        container.appendChild(newRow);
+        container.appendChild(newCard);
         horarioIndex++;
     }
 
     function removerHorario(btn, index) {
-        // Marca o horário para remoção
-        const hiddenField = btn.closest('.horario-row').querySelector('input[name$=".Id"]');
-        if (hiddenField && hiddenField.value !== '0') {
-            // Adiciona o ID à lista de remoção
-            const inputRemover = document.createElement('input');
-            inputRemover.type = 'hidden';
-            inputRemover.name = 'HorariosParaRemover';
-            inputRemover.value = hiddenField.value;
-            document.querySelector('form').appendChild(inputRemover);
-        }
-        btn.closest('.horario-row').remove();
+        btn.closest('.horario-card').remove();
     }
 
     // Máscara para CPF e Telefone
@@ -170,6 +180,47 @@
 </script>
 
 <style>
+    .horario-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    .horario-header {
+        margin-bottom: 12px;
+    }
+    .horario-dias {
+        border-top: 1px solid rgba(255,255,255,0.06);
+        padding-top: 12px;
+    }
+    .dias-label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+        display: block;
+    }
+    .dias-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .dia-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: rgba(255,255,255,0.6);
+        cursor: pointer;
+    }
+    .dia-checkbox input {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: var(--red);
+    }
     .toggle-label {
         display: flex;
         align-items: center;

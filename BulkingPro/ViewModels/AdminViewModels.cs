@@ -61,22 +61,39 @@ namespace BulkingPro.ViewModels
         [Phone(ErrorMessage = "Telefone inválido")]
         public string? Telefone { get; set; }
 
-        public List<HorarioAtendimentoViewModel> HorariosAtendimento { get; set; } = new();
+        // Lista de horários (cada horário pode ter múltiplos dias)
+        public List<HorarioComDiasViewModel> HorariosAtendimento { get; set; } = new();
     }
 
-    public class HorarioAtendimentoViewModel
+    public class HorarioComDiasViewModel
     {
-        [Required(ErrorMessage = "Selecione o dia")]
-        public DayOfWeek? DiaSemana { get; set; }
-        
-        [Required(ErrorMessage = "Informe o horário de início")]
         public TimeSpan? HoraInicio { get; set; }
-        
-        [Required(ErrorMessage = "Informe o horário de fim")]
         public TimeSpan? HoraFim { get; set; }
+        
+        // Dias selecionados
+        public bool Domingo { get; set; }
+        public bool Segunda { get; set; }
+        public bool Terca { get; set; }
+        public bool Quarta { get; set; }
+        public bool Quinta { get; set; }
+        public bool Sexta { get; set; }
+        public bool Sabado { get; set; }
+
+        public List<DayOfWeek> DiasSelecionados()
+        {
+            var dias = new List<DayOfWeek>();
+            if (Domingo) dias.Add(DayOfWeek.Sunday);
+            if (Segunda) dias.Add(DayOfWeek.Monday);
+            if (Terca) dias.Add(DayOfWeek.Tuesday);
+            if (Quarta) dias.Add(DayOfWeek.Wednesday);
+            if (Quinta) dias.Add(DayOfWeek.Thursday);
+            if (Sexta) dias.Add(DayOfWeek.Friday);
+            if (Sabado) dias.Add(DayOfWeek.Saturday);
+            return dias;
+        }
     }
 
-    // ===================== NOVOS VIEWMODELS PARA EDIÇÃO =====================
+    // ===================== VIEWMODELS PARA EDIÇÃO =====================
 
     public class EditarAlunoViewModel
     {
@@ -96,16 +113,35 @@ namespace BulkingPro.ViewModels
 
         public bool Ativo { get; set; } = true;
 
-        public List<HorarioAtendimentoEditViewModel> HorariosAtendimento { get; set; } = new();
+        public List<HorarioComDiasEditViewModel> HorariosAtendimento { get; set; } = new();
         public List<int> HorariosParaRemover { get; set; } = new();
     }
 
-    public class HorarioAtendimentoEditViewModel
+    public class HorarioComDiasEditViewModel
     {
         public int Id { get; set; }
-        public DayOfWeek? DiaSemana { get; set; }
         public TimeSpan? HoraInicio { get; set; }
         public TimeSpan? HoraFim { get; set; }
-        public bool Remover { get; set; }
+        
+        public bool Domingo { get; set; }
+        public bool Segunda { get; set; }
+        public bool Terca { get; set; }
+        public bool Quarta { get; set; }
+        public bool Quinta { get; set; }
+        public bool Sexta { get; set; }
+        public bool Sabado { get; set; }
+
+        public List<DayOfWeek> DiasSelecionados()
+        {
+            var dias = new List<DayOfWeek>();
+            if (Domingo) dias.Add(DayOfWeek.Sunday);
+            if (Segunda) dias.Add(DayOfWeek.Monday);
+            if (Terca) dias.Add(DayOfWeek.Tuesday);
+            if (Quarta) dias.Add(DayOfWeek.Wednesday);
+            if (Quinta) dias.Add(DayOfWeek.Thursday);
+            if (Sexta) dias.Add(DayOfWeek.Friday);
+            if (Sabado) dias.Add(DayOfWeek.Saturday);
+            return dias;
+        }
     }
 }

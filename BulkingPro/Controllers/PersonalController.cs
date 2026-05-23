@@ -91,6 +91,26 @@ namespace BulkingPro.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> CadastrarAluno(CriarPersonalViewModel vm)
         {
+            // ========== DEBUG ==========
+            Console.WriteLine("=== CADASTRANDO ALUNO ===");
+            Console.WriteLine($"Nome: {vm.NomeCompleto}");
+            Console.WriteLine($"Email: {vm.Email}");
+            Console.WriteLine($"CPF: {vm.Cpf}");
+            Console.WriteLine($"Telefone: {vm.Telefone}");
+            Console.WriteLine($"HorariosCount: {vm.HorariosAtendimento?.Count ?? 0}");
+            
+            if (vm.HorariosAtendimento != null)
+            {
+                for (int i = 0; i < vm.HorariosAtendimento.Count; i++)
+                {
+                    var h = vm.HorariosAtendimento[i];
+                    Console.WriteLine($"Horario {i}: {h.HoraInicio} - {h.HoraFim}");
+                    Console.WriteLine($"  Seg:{h.Segunda}, Ter:{h.Terca}, Qua:{h.Quarta}, Qui:{h.Quinta}, Sex:{h.Sexta}, Sab:{h.Sabado}, Dom:{h.Domingo}");
+                }
+            }
+            Console.WriteLine("ModelState válido: " + ModelState.IsValid);
+            // ========== FIM DEBUG ==========
+
             if (!ModelState.IsValid) return View(vm);
 
             var personal = await _userManager.GetUserAsync(User);
@@ -132,18 +152,26 @@ namespace BulkingPro.Controllers
             // Salva os horários de atendimento do aluno
             if (vm.HorariosAtendimento != null && vm.HorariosAtendimento.Any())
             {
-                foreach (var h in vm.HorariosAtendimento.Where(h => h.DiaSemana.HasValue && h.HoraInicio.HasValue && h.HoraFim.HasValue))
+                foreach (var h in vm.HorariosAtendimento)
                 {
-                    _context.AlunosHorariosAtendimento.Add(new AlunoHorarioAtendimento
+                    if (!h.HoraInicio.HasValue || !h.HoraFim.HasValue) continue;
+                    
+                    var diasSelecionados = h.DiasSelecionados();
+                    Console.WriteLine($"Dias selecionados para {h.HoraInicio}-{h.HoraFim}: {diasSelecionados.Count}");
+                    
+                    foreach (var dia in diasSelecionados)
                     {
-                        PersonalId = personal.Id,
-                        AlunoId = usuario.Id,
-                        DiaSemana = h.DiaSemana.Value,
-                        HoraInicio = h.HoraInicio.Value,
-                        HoraFim = h.HoraFim.Value,
-                        Ativo = true,
-                        DataCriacao = DateTime.Now
-                    });
+                        _context.AlunosHorariosAtendimento.Add(new AlunoHorarioAtendimento
+                        {
+                            PersonalId = personal.Id,
+                            AlunoId = usuario.Id,
+                            DiaSemana = dia,
+                            HoraInicio = h.HoraInicio.Value,
+                            HoraFim = h.HoraFim.Value,
+                            Ativo = true,
+                            DataCriacao = DateTime.Now
+                        });
+                    }
                 }
             }
 
@@ -159,7 +187,6 @@ namespace BulkingPro.Controllers
             var personal = await _userManager.GetUserAsync(User);
             if (personal == null) return Challenge();
 
-            // Verifica se o aluno pertence ao personal
             var alunoVinculado = await _context.PlanosTreino
                 .AnyAsync(p => p.TreinadorId == personal.Id && p.AlunoId == id);
             
@@ -173,6 +200,23 @@ namespace BulkingPro.Controllers
                 .Where(h => h.PersonalId == personal.Id && h.AlunoId == id && h.Ativo)
                 .ToListAsync();
 
+            // Agrupa horários por hora para mostrar como blocos com múltiplos dias
+            var horariosAgrupados = horarios
+                .GroupBy(h => new { h.HoraInicio, h.HoraFim })
+                .Select(g => new HorarioComDiasEditViewModel
+                {
+                    HoraInicio = g.Key.HoraInicio,
+                    HoraFim = g.Key.HoraFim,
+                    Domingo = g.Any(h => h.DiaSemana == DayOfWeek.Sunday),
+                    Segunda = g.Any(h => h.DiaSemana == DayOfWeek.Monday),
+                    Terca = g.Any(h => h.DiaSemana == DayOfWeek.Tuesday),
+                    Quarta = g.Any(h => h.DiaSemana == DayOfWeek.Wednesday),
+                    Quinta = g.Any(h => h.DiaSemana == DayOfWeek.Thursday),
+                    Sexta = g.Any(h => h.DiaSemana == DayOfWeek.Friday),
+                    Sabado = g.Any(h => h.DiaSemana == DayOfWeek.Saturday)
+                })
+                .ToList();
+
             var vm = new EditarAlunoViewModel
             {
                 Id = aluno.Id,
@@ -181,20 +225,8 @@ namespace BulkingPro.Controllers
                 Cpf = aluno.Cpf,
                 Telefone = aluno.Telefone,
                 Ativo = aluno.Ativo,
-                HorariosAtendimento = horarios.Select(h => new HorarioAtendimentoEditViewModel
-                {
-                    Id = h.Id,
-                    DiaSemana = h.DiaSemana,
-                    HoraInicio = h.HoraInicio,
-                    HoraFim = h.HoraFim
-                }).ToList()
+                HorariosAtendimento = horariosAgrupados
             };
-
-            // Adiciona linhas vazias para novos horários (máximo 7)
-            for (int i = vm.HorariosAtendimento.Count; i < 7; i++)
-            {
-                vm.HorariosAtendimento.Add(new HorarioAtendimentoEditViewModel());
-            }
 
             return View(vm);
         }
@@ -229,39 +261,23 @@ namespace BulkingPro.Controllers
                 return View(vm);
             }
 
-            // Remove horários marcados para exclusão
-            if (vm.HorariosParaRemover != null && vm.HorariosParaRemover.Any())
-            {
-                var horariosToRemove = await _context.AlunosHorariosAtendimento
-                    .Where(h => vm.HorariosParaRemover.Contains(h.Id) && h.PersonalId == personal.Id)
-                    .ToListAsync();
-                _context.AlunosHorariosAtendimento.RemoveRange(horariosToRemove);
-            }
+            // Remove todos os horários antigos do aluno
+            var horariosAntigos = await _context.AlunosHorariosAtendimento
+                .Where(h => h.PersonalId == personal.Id && h.AlunoId == aluno.Id)
+                .ToListAsync();
+            _context.AlunosHorariosAtendimento.RemoveRange(horariosAntigos);
 
-            // Atualiza ou adiciona horários
-            foreach (var h in vm.HorariosAtendimento.Where(h => h.DiaSemana.HasValue && h.HoraInicio.HasValue && h.HoraFim.HasValue))
+            // Adiciona os novos horários
+            foreach (var h in vm.HorariosAtendimento.Where(h => h.HoraInicio.HasValue && h.HoraFim.HasValue))
             {
-                if (h.Id > 0)
+                var diasSelecionados = h.DiasSelecionados();
+                foreach (var dia in diasSelecionados)
                 {
-                    // Atualiza horário existente
-                    var horarioExistente = await _context.AlunosHorariosAtendimento
-                        .FirstOrDefaultAsync(hx => hx.Id == h.Id && hx.PersonalId == personal.Id);
-                    if (horarioExistente != null)
-                    {
-                        horarioExistente.DiaSemana = h.DiaSemana.Value;
-                        horarioExistente.HoraInicio = h.HoraInicio.Value;
-                        horarioExistente.HoraFim = h.HoraFim.Value;
-                        horarioExistente.DataAtualizacao = DateTime.Now;
-                    }
-                }
-                else
-                {
-                    // Adiciona novo horário
                     _context.AlunosHorariosAtendimento.Add(new AlunoHorarioAtendimento
                     {
                         PersonalId = personal.Id,
                         AlunoId = aluno.Id,
-                        DiaSemana = h.DiaSemana.Value,
+                        DiaSemana = dia,
                         HoraInicio = h.HoraInicio.Value,
                         HoraFim = h.HoraFim.Value,
                         Ativo = true,
@@ -781,173 +797,19 @@ namespace BulkingPro.Controllers
             if (personal == null) return Challenge();
 
             var dataSelecionada = data ?? DateTime.Today;
-            
-            var horarios = await _context.HorariosTrabalhoPersonal
-                .Where(h => h.PersonalId == personal.Id && h.Ativo)
-                .OrderBy(h => h.DiaSemana)
-                .ThenBy(h => h.HoraInicio)
-                .ToListAsync();
+            var diaSemana = (int)dataSelecionada.DayOfWeek;
 
-            var agendamentos = await _context.AgendamentosAlunos
+            // Busca os horários de atendimento dos alunos para o dia selecionado
+            var agendamentos = await _context.AlunosHorariosAtendimento
                 .Include(a => a.Aluno)
-                .Where(a => a.PersonalId == personal.Id && a.Status == 1)
-                .ToListAsync();
-
-            var alunosIds = await _context.PlanosTreino
-                .Where(p => p.TreinadorId == personal.Id)
-                .Select(p => p.AlunoId)
-                .Distinct()
-                .ToListAsync();
-            
-            var alunos = await _userManager.Users
-                .Where(u => alunosIds.Contains(u.Id) && u.Ativo)
+                .Where(a => a.PersonalId == personal.Id && a.Ativo && (int)a.DiaSemana == diaSemana)
+                .OrderBy(a => a.HoraInicio)
                 .ToListAsync();
 
             ViewBag.DataSelecionada = dataSelecionada;
-            ViewBag.Horarios = horarios;
             ViewBag.Agendamentos = agendamentos;
-            ViewBag.Alunos = alunos;
             
             return View();
-        }
-
-        public IActionResult DefinirHorarios()
-        {
-            return View(new DefinirHorarioViewModel());
-        }
-
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> DefinirHorarios(DefinirHorarioViewModel vm)
-        {
-            var personal = await _userManager.GetUserAsync(User);
-            if (personal == null) return Challenge();
-
-            if (!ModelState.IsValid) return View(vm);
-
-            var existe = await _context.HorariosTrabalhoPersonal
-                .AnyAsync(h => h.PersonalId == personal.Id && h.DiaSemana == vm.DiaSemana);
-
-            if (existe)
-            {
-                ModelState.AddModelError("", "Já existe um horário definido para este dia da semana.");
-                return View(vm);
-            }
-
-            var horario = new HorarioTrabalhoPersonal
-            {
-                PersonalId = personal.Id,
-                DiaSemana = vm.DiaSemana,
-                HoraInicio = vm.HoraInicio,
-                HoraFim = vm.HoraFim,
-                Ativo = vm.Ativo,
-                DataCriacao = DateTime.Now
-            };
-
-            _context.HorariosTrabalhoPersonal.Add(horario);
-            await _context.SaveChangesAsync();
-
-            TempData["Sucesso"] = "Horário de atendimento adicionado com sucesso!";
-            return RedirectToAction(nameof(Agenda));
-        }
-
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> RemoverHorario(int id)
-        {
-            var personal = await _userManager.GetUserAsync(User);
-            if (personal == null) return Challenge();
-
-            var horario = await _context.HorariosTrabalhoPersonal
-                .FirstOrDefaultAsync(h => h.Id == id && h.PersonalId == personal.Id);
-            
-            if (horario == null) return NotFound();
-
-            _context.HorariosTrabalhoPersonal.Remove(horario);
-            await _context.SaveChangesAsync();
-
-            TempData["Sucesso"] = "Horário removido com sucesso!";
-            return RedirectToAction(nameof(Agenda));
-        }
-
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> AgendarAula(AgendarAulaViewModel vm)
-        {
-            var personal = await _userManager.GetUserAsync(User);
-            if (personal == null) return Challenge();
-
-            if (!ModelState.IsValid)
-            {
-                TempData["Erro"] = "Preencha todos os campos corretamente.";
-                return RedirectToAction(nameof(Agenda));
-            }
-
-            var conflito = await _context.AgendamentosAlunos
-                .AnyAsync(a => a.PersonalId == personal.Id && 
-                               a.DiaSemana == vm.DataAgendamento.DayOfWeek &&
-                               a.Status == 1 &&
-                               ((vm.HoraInicio >= a.HoraInicio && vm.HoraInicio < a.HoraFim) ||
-                                (vm.HoraFim > a.HoraInicio && vm.HoraFim <= a.HoraFim)));
-
-            if (conflito)
-            {
-                TempData["Erro"] = "Já existe um agendamento neste horário.";
-                return RedirectToAction(nameof(Agenda));
-            }
-
-            var agendamento = new AgendamentoAluno
-            {
-                PersonalId = personal.Id,
-                AlunoId = vm.AlunoId,
-                HorarioTrabalhoId = 0,
-                DiaSemana = vm.DataAgendamento.DayOfWeek,
-                HoraInicio = vm.HoraInicio,
-                HoraFim = vm.HoraFim,
-                Status = 1,
-                DataCriacao = DateTime.Now
-            };
-
-            _context.AgendamentosAlunos.Add(agendamento);
-            await _context.SaveChangesAsync();
-
-            TempData["Sucesso"] = $"Aula agendada com sucesso para {vm.DataAgendamento:dd/MM/yyyy} às {vm.HoraInicio:hh\\:mm}";
-            return RedirectToAction(nameof(Agenda));
-        }
-
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelarAgendamento(int id)
-        {
-            var personal = await _userManager.GetUserAsync(User);
-            if (personal == null) return Challenge();
-
-            var agendamento = await _context.AgendamentosAlunos
-                .FirstOrDefaultAsync(a => a.Id == id && a.PersonalId == personal.Id);
-            
-            if (agendamento == null) return NotFound();
-
-            agendamento.Status = 0;
-            agendamento.DataAtualizacao = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            TempData["Sucesso"] = "Agendamento cancelado com sucesso!";
-            return RedirectToAction(nameof(Agenda));
-        }
-
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> ConcluirAgendamento(int id)
-        {
-            var personal = await _userManager.GetUserAsync(User);
-            if (personal == null) return Challenge();
-
-            var agendamento = await _context.AgendamentosAlunos
-                .FirstOrDefaultAsync(a => a.Id == id && a.PersonalId == personal.Id);
-            
-            if (agendamento == null) return NotFound();
-
-            agendamento.Status = 2;
-            agendamento.DataAtualizacao = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            TempData["Sucesso"] = "Atendimento concluído!";
-            return RedirectToAction(nameof(Agenda));
         }
 
         // ── Helpers ───────────────────────────────────────────────
