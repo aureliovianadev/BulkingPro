@@ -26,6 +26,7 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     public DbSet<HorarioTrabalhoPersonal> HorariosTrabalhoPersonal { get; set; }
     public DbSet<AgendamentoAluno> AgendamentosAlunos { get; set; }
     public DbSet<AlunoHorarioAtendimento> AlunosHorariosAtendimento { get; set; }
+    
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -152,17 +153,23 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .HasForeignKey(a => a.HorarioTrabalhoId)
             .OnDelete(DeleteBehavior.Restrict);
 
-            builder.Entity<AlunoHorarioAtendimento>()
-    .HasOne(h => h.Personal)
-    .WithMany()
-    .HasForeignKey(h => h.PersonalId)
-    .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<AlunoHorarioAtendimento>()
+            .HasOne(h => h.Personal)
+            .WithMany()
+            .HasForeignKey(h => h.PersonalId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-builder.Entity<AlunoHorarioAtendimento>()
-    .HasOne(h => h.Aluno)
-    .WithMany(u => u.HorariosAtendimento)
-    .HasForeignKey(h => h.AlunoId)
-    .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<AlunoHorarioAtendimento>()
+            .HasOne(h => h.Aluno)
+            .WithMany(u => u.HorariosAtendimento)
+            .HasForeignKey(h => h.AlunoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ⚠️ ÍNDICE ÚNICO PARA EVITAR CONFLITO DE HORÁRIOS ⚠️
+        builder.Entity<AlunoHorarioAtendimento>()
+            .HasIndex(a => new { a.PersonalId, a.DiaSemana, a.HoraInicio, a.HoraFim })
+            .IsUnique()
+            .HasDatabaseName("IX_AlunoHorarioAtendimento_Unique");
 
         // ── SEED: Categorias ─────────────────────────────────────
         builder.Entity<CategoriaMuscular>().HasData(
@@ -250,9 +257,5 @@ builder.Entity<AlunoHorarioAtendimento>()
             new Exercicio { Id = 42, Nome = "Elíptico", Descricao = "Cardio com baixo impacto articular", GrupoMuscularId = 10, InstrucoesExecucao = "Movimento elíptico contínuo.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) },
             new Exercicio { Id = 43, Nome = "Corda (Jump Rope)", Descricao = "Cardio de alta intensidade", GrupoMuscularId = 10, InstrucoesExecucao = "Pule a corda em ritmo constante.", Ativo = true, DataCriacao = new DateTime(2026, 4, 1) }
         );
-
-        // ── SEED: Roles ──────────────────────────────────────────
-        // Roles e usuários são criados via UserManager no Program.cs
-        // NÃO duplicar aqui para evitar conflito com o seed do Program.cs
     }
 }

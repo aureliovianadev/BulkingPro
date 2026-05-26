@@ -19,34 +19,36 @@
 
 <div class="card">
     <div class="card-body">
-        <form asp-action="EditarAluno" method="post">
+        <form asp-action="EditarAluno" method="post" id="form-editar">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
 
-            <!-- Dados Pessoais -->
             <div class="card-title"><i class="ti ti-user"></i> Dados Pessoais</div>
+
             <div class="form-row">
                 <div class="form-group" style="flex:2">
                     <label class="form-label" asp-for="NomeCompleto">Nome completo</label>
-                    <input class="form-control" asp-for="NomeCompleto" />
+                    <input class="form-control" asp-for="NomeCompleto" placeholder="Nome completo do aluno" />
                     <span asp-validation-for="NomeCompleto" class="field-validation-error"></span>
                 </div>
                 <div class="form-group" style="flex:1">
                     <label class="form-label" asp-for="Cpf">CPF</label>
-                    <input class="form-control" asp-for="Cpf" id="cpf" />
+                    <input class="form-control" asp-for="Cpf" id="cpf" placeholder="000.000.000-00" />
                 </div>
             </div>
+
             <div class="form-row">
                 <div class="form-group" style="flex:2">
                     <label class="form-label" asp-for="Email">E-mail</label>
-                    <input class="form-control" asp-for="Email" type="email" />
+                    <input class="form-control" asp-for="Email" type="email" placeholder="aluno@email.com" />
                     <span asp-validation-for="Email" class="field-validation-error"></span>
                 </div>
                 <div class="form-group" style="flex:1">
-                    <label class="form-label" asp-for="Telefone">Telefone (WhatsApp)</label>
-                    <input class="form-control" asp-for="Telefone" id="telefone" />
+                    <label class="form-label" asp-for="Telefone">WhatsApp</label>
+                    <input class="form-control" asp-for="Telefone" id="telefone" placeholder="(00) 00000-0000" />
                 </div>
             </div>
+
             <div class="form-group">
                 <label class="toggle-label">
                     <input type="checkbox" asp-for="Ativo" class="toggle-input" />
@@ -55,9 +57,8 @@
                 </label>
             </div>
 
-            <!-- Horários de Atendimento -->
-            <div class="card-title" style="margin-top:24px"><i class="ti ti-calendar-clock"></i> Horários de Atendimento</div>
-            <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Defina os horários e selecione os dias da semana</p>
+            <div class="card-title" style="margin-top:24px"><i class="ti ti-clock"></i> Horários de Atendimento</div>
+            <p class="subtitulo">Adicione os horários que este aluno irá treinar e selecione os dias</p>
 
             <div id="horarios-container">
                 @for (int i = 0; i < Model.HorariosAtendimento.Count; i++)
@@ -65,48 +66,73 @@
                     var h = Model.HorariosAtendimento[i];
                     <div class="horario-card" data-index="@i">
                         <div class="horario-header">
-                            <div class="form-row" style="align-items:center">
-                                <div class="form-group" style="flex:1">
-                                    <label class="form-label">Horário início</label>
-                                    <input type="time" name="HorariosAtendimento[@i].HoraInicio" class="form-control" value="@(h.HoraInicio.HasValue ? h.HoraInicio.Value.ToString(@"hh\:mm") : "")" />
+                            <div class="horario-titulo">
+                                <span><i class="ti ti-clock"></i> Horário @(i + 1)</span>
+                                <button type="button" class="btn-remove" onclick="removerHorario(this, @i)">×</button>
+                            </div>
+                            <div class="horario-inputs">
+                                <div class="time-field">
+                                    <label>De</label>
+                                    <input type="time" name="HorariosAtendimento[@i].HoraInicio" class="time-input" value="@(h.HoraInicio.HasValue ? h.HoraInicio.Value.ToString(@"hh\:mm") : "")" />
                                 </div>
-                                <div class="form-group" style="flex:1">
-                                    <label class="form-label">Horário fim</label>
-                                    <input type="time" name="HorariosAtendimento[@i].HoraFim" class="form-control" value="@(h.HoraFim.HasValue ? h.HoraFim.Value.ToString(@"hh\:mm") : "")" />
+                                <div class="time-field">
+                                    <label>Até</label>
+                                    <input type="time" name="HorariosAtendimento[@i].HoraFim" class="time-input" value="@(h.HoraFim.HasValue ? h.HoraFim.Value.ToString(@"hh\:mm") : "")" />
                                 </div>
-                                <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this, @i)">
-                                    <i class="ti ti-trash"></i>
-                                </button>
                             </div>
                         </div>
                         <div class="horario-dias">
                             <label class="dias-label">Dias da semana:</label>
-                            <div class="dias-grid">
-                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Domingo" @(h.Domingo ? "checked" : "") /> Dom</label>
-                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Segunda" @(h.Segunda ? "checked" : "") /> Seg</label>
-                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Terca" @(h.Terca ? "checked" : "") /> Ter</label>
-                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Quarta" @(h.Quarta ? "checked" : "") /> Qua</label>
-                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Quinta" @(h.Quinta ? "checked" : "") /> Qui</label>
-                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Sexta" @(h.Sexta ? "checked" : "") /> Sex</label>
-                                <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[@i].Sabado" @(h.Sabado ? "checked" : "") /> Sáb</label>
+                            <div class="dias-buttons">
+                                <label class="dia-btn">
+                                    <input type="checkbox" name="HorariosAtendimento[@i].Domingo" value="true" @(h.Domingo ? "checked" : "") />
+                                    <span>DOM</span>
+                                </label>
+                                <label class="dia-btn">
+                                    <input type="checkbox" name="HorariosAtendimento[@i].Segunda" value="true" @(h.Segunda ? "checked" : "") />
+                                    <span>SEG</span>
+                                </label>
+                                <label class="dia-btn">
+                                    <input type="checkbox" name="HorariosAtendimento[@i].Terca" value="true" @(h.Terca ? "checked" : "") />
+                                    <span>TER</span>
+                                </label>
+                                <label class="dia-btn">
+                                    <input type="checkbox" name="HorariosAtendimento[@i].Quarta" value="true" @(h.Quarta ? "checked" : "") />
+                                    <span>QUA</span>
+                                </label>
+                                <label class="dia-btn">
+                                    <input type="checkbox" name="HorariosAtendimento[@i].Quinta" value="true" @(h.Quinta ? "checked" : "") />
+                                    <span>QUI</span>
+                                </label>
+                                <label class="dia-btn">
+                                    <input type="checkbox" name="HorariosAtendimento[@i].Sexta" value="true" @(h.Sexta ? "checked" : "") />
+                                    <span>SEX</span>
+                                </label>
+                                <label class="dia-btn">
+                                    <input type="checkbox" name="HorariosAtendimento[@i].Sabado" value="true" @(h.Sabado ? "checked" : "") />
+                                    <span>SAB</span>
+                                </label>
                             </div>
                         </div>
                     </div>
                 }
             </div>
 
-            <button type="button" class="btn btn-ghost btn-sm" onclick="adicionarHorario()" style="margin-top:16px">
-                <i class="ti ti-plus"></i> Adicionar outro horário
+            <button type="button" class="btn-add-horario" onclick="adicionarHorario()">
+                <i class="ti ti-plus"></i> Adicionar horário
             </button>
 
             @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey(""))
             {
                 <div class="alert alert-danger" style="margin-top:16px">
-                    @foreach (var e in ViewData.ModelState[""]!.Errors) { <div>@e.ErrorMessage</div> }
+                    @foreach (var e in ViewData.ModelState[""]!.Errors)
+                    {
+                        <div>@e.ErrorMessage</div>
+                    }
                 </div>
             }
 
-            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:24px">
+            <button type="submit" class="btn-cadastrar">
                 <i class="ti ti-device-floppy"></i> Salvar alterações
             </button>
         </form>
@@ -116,49 +142,67 @@
 <script>
     let horarioIndex = @Model.HorariosAtendimento.Count;
 
+    function reindexarHorarios() {
+        const cards = document.querySelectorAll('.horario-card');
+        cards.forEach((card, i) => {
+            card.setAttribute('data-index', i);
+            card.querySelector('.horario-titulo span').innerHTML = 
+                `<i class="ti ti-clock"></i> Horário ${i + 1}`;
+            
+            card.querySelectorAll('input[name]').forEach(input => {
+                input.name = input.name.replace(/HorariosAtendimento\[\d+\]/, `HorariosAtendimento[${i}]`);
+            });
+        });
+        horarioIndex = cards.length;
+    }
+
     function adicionarHorario() {
+        reindexarHorarios();
         const container = document.getElementById('horarios-container');
-        const newCard = document.createElement('div');
-        newCard.className = 'horario-card';
-        newCard.setAttribute('data-index', horarioIndex);
-        newCard.innerHTML = `
+        const i = horarioIndex;
+        const card = document.createElement('div');
+        card.className = 'horario-card';
+        card.setAttribute('data-index', i);
+        card.innerHTML = `
             <div class="horario-header">
-                <div class="form-row" style="align-items:center">
-                    <div class="form-group" style="flex:1">
-                        <label class="form-label">Horário início</label>
-                        <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraInicio" class="form-control" />
+                <div class="horario-titulo">
+                    <span><i class="ti ti-clock"></i> Horário ${i + 1}</span>
+                    <button type="button" class="btn-remove" onclick="removerHorario(this, ${i})">×</button>
+                </div>
+                <div class="horario-inputs">
+                    <div class="time-field">
+                        <label>De</label>
+                        <input type="time" name="HorariosAtendimento[${i}].HoraInicio" class="time-input" />
                     </div>
-                    <div class="form-group" style="flex:1">
-                        <label class="form-label">Horário fim</label>
-                        <input type="time" name="HorariosAtendimento[${horarioIndex}].HoraFim" class="form-control" />
+                    <div class="time-field">
+                        <label>Até</label>
+                        <input type="time" name="HorariosAtendimento[${i}].HoraFim" class="time-input" />
                     </div>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removerHorario(this, ${horarioIndex})">
-                        <i class="ti ti-trash"></i>
-                    </button>
                 </div>
             </div>
             <div class="horario-dias">
                 <label class="dias-label">Dias da semana:</label>
-                <div class="dias-grid">
-                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Domingo" /> Dom</label>
-                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Segunda" /> Seg</label>
-                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Terca" /> Ter</label>
-                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Quarta" /> Qua</label>
-                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Quinta" /> Qui</label>
-                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Sexta" /> Sex</label>
-                    <label class="dia-checkbox"><input type="checkbox" name="HorariosAtendimento[${horarioIndex}].Sabado" /> Sáb</label>
+                <div class="dias-buttons">
+                    <label class="dia-btn"><input type="checkbox" name="HorariosAtendimento[${i}].Domingo" value="true" /><span>DOM</span></label>
+                    <label class="dia-btn"><input type="checkbox" name="HorariosAtendimento[${i}].Segunda" value="true" /><span>SEG</span></label>
+                    <label class="dia-btn"><input type="checkbox" name="HorariosAtendimento[${i}].Terca"   value="true" /><span>TER</span></label>
+                    <label class="dia-btn"><input type="checkbox" name="HorariosAtendimento[${i}].Quarta"  value="true" /><span>QUA</span></label>
+                    <label class="dia-btn"><input type="checkbox" name="HorariosAtendimento[${i}].Quinta"  value="true" /><span>QUI</span></label>
+                    <label class="dia-btn"><input type="checkbox" name="HorariosAtendimento[${i}].Sexta"   value="true" /><span>SEX</span></label>
+                    <label class="dia-btn"><input type="checkbox" name="HorariosAtendimento[${i}].Sabado"  value="true" /><span>SAB</span></label>
                 </div>
             </div>
         `;
-        container.appendChild(newCard);
+        container.appendChild(card);
         horarioIndex++;
     }
 
     function removerHorario(btn, index) {
         btn.closest('.horario-card').remove();
+        reindexarHorarios();
     }
 
-    // Máscara para CPF e Telefone
+    // Máscara para CPF
     document.getElementById('cpf')?.addEventListener('input', function(e) {
         let value = e.target.value.replace(/\D/g, '');
         if (value.length <= 11) {
@@ -169,6 +213,7 @@
         }
     });
 
+    // Máscara para Telefone
     document.getElementById('telefone')?.addEventListener('input', function(e) {
         let value = e.target.value.replace(/\D/g, '');
         if (value.length <= 11) {
@@ -180,56 +225,181 @@
 </script>
 
 <style>
+    .form-row { display: flex; gap: 14px; margin-bottom: 16px; }
+    .form-group { margin-bottom: 0; flex: 1; }
+
+    .subtitulo {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 20px;
+    }
+
     .horario-card {
         background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 12px;
         padding: 16px;
         margin-bottom: 16px;
     }
+
     .horario-header {
-        margin-bottom: 12px;
+        margin-bottom: 14px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
-    .horario-dias {
-        border-top: 1px solid rgba(255,255,255,0.06);
-        padding-top: 12px;
+
+    .horario-titulo {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gold);
+        margin-bottom: 14px;
     }
-    .dias-label {
-        font-size: 11px;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 10px;
+
+    .horario-titulo i { margin-right: 8px; }
+
+    .btn-remove {
+        background: rgba(238,25,32,0.15);
+        border: none;
+        color: #ee1920;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-remove:hover { background: rgba(238,25,32,0.3); }
+
+    .horario-inputs {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .time-field { flex: 1; }
+
+    .time-field label {
         display: block;
+        font-size: 10px;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        margin-bottom: 6px;
     }
-    .dias-grid {
+
+    .time-input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 10px 12px;
+        color: #fff;
+        font-size: 14px;
+        font-family: monospace;
+    }
+
+    .time-input:focus {
+        border-color: var(--red);
+        outline: none;
+    }
+
+    .dias-label {
+        display: block;
+        font-size: 10px;
+        color: rgba(255,255,255,0.4);
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .dias-buttons {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 8px;
     }
-    .dia-checkbox {
+
+    .dia-btn { cursor: pointer; }
+
+    .dia-btn input { display: none; }
+
+    .dia-btn span {
+        display: inline-block;
+        padding: 6px 14px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.6);
+        transition: all 0.2s;
+    }
+
+    .dia-btn input:checked + span {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+    }
+
+    .dia-btn:hover span { border-color: var(--red); }
+
+    .btn-add-horario {
+        width: 100%;
+        background: rgba(255,255,255,0.03);
+        border: 1px dashed rgba(255,255,255,0.2);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 12px;
+        color: var(--gold);
+        cursor: pointer;
+        transition: all 0.2s;
         display: flex;
         align-items: center;
-        gap: 4px;
-        font-size: 12px;
-        color: rgba(255,255,255,0.6);
-        cursor: pointer;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 4px;
     }
-    .dia-checkbox input {
-        width: 16px;
-        height: 16px;
-        cursor: pointer;
-        accent-color: var(--red);
+
+    .btn-add-horario:hover {
+        background: rgba(255,255,255,0.06);
+        border-color: var(--gold);
     }
+
+    .btn-cadastrar {
+        width: 100%;
+        background: linear-gradient(135deg, #ee1920 0%, #c41218 100%);
+        border: none;
+        border-radius: 30px;
+        padding: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        cursor: pointer;
+        margin-top: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-cadastrar:hover {
+        transform: translateY(-1px);
+        opacity: 0.9;
+    }
+
     .toggle-label {
         display: flex;
         align-items: center;
         gap: 10px;
         cursor: pointer;
     }
+
     .toggle-input {
         display: none;
     }
+
     .toggle-track {
         width: 40px;
         height: 22px;
@@ -238,6 +408,7 @@
         border: 1px solid rgba(255,255,255,0.15);
         position: relative;
     }
+
     .toggle-track::after {
         content: '';
         position: absolute;
@@ -249,17 +420,33 @@
         left: 2px;
         transition: all .2s;
     }
+
     .toggle-input:checked + .toggle-track {
         background: rgba(46,160,67,0.5);
         border-color: #2ea043;
     }
+
     .toggle-input:checked + .toggle-track::after {
         left: 20px;
         background: #2ea043;
     }
+
     .toggle-text {
         font-size: 13px;
         color: rgba(255,255,255,0.6);
+    }
+
+    .field-validation-error {
+        font-size: 11px;
+        color: #ee1920;
+        margin-top: 4px;
+        display: block;
+    }
+
+    @@media (max-width: 700px) {
+        .form-row { flex-direction: column; gap: 16px; }
+        .horario-inputs { flex-direction: column; gap: 10px; }
+        .dia-btn span { padding: 5px 10px; font-size: 10px; }
     }
 </style>
 

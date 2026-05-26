@@ -85,6 +85,73 @@ namespace BulkingPro.Controllers
             return View(lista);
         }
 
+        // ── Verificar Conflito de Horário (AJAX) ───────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerificarConflitoHorario([FromBody] List<HorarioFrontend> horarios)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Json(new { temConflito = false });
+
+            foreach (var h in horarios)
+            {
+                if (string.IsNullOrEmpty(h.HoraInicio) || string.IsNullOrEmpty(h.HoraFim)) continue;
+
+                if (!TimeSpan.TryParse(h.HoraInicio, out var horaInicio)) continue;
+                if (!TimeSpan.TryParse(h.HoraFim, out var horaFim)) continue;
+
+                var diasSelecionados = new List<DayOfWeek>();
+                if (h.Domingo) diasSelecionados.Add(DayOfWeek.Sunday);
+                if (h.Segunda) diasSelecionados.Add(DayOfWeek.Monday);
+                if (h.Terca) diasSelecionados.Add(DayOfWeek.Tuesday);
+                if (h.Quarta) diasSelecionados.Add(DayOfWeek.Wednesday);
+                if (h.Quinta) diasSelecionados.Add(DayOfWeek.Thursday);
+                if (h.Sexta) diasSelecionados.Add(DayOfWeek.Friday);
+                if (h.Sabado) diasSelecionados.Add(DayOfWeek.Saturday);
+
+                foreach (var dia in diasSelecionados)
+                {
+                    var conflito = await _context.AlunosHorariosAtendimento
+                        .AnyAsync(a => a.PersonalId == personal.Id 
+                            && a.DiaSemana == dia
+                            && a.Ativo == true
+                            && ((a.HoraInicio <= horaInicio && a.HoraFim > horaInicio)
+                                || (a.HoraInicio < horaFim && a.HoraFim >= horaFim)
+                                || (a.HoraInicio >= horaInicio && a.HoraFim <= horaFim)));
+
+                    if (conflito) return Json(new { temConflito = true });
+                }
+            }
+
+            return Json(new { temConflito = false });
+        }
+
+        // ── Verifica se existe conflito (método auxiliar) ───────────
+        private async Task<bool> ExisteConflitoHorario(string personalId, string alunoIdIgnorar, List<HorarioComDiasViewModel> horarios)
+        {
+            foreach (var h in horarios)
+            {
+                if (!h.HoraInicio.HasValue || !h.HoraFim.HasValue) continue;
+                
+                var diasSelecionados = h.DiasSelecionados();
+                
+                foreach (var dia in diasSelecionados)
+                {
+                    var conflito = await _context.AlunosHorariosAtendimento
+                        .AnyAsync(a => a.PersonalId == personalId 
+                            && a.AlunoId != alunoIdIgnorar
+                            && a.DiaSemana == dia
+                            && a.Ativo == true
+                            && ((a.HoraInicio <= h.HoraInicio.Value && a.HoraFim > h.HoraInicio.Value)
+                                || (a.HoraInicio < h.HoraFim.Value && a.HoraFim >= h.HoraFim.Value)
+                                || (a.HoraInicio >= h.HoraInicio.Value && a.HoraFim <= h.HoraFim.Value)));
+                    
+                    if (conflito) return true;
+                }
+            }
+            return false;
+        }
+
         // ── Cadastrar Aluno ───────────────────────────────────────
         public IActionResult CadastrarAluno() => View();
 
@@ -111,22 +178,33 @@ namespace BulkingPro.Controllers
             Console.WriteLine("ModelState válido: " + ModelState.IsValid);
 
             foreach (var key in ModelState.Keys)
-{
-    var state = ModelState[key];
-    if (state!.Errors.Count > 0)
-    {
-        foreach (var error in state.Errors)
-        {
-            Console.WriteLine($"ERRO no campo '{key}': {error.ErrorMessage}");
-        }
-    }
-}
+            {
+                var state = ModelState[key];
+                if (state!.Errors.Count > 0)
+                {
+                    foreach (var error in state.Errors)
+                    {
+                        Console.WriteLine($"ERRO no campo '{key}': {error.ErrorMessage}");
+                    }
+                }
+            }
             // ========== FIM DEBUG ==========
 
             if (!ModelState.IsValid) return View(vm);
 
             var personal = await _userManager.GetUserAsync(User);
             if (personal == null) return Challenge();
+
+            // ⚠️ VALIDAÇÃO DE CONFLITO DE HORÁRIO
+            if (vm.HorariosAtendimento != null && vm.HorariosAtendimento.Any())
+            {
+                var temConflito = await ExisteConflitoHorario(personal.Id, "", vm.HorariosAtendimento);
+                if (temConflito)
+                {
+                    ModelState.AddModelError("", "❌ Conflito de horário! Já existe um aluno agendado neste mesmo dia e horário.");
+                    return View(vm);
+                }
+            }
 
             var usuario = new Usuario
             {
@@ -253,6 +331,31 @@ namespace BulkingPro.Controllers
 
             var aluno = await _userManager.FindByIdAsync(vm.Id);
             if (aluno == null) return NotFound();
+
+            // ⚠️ VALIDAÇÃO DE CONFLITO DE HORÁRIO (ignorando o próprio aluno)
+            if (vm.HorariosAtendimento != null && vm.HorariosAtendimento.Any())
+            {
+                // Converte os horários do ViewModel para o tipo esperado
+                var horariosParaValidar = vm.HorariosAtendimento.Select(h => new HorarioComDiasViewModel
+                {
+                    HoraInicio = h.HoraInicio,
+                    HoraFim = h.HoraFim,
+                    Domingo = h.Domingo,
+                    Segunda = h.Segunda,
+                    Terca = h.Terca,
+                    Quarta = h.Quarta,
+                    Quinta = h.Quinta,
+                    Sexta = h.Sexta,
+                    Sabado = h.Sabado
+                }).ToList();
+
+                var temConflito = await ExisteConflitoHorario(personal.Id, vm.Id, horariosParaValidar);
+                if (temConflito)
+                {
+                    ModelState.AddModelError("", "❌ Conflito de horário! Já existe outro aluno agendado neste mesmo dia e horário.");
+                    return View(vm);
+                }
+            }
 
             // Atualiza dados do aluno
             aluno.NomeCompleto = vm.NomeCompleto;
@@ -861,5 +964,19 @@ namespace BulkingPro.Controllers
 
             ViewBag.Alunos = new SelectList(alunos, "Id", "NomeCompleto", selecionado);
         }
+    }
+
+    // ── Classe auxiliar para validação via AJAX ───────────────────
+    public class HorarioFrontend
+    {
+        public string HoraInicio { get; set; } = "";
+        public string HoraFim { get; set; } = "";
+        public bool Domingo { get; set; }
+        public bool Segunda { get; set; }
+        public bool Terca { get; set; }
+        public bool Quarta { get; set; }
+        public bool Quinta { get; set; }
+        public bool Sexta { get; set; }
+        public bool Sabado { get; set; }
     }
 }
