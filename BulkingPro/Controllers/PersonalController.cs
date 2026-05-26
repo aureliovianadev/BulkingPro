@@ -109,6 +109,18 @@ namespace BulkingPro.Controllers
                 }
             }
             Console.WriteLine("ModelState válido: " + ModelState.IsValid);
+
+            foreach (var key in ModelState.Keys)
+{
+    var state = ModelState[key];
+    if (state!.Errors.Count > 0)
+    {
+        foreach (var error in state.Errors)
+        {
+            Console.WriteLine($"ERRO no campo '{key}': {error.ErrorMessage}");
+        }
+    }
+}
             // ========== FIM DEBUG ==========
 
             if (!ModelState.IsValid) return View(vm);
