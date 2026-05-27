@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BulkingPro.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUniqueIndexHorario : Migration
+    public partial class AddComentarioTreino : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -42,7 +42,7 @@ namespace BulkingPro.Migrations
                 {
                     Id = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    NomeCompleto = table.Column<string>(type: "longtext", nullable: true)
+                    NomeCompleto = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Cpf = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -631,6 +631,38 @@ namespace BulkingPro.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "ComentariosTreino",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TreinoExercicioId = table.Column<int>(type: "int", nullable: false),
+                    AlunoId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Comentario = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Lido = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ComentariosTreino", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ComentariosTreino_AspNetUsers_AlunoId",
+                        column: x => x.AlunoId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ComentariosTreino_TreinoExercicios_TreinoExercicioId",
+                        column: x => x.TreinoExercicioId,
+                        principalTable: "TreinoExercicios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "ExecucoesTreinoExercicios",
                 columns: table => new
                 {
@@ -825,6 +857,16 @@ namespace BulkingPro.Migrations
                 column: "TreinadorId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ComentariosTreino_AlunoId",
+                table: "ComentariosTreino",
+                column: "AlunoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ComentariosTreino_TreinoExercicioId",
+                table: "ComentariosTreino",
+                column: "TreinoExercicioId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ExecucoesTreino_AlunoId",
                 table: "ExecucoesTreino",
                 column: "AlunoId");
@@ -914,6 +956,9 @@ namespace BulkingPro.Migrations
 
             migrationBuilder.DropTable(
                 name: "AvaliacoesFisicas");
+
+            migrationBuilder.DropTable(
+                name: "ComentariosTreino");
 
             migrationBuilder.DropTable(
                 name: "ExecucoesTreinoExercicios");

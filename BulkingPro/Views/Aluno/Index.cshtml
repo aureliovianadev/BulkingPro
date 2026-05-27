@@ -1,0 +1,151 @@
+@model BulkingPro.ViewModels.AlunoDashboardViewModel
+@{
+    Layout = "~/Views/Aluno/_AlunoLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Meu Dashboard</div>
+            <div class="topbar-sub">Acompanhe sua evolução</div>
+        </div>
+    </div>
+}
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon gold"><i class="ti ti-barbell"></i></div>
+        <div class="stat-val">@Model.TotalTreinosRealizados</div>
+        <div class="stat-label">Treinos realizados</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red"><i class="ti ti-calendar"></i></div>
+        <div class="stat-val">@Model.TotalTreinosPrevistos</div>
+        <div class="stat-label">Treinos previstos</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon green"><i class="ti ti-flame"></i></div>
+        <div class="stat-val">@Model.DiasConsecutivos</div>
+        <div class="stat-label">Dias consecutivos</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon blue"><i class="ti ti-chart-line"></i></div>
+        <div class="stat-val">
+            @if (Model.EvolucaoPeso.HasValue)
+            {
+                string sinal = Model.EvolucaoPeso.Value > 0 ? "+" : "";
+                @sinal@(Model.EvolucaoPeso.Value.ToString("F1"))<text> kg</text>
+            }
+            else
+            {
+                <span>—</span>
+            }
+        </div>
+        <div class="stat-label">Evolução de peso</div>
+    </div>
+</div>
+
+<!-- Gráfico de peso -->
+@if (Model.EvolucaoPesoData.Any())
+{
+    <div class="grafico-container">
+        <div class="card-title"><i class="ti ti-chart-line"></i> Evolução do Peso</div>
+        <canvas id="pesoChart" width="400" height="200"></canvas>
+    </div>
+}
+
+<!-- Gráfico de cargas -->
+@if (Model.EvolucaoCargaData.Any())
+{
+    <div class="grafico-container">
+        <div class="card-title"><i class="ti ti-trending-up"></i> Evolução de Carga (kg)</div>
+        <canvas id="cargaChart" width="400" height="200"></canvas>
+    </div>
+}
+
+<!-- Frequência semanal -->
+<div class="card">
+    <div class="card-body">
+        <div class="card-title"><i class="ti ti-calendar-week"></i> Minha semana de treinos</div>
+        <div class="semana-grid">
+            @foreach (var dia in Model.TreinosSemana)
+            {
+                <div class="dia-semana @(dia.Realizado ? "realizado" : "")">
+                    <div class="nome">@dia.Nome.Substring(0, 3)</div>
+                    <div class="status @(dia.Realizado ? "realizado" : "nao")">
+                        @if (dia.Realizado) { <i class="ti ti-circle-check"></i> } 
+                        else { <i class="ti ti-circle-x"></i> }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Ranking de cargas -->
+@if (Model.EvolucaoCargaData.Any())
+{
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title"><i class="ti ti-trophy"></i> Meus Recordes de Carga</div>
+            @foreach (var carga in Model.EvolucaoCargaData.OrderByDescending(c => c.Percentual).Take(5))
+            {
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.04);">
+                    <div>
+                        <div style="font-weight: 600;">@carga.ExercicioNome</div>
+                        <div style="font-size: 11px; color: var(--muted);">@carga.CargaInicial.ToString("F0") kg → @carga.CargaAtual.ToString("F0") kg</div>
+                    </div>
+                    <div style="color: #2ea043; font-weight: 700;">+@carga.Percentual.ToString("F0")%</div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        @if (Model.EvolucaoPesoData.Any())
+        {
+            <text>
+                const pesoCtx = document.getElementById('pesoChart').getContext('2d');
+                new Chart(pesoCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [@Html.Raw(string.Join(", ", Model.EvolucaoPesoData.Select(d => $"'{d.Data.ToString("dd/MM")}'")))],
+                        datasets: [{
+                            label: 'Peso (kg)',
+                            data: [@string.Join(", ", Model.EvolucaoPesoData.Select(d => d.Peso.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)))],
+                            borderColor: '#ee1920',
+                            backgroundColor: 'rgba(238,25,32,0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#fff' } } } }
+                });
+            </text>
+        }
+
+        @if (Model.EvolucaoCargaData.Any())
+        {
+            <text>
+                const cargaCtx = document.getElementById('cargaChart').getContext('2d');
+                new Chart(cargaCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [@Html.Raw(string.Join(", ", Model.EvolucaoCargaData.Select(c => $"'{c.ExercicioNome.Replace("'", "\\'")}'")))],
+                        datasets: [
+                            { label: 'Carga Inicial (kg)', data: [@string.Join(", ", Model.EvolucaoCargaData.Select(c => c.CargaInicial.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))], backgroundColor: 'rgba(196,168,122,0.6)' },
+                            { label: 'Carga Atual (kg)', data: [@string.Join(", ", Model.EvolucaoCargaData.Select(c => c.CargaAtual.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)))], backgroundColor: 'rgba(46,160,67,0.8)' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#fff' } } } }
+                });
+            </text>
+        }
+    </script>
+}

@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.AspNetCore.Identity;
 
 namespace BulkingPro.Models;
@@ -11,9 +12,7 @@ public class Usuario : IdentityUser
     public DateTime DataCriacao { get; set; }
     public DateTime? DataAtualizacao { get; set; }
     
-    // Horários de atendimento do aluno
     public ICollection<AlunoHorarioAtendimento> HorariosAtendimento { get; set; } = new List<AlunoHorarioAtendimento>();
-    
     public ICollection<PlanoTreino> PlanosComoTreinador { get; set; } = new List<PlanoTreino>();
     public ICollection<PlanoTreino> PlanosComoAluno { get; set; } = new List<PlanoTreino>();
 }

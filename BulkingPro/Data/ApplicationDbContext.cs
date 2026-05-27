@@ -26,7 +26,8 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     public DbSet<HorarioTrabalhoPersonal> HorariosTrabalhoPersonal { get; set; }
     public DbSet<AgendamentoAluno> AgendamentosAlunos { get; set; }
     public DbSet<AlunoHorarioAtendimento> AlunosHorariosAtendimento { get; set; }
-    
+    public DbSet<ComentarioTreino> ComentariosTreino { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -170,6 +171,12 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .HasIndex(a => new { a.PersonalId, a.DiaSemana, a.HoraInicio, a.HoraFim })
             .IsUnique()
             .HasDatabaseName("IX_AlunoHorarioAtendimento_Unique");
+
+        builder.Entity<ComentarioTreino>()
+            .HasOne(c => c.TreinoExercicio)
+            .WithMany()
+            .HasForeignKey(c => c.TreinoExercicioId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // ── SEED: Categorias ─────────────────────────────────────
         builder.Entity<CategoriaMuscular>().HasData(

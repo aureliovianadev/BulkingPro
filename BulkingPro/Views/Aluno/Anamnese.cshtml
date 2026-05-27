@@ -1,0 +1,88 @@
+@model BulkingPro.Models.AnamneseAluno
+@{
+    Layout = "~/Views/Aluno/_AlunoLayout.cshtml";
+    ViewData["Title"] = "Minha Anamnese";
+    ViewData["ActivePage"] = "Anamnese";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Minha Anamnese</div>
+            <div class="topbar-sub">Questionário de avaliação inicial</div>
+        </div>
+    </div>
+}
+
+@if (Model == null)
+{
+    <div style="text-align: center; padding: 60px 20px; color: var(--muted);">
+        <i class="ti ti-clipboard-text" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <p>Nenhuma anamnese registrada ainda.</p>
+        <p style="font-size: 12px;">Seu personal trainer irá preencher suas informações em breve.</p>
+    </div>
+}
+else
+{
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-trophy"></i> Histórico esportivo</div>
+                <div class="info-row"><span>Já treinou antes?</span><span>@(Model.JaTreinouAntes ? "Sim" : "Não")</span></div>
+                <div class="info-row"><span>Treina há quanto tempo?</span><span>@(Model.TempoTreinando ?? "—")</span></div>
+                <div class="info-row"><span>Tempo sem atividade?</span><span>@(Model.TempoSemAtividade ?? "—")</span></div>
+                <div class="info-row"><span>Objetivo</span><span>@(Model.Objetivo ?? "—")</span></div>
+                <div class="info-row"><span>Frequência semanal</span><span>@(Model.FrequenciaSemanal ?? "—")</span></div>
+                <div class="info-row"><span>Tempo por dia</span><span>@(Model.TempoPorDia ?? "—")</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-heart-rate-monitor"></i> Saúde</div>
+                <div class="info-row"><span>Doença/problema</span><span>@(Model.TemDoenca ? (Model.QualDoenca ?? "Sim") : "Não")</span></div>
+                <div class="info-row"><span>Limitação de movimento</span><span>@(Model.TemLimitacaoMovimento ? (Model.QualLimitacao ?? "Sim") : "Não")</span></div>
+                <div class="info-row"><span>Dor em movimento</span><span>@(Model.TemDorMovimento ? (Model.QualDor ?? "Sim") : "Não")</span></div>
+                <div class="info-row"><span>Cirurgias</span><span>@(Model.FezCirurgia ? (Model.QualCirurgia ?? "Sim") : "Não")</span></div>
+                <div class="info-row"><span>Medicamento controlado</span><span>@(Model.UsaMedicamento ? (Model.QualMedicamento ?? "Sim") : "Não")</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="card-title"><i class="ti ti-leaf"></i> Hábitos</div>
+                <div class="info-row"><span>Faz dieta?</span><span>@(Model.FazDieta ? (Model.TipoDieta ?? "Sim") : "Não")</span></div>
+                <div class="info-row"><span>Consumo de álcool</span><span>@(Model.ConsomeAlcool ?? "—")</span></div>
+                <div class="info-row"><span>Fuma?</span><span>@(Model.Fuma ? "Sim" : "Não")</span></div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ObservacoesGerais))
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="card-title"><i class="ti ti-notes"></i> Observações</div>
+                    <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.7;">@Model.ObservacoesGerais</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div style="margin-top: 16px; font-size: 11px; color: var(--muted);">
+        Avaliação de @Model.DataAvaliacao.ToString("dd/MM/yyyy")
+    </div>
+}
+
+<style>
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row span:first-child { font-size: 12px; color: rgba(255,255,255,0.4); }
+    .info-row span:last-child { font-size: 12px; color: rgba(255,255,255,0.8); font-weight: 500; text-align: right; max-width: 55%; }
+</style>

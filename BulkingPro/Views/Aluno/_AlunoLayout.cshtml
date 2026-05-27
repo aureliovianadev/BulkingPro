@@ -1,0 +1,335 @@
+@{
+    var nomeAluno = User.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value
+                 ?? User.FindFirst("NomeCompleto")?.Value
+                 ?? User.Identity?.Name
+                 ?? "Aluno";
+    var iniciais = nomeAluno.Length >= 2
+        ? nomeAluno[0].ToString().ToUpper() + nomeAluno.Split(' ').Last()[0].ToString().ToUpper()
+        : nomeAluno[0].ToString().ToUpper();
+}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — BulkingPro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --red:     #ee1920;
+            --red-dim: rgba(238,25,32,0.12);
+            --gold:    #c4a87a;
+            --bg:      #0a0a0a;
+            --bg2:     #0e0e10;
+            --bg3:     #131316;
+            --border:  rgba(255,255,255,0.07);
+            --text:    rgba(255,255,255,0.85);
+            --muted:   rgba(255,255,255,0.4);
+            --faint:   rgba(255,255,255,0.15);
+        }
+
+        html, body { height: 100%; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+        .aluno-wrap { display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar - IGUAL AO ADMIN */
+        .sidebar {
+            width: 230px; flex-shrink: 0;
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+        }
+        .sidebar-brand {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+        }
+        .sidebar-brand img { height: 100px; width: auto; object-fit: contain; }
+        .sidebar-brand-role { font-size: 10px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+
+        .sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .sidebar-nav::-webkit-scrollbar { width: 0; }
+
+        .nav-section {
+            font-size: 10px; color: rgba(255,255,255,0.22);
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 14px 18px 5px;
+        }
+        .nav-link {
+            display: flex; align-items: center; gap: 10px;
+            padding: 9px 18px;
+            color: var(--muted); font-size: 13px;
+            text-decoration: none;
+            border-left: 2px solid transparent;
+            transition: color .15s, background .15s;
+        }
+        .nav-link i { font-size: 17px; width: 20px; }
+        .nav-link:hover { color: rgba(255,255,255,.8); background: rgba(255,255,255,.03); }
+        .nav-link.active { color: #fff; background: var(--red-dim); border-left-color: var(--red); }
+
+        .sidebar-footer {
+            padding: 14px 18px;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: rgba(196,168,122,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 600; color: var(--gold);
+            flex-shrink: 0;
+        }
+        .avatar-name  { font-size: 12px; color: #fff; font-weight: 500; }
+        .avatar-email { font-size: 10px; color: var(--muted); }
+
+        /* Main */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        .topbar {
+            padding: 14px 28px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg2);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .topbar-title { font-size: 16px; font-weight: 600; color: #fff; }
+        .topbar-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+        .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+        .content::-webkit-scrollbar { width: 4px; }
+        .content::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+
+        /* Botões */
+        .btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 20px; padding: 8px 18px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; text-decoration: none; transition: opacity .15s; }
+        .btn:hover { opacity: .85; }
+        .btn-primary { background: var(--red); color: #fff; }
+        .btn-ghost   { background: rgba(255,255,255,.05); color: var(--muted); border: 1px solid var(--border); }
+        .btn-sm { padding: 5px 12px; font-size: 11px; }
+
+        /* Cards */
+        .card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; }
+        .card-body { padding: 18px; }
+
+        /* Stats grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+        .stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 18px; }
+        .stat-icon.gold  { background: rgba(196,168,122,.15); color: var(--gold); }
+        .stat-icon.red   { background: rgba(238,25,32,.15); color: var(--red); }
+        .stat-icon.blue  { background: rgba(56,139,253,.15); color: #388bfd; }
+        .stat-icon.green { background: rgba(46,160,67,.15); color: #2ea043; }
+        .stat-val   { font-size: 28px; font-weight: 600; color: #fff; line-height: 1; }
+        .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        /* Badge */
+        .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+        .badge-active   { background: rgba(46,160,67,.12);   color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
+        .badge-inactive { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); }
+
+        /* Alert */
+        .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+        .alert-success { background: rgba(46,160,67,.12); color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
+        .alert-danger  { background: rgba(238,25,32,.12); color: var(--red); border: 1px solid rgba(238,25,32,.25); }
+
+        /* Tabela treinos */
+        .treino-dia { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+        .treino-header { padding: 12px 18px; background: rgba(255,255,255,.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .treino-nome { font-size: 14px; font-weight: 600; color: #fff; }
+        .treino-badge { font-size: 10px; padding: 3px 10px; border-radius: 20px; }
+        .treino-badge.hoje { background: rgba(196,168,122,.2); color: var(--gold); }
+        
+        .exercicio-linha { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,.04); }
+        .exercicio-num { width: 26px; height: 26px; border-radius: 50%; background: rgba(196,168,122,.15); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+        .exercicio-info { flex: 1; }
+        .exercicio-nome { font-size: 13px; font-weight: 600; color: #fff; }
+        .exercicio-grupo { font-size: 10px; color: var(--muted); margin-top: 2px; }
+        .exercicio-detalhes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .detalhe-chip { font-size: 10px; background: rgba(255,255,255,.04); padding: 2px 8px; border-radius: 20px; color: rgba(255,255,255,.6); }
+        .btn-comentario { background: none; border: none; color: var(--gold); cursor: pointer; font-size: 16px; padding: 4px; border-radius: 50%; }
+        .comentario-texto { font-size: 11px; color: var(--gold); margin-top: 6px; padding: 6px 10px; background: rgba(196,168,122,.08); border-radius: 8px; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 16px; font-weight: 600; color: #fff; }
+        .modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; }
+        .modal-textarea { width: 100%; background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; resize: vertical; min-height: 100px; }
+        
+        .grafico-container { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        canvas { max-height: 250px; width: 100%; }
+
+        .semana-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 12px; }
+        .dia-semana { text-align: center; padding: 8px; border-radius: 10px; background: rgba(255,255,255,.03); border: 1px solid var(--border); }
+        .dia-semana.realizado { background: rgba(46,160,67,.15); border-color: #2ea043; }
+        .dia-semana .nome { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+        .dia-semana .status { font-size: 18px; margin-top: 4px; }
+        .dia-semana .status.realizado { color: #2ea043; }
+        
+        .medidas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+        .medida-item { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 12px; }
+        .medida-label { font-size: 9px; color: rgba(255,255,255,0.3); text-transform: uppercase; margin-bottom: 4px; }
+        .medida-val { font-size: 14px; font-weight: 600; color: #fff; }
+
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .info-row span:first-child { font-size: 11px; color: rgba(255,255,255,0.4); }
+        .info-row span:last-child { font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 500; }
+
+        @@media (max-width: 900px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .semana-grid { grid-template-columns: repeat(7, 1fr); }
+        }
+    </style>
+</head>
+<body>
+<div class="aluno-wrap">
+
+    <!-- Sidebar - IGUAL AO ADMIN -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
+            <div class="sidebar-brand-role">Aluno</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">Principal</div>
+            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Dashboard" ? "active" : "")"
+               asp-controller="Aluno" asp-action="Index">
+                <i class="ti ti-layout-dashboard"></i> Dashboard
+            </a>
+            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Treinos" ? "active" : "")"
+               asp-controller="Aluno" asp-action="Treinos">
+                <i class="ti ti-barbell"></i> Meus Treinos
+            </a>
+
+            <div class="nav-section">Avaliação</div>
+            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Medidas" ? "active" : "")"
+               asp-controller="Aluno" asp-action="Medidas">
+                <i class="ti ti-ruler"></i> Minhas Medidas
+            </a>
+            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Anamnese" ? "active" : "")"
+               asp-controller="Aluno" asp-action="Anamnese">
+                <i class="ti ti-clipboard-text"></i> Minha Anamnese
+            </a>
+
+            <div class="nav-section">Conta</div>
+            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Configuracoes" ? "active" : "")"
+               asp-controller="Account" asp-action="Configuracoes">
+                <i class="ti ti-settings"></i> Minha conta
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="avatar">@iniciais</div>
+            <div style="flex:1;min-width:0">
+                <div class="avatar-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@nomeAluno</div>
+                <div class="avatar-email">Aluno</div>
+            </div>
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
+                @Html.AntiForgeryToken()
+                <button type="submit" title="Sair" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.3);padding:4px;border-radius:6px;transition:color .15s" onmouseover="this.style.color='#ee1920'" onmouseout="this.style.color='rgba(255,255,255,0.3)'">
+                    <i class="ti ti-logout" style="font-size:18px"></i>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Conteúdo principal -->
+    <div class="main">
+        @RenderSection("Topbar", required: false)
+        <div class="content">
+            @if (TempData["Sucesso"] != null)
+            {
+                <div class="alert alert-success">
+                    <i class="ti ti-circle-check"></i> @TempData["Sucesso"]
+                </div>
+            }
+            @if (TempData["Erro"] != null)
+            {
+                <div class="alert alert-danger">
+                    <i class="ti ti-alert-circle"></i> @TempData["Erro"]
+                </div>
+            }
+            @RenderBody()
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal de comentário -->
+<div id="comentarioModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Comentário: <span id="modalNomeExercicio"></span></div>
+            <button class="modal-close" onclick="fecharModal()">×</button>
+        </div>
+        <textarea id="modalComentario" class="modal-textarea" placeholder="Digite seu comentário sobre este exercício... Seu personal trainer será notificado."></textarea>
+        <input type="hidden" id="modalTreinoExercicioId" />
+        <div style="display:flex; gap:10px; margin-top:16px;">
+            <button class="btn btn-primary" style="flex:1" onclick="enviarComentario()">Enviar comentário</button>
+            <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModal(treinoExercicioId, nomeExercicio, comentarioAtual) {
+        document.getElementById('modalTreinoExercicioId').value = treinoExercicioId;
+        document.getElementById('modalNomeExercicio').innerText = nomeExercicio;
+        document.getElementById('modalComentario').value = comentarioAtual || '';
+        document.getElementById('comentarioModal').style.display = 'flex';
+    }
+    
+    function fecharModal() {
+        document.getElementById('comentarioModal').style.display = 'none';
+    }
+    
+    async function enviarComentario() {
+        const treinoExercicioId = parseInt(document.getElementById('modalTreinoExercicioId').value);
+        const comentario = document.getElementById('modalComentario').value;
+        
+        const response = await fetch('/Aluno/EnviarComentario', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ treinoExercicioId: treinoExercicioId, comentario: comentario })
+        });
+        
+        const result = await response.json();
+        if (result.sucesso) {
+            fecharModal();
+            location.reload();
+        } else {
+            alert('Erro ao enviar comentário');
+        }
+    }
+    
+    async function marcarTreinoRealizado(treinoId) {
+        if (!confirm('Marcar este treino como realizado hoje?')) return;
+        
+        const response = await fetch('/Aluno/MarcarTreinoRealizado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ treinoId: treinoId })
+        });
+        
+        const result = await response.json();
+        if (result.sucesso) {
+            location.reload();
+        } else {
+            alert(result.erro || 'Erro ao marcar treino');
+        }
+    }
+</script>
+@RenderSection("Scripts", required: false)
+</body>
+</html>

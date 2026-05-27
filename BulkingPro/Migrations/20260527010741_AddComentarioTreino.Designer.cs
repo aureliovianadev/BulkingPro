@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BulkingPro.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260526012703_AddUniqueIndexHorario")]
-    partial class AddUniqueIndexHorario
+    [Migration("20260527010741_AddComentarioTreino")]
+    partial class AddComentarioTreino
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -325,6 +325,39 @@ namespace BulkingPro.Migrations
                             Id = 3,
                             Nome = "Aeróbico"
                         });
+                });
+
+            modelBuilder.Entity("BulkingPro.Models.ComentarioTreino", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AlunoId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Comentario")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("DataCriacao")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("Lido")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("TreinoExercicioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AlunoId");
+
+                    b.HasIndex("TreinoExercicioId");
+
+                    b.ToTable("ComentariosTreino");
                 });
 
             modelBuilder.Entity("BulkingPro.Models.ExecucaoTreino", b =>
@@ -1205,6 +1238,7 @@ namespace BulkingPro.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("NomeCompleto")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("NormalizedEmail")
@@ -1463,6 +1497,25 @@ namespace BulkingPro.Migrations
                     b.Navigation("Aluno");
 
                     b.Navigation("Treinador");
+                });
+
+            modelBuilder.Entity("BulkingPro.Models.ComentarioTreino", b =>
+                {
+                    b.HasOne("BulkingPro.Models.Usuario", "Aluno")
+                        .WithMany()
+                        .HasForeignKey("AlunoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BulkingPro.Models.TreinoExercicio", "TreinoExercicio")
+                        .WithMany()
+                        .HasForeignKey("TreinoExercicioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Aluno");
+
+                    b.Navigation("TreinoExercicio");
                 });
 
             modelBuilder.Entity("BulkingPro.Models.ExecucaoTreino", b =>

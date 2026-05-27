@@ -1,0 +1,100 @@
+@model List<BulkingPro.Models.AvaliacaoFisica>
+@{
+    Layout = "~/Views/Aluno/_AlunoLayout.cshtml";
+    ViewData["Title"] = "Minhas Medidas";
+    ViewData["ActivePage"] = "Medidas";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Minhas Medidas</div>
+            <div class="topbar-sub">Histórico de avaliações físicas</div>
+        </div>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div style="text-align: center; padding: 60px 20px; color: var(--muted);">
+        <i class="ti ti-ruler" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <p>Nenhuma avaliação física registrada ainda.</p>
+    </div>
+}
+else
+{
+    <!-- Gráfico de IMC -->
+    <div class="grafico-container">
+        <div class="card-title"><i class="ti ti-chart-line"></i> Evolução do IMC</div>
+        <canvas id="imcChart" width="400" height="200"></canvas>
+    </div>
+
+    @foreach (var av in Model)
+    {
+        decimal? imc = (av.Peso.HasValue && av.Altura.HasValue && av.Altura > 0)
+            ? Math.Round(av.Peso.Value / (av.Altura.Value * av.Altura.Value), 2)
+            : null;
+        
+        <div class="card" style="margin-bottom: 16px;">
+            <div class="card-body">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-size: 16px; font-weight: 600;">@av.DataAvaliacao.ToString("dd/MM/yyyy")</div>
+                        @if (imc.HasValue)
+                        {
+                            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">IMC: @imc.Value.ToString("F1")</div>
+                        }
+                    </div>
+                </div>
+                
+                <div class="medidas-grid">
+                    @if (av.Altura.HasValue) { <div class="medida-item"><div class="medida-label">Altura</div><div class="medida-val">@av.Altura.Value.ToString("F2") m</div></div> }
+                    @if (av.Peso.HasValue) { <div class="medida-item"><div class="medida-label">Peso</div><div class="medida-val">@av.Peso.Value.ToString("F1") kg</div></div> }
+                    @if (av.Pescoco.HasValue) { <div class="medida-item"><div class="medida-label">Pescoço</div><div class="medida-val">@av.Pescoco.Value.ToString("F1") cm</div></div> }
+                    @if (av.Ombro.HasValue) { <div class="medida-item"><div class="medida-label">Ombro</div><div class="medida-val">@av.Ombro.Value.ToString("F1") cm</div></div> }
+                    @if (av.ToraxContrai.HasValue) { <div class="medida-item"><div class="medida-label">Tórax (cont.)</div><div class="medida-val">@av.ToraxContrai.Value.ToString("F1") cm</div></div> }
+                    @if (av.BicepsDireito.HasValue) { <div class="medida-item"><div class="medida-label">Bíceps D</div><div class="medida-val">@av.BicepsDireito.Value.ToString("F1") cm</div></div> }
+                    @if (av.BicepsEsquerdo.HasValue) { <div class="medida-item"><div class="medida-label">Bíceps E</div><div class="medida-val">@av.BicepsEsquerdo.Value.ToString("F1") cm</div></div> }
+                    @if (av.Cintura.HasValue) { <div class="medida-item"><div class="medida-label">Cintura</div><div class="medida-val">@av.Cintura.Value.ToString("F1") cm</div></div> }
+                    @if (av.Quadril.HasValue) { <div class="medida-item"><div class="medida-label">Quadril</div><div class="medida-val">@av.Quadril.Value.ToString("F1") cm</div></div> }
+                    @if (av.CoxaDireita.HasValue) { <div class="medida-item"><div class="medida-label">Coxa D</div><div class="medida-val">@av.CoxaDireita.Value.ToString("F1") cm</div></div> }
+                    @if (av.PanturrilhaDireita.HasValue) { <div class="medida-item"><div class="medida-label">Panturrilha D</div><div class="medida-val">@av.PanturrilhaDireita.Value.ToString("F1") cm</div></div> }
+                </div>
+                
+                @if (!string.IsNullOrWhiteSpace(av.Observacoes))
+                {
+                    <div style="margin-top: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 12px; color: var(--muted);">
+                        <i class="ti ti-notes"></i> @av.Observacoes
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script>
+        @if (Model.Any() && Model.Where(a => a.Peso.HasValue && a.Altura.HasValue).Any())
+        {
+            var avaliacoesComImc = Model.Where(a => a.Peso.HasValue && a.Altura.HasValue).OrderBy(a => a.DataAvaliacao).ToList();
+            <text>
+                const imcCtx = document.getElementById('imcChart').getContext('2d');
+                new Chart(imcCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [@Html.Raw(string.Join(", ", avaliacoesComImc.Select(a => $"'{a.DataAvaliacao.ToString("dd/MM")}'")))],
+                        datasets: [{
+                            label: 'IMC',
+                            data: [@string.Join(", ", avaliacoesComImc.Select(a => Math.Round(a.Peso.Value / (a.Altura.Value * a.Altura.Value), 2).ToString(System.Globalization.CultureInfo.InvariantCulture)))],
+                            borderColor: '#c4a87a',
+                            backgroundColor: 'rgba(196,168,122,0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#fff' } } } }
+                });
+            </text>
+        }
+    </script>
+}

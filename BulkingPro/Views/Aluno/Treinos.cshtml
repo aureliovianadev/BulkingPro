@@ -1,0 +1,80 @@
+@model BulkingPro.ViewModels.TreinoAlunoViewModel
+@{
+    Layout = "~/Views/Aluno/_AlunoLayout.cshtml";
+    ViewData["Title"] = "Meus Treinos";
+    ViewData["ActivePage"] = "Treinos";
+}
+
+@section Topbar {
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Meus Treinos</div>
+            <div class="topbar-sub">@(Model.PlanoAtivo?.Titulo ?? "Plano ativo")</div>
+        </div>
+    </div>
+}
+
+@if (ViewBag.Mensagem != null)
+{
+    <div class="alert alert-warning">
+        <i class="ti ti-info-circle"></i> @ViewBag.Mensagem
+    </div>
+}
+
+@foreach (var dia in Model.DiasTreino)
+{
+    <div class="treino-dia">
+        <div class="treino-header">
+            <div class="treino-nome">@dia.Nome</div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                @if (dia.Hoje)
+                {
+                    <span class="treino-badge hoje"><i class="ti ti-calendar"></i> Hoje</span>
+                }
+                @if (!dia.Realizado && dia.Hoje)
+                {
+                    <button class="btn btn-primary btn-sm" onclick="marcarTreinoRealizado(@dia.TreinoId)">
+                        <i class="ti ti-check"></i> Marcar realizado
+                    </button>
+                }
+            </div>
+        </div>
+        <div>
+            @foreach (var ex in dia.Exercicios)
+            {
+                <div class="exercicio-linha">
+                    <div class="exercicio-num">@ex.Ordem</div>
+                    <div class="exercicio-info">
+                        <div class="exercicio-nome">@ex.NomeExercicio</div>
+                        <div class="exercicio-grupo">@ex.GrupoMuscular</div>
+                        <div class="exercicio-detalhes">
+                            <span class="detalhe-chip"><i class="ti ti-repeat"></i> @ex.Series séries</span>
+                            <span class="detalhe-chip"><i class="ti ti-refresh"></i> @ex.RepeticoesOuTempo</span>
+                            @if (ex.Carga.HasValue) { <span class="detalhe-chip"><i class="ti ti-barbell"></i> @ex.Carga.Value.ToString("F0") kg</span> }
+                            @if (ex.Descanso.HasValue) { <span class="detalhe-chip"><i class="ti ti-hourglass"></i> @ex.Descanso s</span> }
+                        </div>
+                        @if (!string.IsNullOrEmpty(ex.Observacoes))
+                        {
+                            <div style="font-size: 11px; color: var(--muted); margin-top: 6px;"><i class="ti ti-notes"></i> @ex.Observacoes</div>
+                        }
+                        @if (!string.IsNullOrEmpty(ex.MeuComentario))
+                        {
+                            <div class="comentario-texto"><i class="ti ti-message"></i> @ex.MeuComentario</div>
+                        }
+                    </div>
+                    <button class="btn-comentario" onclick="abrirModal(@ex.TreinoExercicioId, '@ex.NomeExercicio.Replace("'", "\\'")', '@(ex.MeuComentario?.Replace("'", "\\'") ?? "")')">
+                        <i class="ti ti-message"></i>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (!Model.DiasTreino.Any())
+{
+    <div style="text-align: center; padding: 60px 20px; color: var(--muted);">
+        <i class="ti ti-barbell-off" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+        <p>Nenhum treino cadastrado ainda.</p>
+    </div>
+}

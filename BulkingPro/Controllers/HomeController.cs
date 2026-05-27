@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using BulkingPro.Models;
 
 namespace BulkingPro.Controllers;
@@ -19,7 +20,9 @@ public class HomeController : Controller
         if (User.IsInRole("Moderador"))
             return RedirectToAction("Index", "Personal");
 
-        // Aluno — área futura
+        if (User.IsInRole("Usuario"))
+            return RedirectToAction("Index", "Aluno");  // <-- ALTERADO!
+
         return RedirectToAction("Login", "Account");
     }
 
