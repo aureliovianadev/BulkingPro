@@ -49,9 +49,28 @@
                         <div class="exercicio-grupo">@ex.GrupoMuscular</div>
                         <div class="exercicio-detalhes">
                             <span class="detalhe-chip"><i class="ti ti-repeat"></i> @ex.Series séries</span>
-                            <span class="detalhe-chip"><i class="ti ti-refresh"></i> @ex.RepeticoesOuTempo</span>
-                            @if (ex.Carga.HasValue) { <span class="detalhe-chip"><i class="ti ti-barbell"></i> @ex.Carga.Value.ToString("F0") kg</span> }
-                            @if (ex.Descanso.HasValue) { <span class="detalhe-chip"><i class="ti ti-hourglass"></i> @ex.Descanso s</span> }
+                            
+                            <!-- Exibe Repetições OU Tempo baseado no que foi preenchido -->
+                            @if (!string.IsNullOrEmpty(ex.RepeticoesOuTempo))
+                            {
+                                if (ex.RepeticoesOuTempo.Contains("min") || ex.RepeticoesOuTempo.Contains("s"))
+                                {
+                                    <span class="detalhe-chip"><i class="ti ti-clock"></i> @ex.RepeticoesOuTempo</span>
+                                }
+                                else
+                                {
+                                    <span class="detalhe-chip"><i class="ti ti-refresh"></i> @ex.RepeticoesOuTempo reps</span>
+                                }
+                            }
+
+                            @if (ex.Carga.HasValue) 
+                            { 
+                                <span class="detalhe-chip"><i class="ti ti-barbell"></i> @ex.Carga.Value.ToString("F0") kg</span> 
+                            }
+                            @if (ex.Descanso.HasValue) 
+                            { 
+                                <span class="detalhe-chip"><i class="ti ti-hourglass"></i> @ex.Descanso s</span> 
+                            }
                         </div>
                         @if (!string.IsNullOrEmpty(ex.Observacoes))
                         {

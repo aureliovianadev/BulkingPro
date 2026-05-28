@@ -49,9 +49,9 @@ public class AlunoController : Controller
 
         var pesoInicial = evolucaoPeso.FirstOrDefault()?.Peso;
         var pesoAtual = evolucaoPeso.LastOrDefault()?.Peso;
-       decimal? evolucaoPesoKg = (pesoAtual.HasValue && pesoInicial.HasValue) 
-    ? pesoAtual.Value - pesoInicial.Value 
-    : (decimal?)null;
+        decimal? evolucaoPesoKg = (pesoAtual.HasValue && pesoInicial.HasValue) 
+            ? pesoAtual.Value - pesoInicial.Value 
+            : (decimal?)null;
 
         // --- Aumento de carga nos exercícios (histórico das execuções) ---
         var cargasEvolucao = new List<CargaEvolucao>();
@@ -96,10 +96,6 @@ public class AlunoController : Controller
         }
 
         // --- Constância nos treinos (últimos 30 dias) ---
-        var ultimos30Dias = Enumerable.Range(0, 30)
-            .Select(i => DateTime.Today.AddDays(-i))
-            .ToList();
-
         var treinosRealizados = await _context.ExecucoesTreino
             .Where(e => e.AlunoId == aluno.Id && e.Concluido)
             .Select(e => e.DataExecucao.Date)
@@ -200,18 +196,20 @@ public class AlunoController : Controller
             var exercicios = new List<ExercicioTreinoAlunoViewModel>();
             foreach (var te in treino.TreinoExercicios.OrderBy(te => te.Ordem))
             {
-                var realizadoHoje = treinosRealizadosHoje.Contains(te.Id);
-                
+                // ⭐ CORREÇÃO: Exibe baseado no que foi SALVO, não no tipo do exercício
                 string repsOuTempo;
-                if (te.Exercicio?.TipoExecucao == TipoExecucao.Tempo && te.TempoExecucaoSegundos.HasValue)
+                
+                // Se tem tempo salvo (em segundos), exibe como tempo
+                if (te.TempoExecucaoSegundos.HasValue && te.TempoExecucaoSegundos.Value > 0)
                 {
                     var minutos = te.TempoExecucaoSegundos.Value / 60;
                     var segundos = te.TempoExecucaoSegundos.Value % 60;
                     repsOuTempo = minutos > 0 ? $"{minutos}min {segundos}s" : $"{segundos}s";
                 }
+                // Senão, exibe as repetições
                 else
                 {
-                    repsOuTempo = te.RepeticoesPlanejadas;
+                    repsOuTempo = string.IsNullOrEmpty(te.RepeticoesPlanejadas) ? "—" : te.RepeticoesPlanejadas;
                 }
 
                 exercicios.Add(new ExercicioTreinoAlunoViewModel
@@ -237,7 +235,7 @@ public class AlunoController : Controller
                 OrdemDia = treino.OrdemDia,
                 DiaSemana = diaSemanaTreino,
                 Hoje = isHoje,
-                Realizado = false, // TODO: verificar se o treino completo foi realizado
+                Realizado = false,
                 Exercicios = exercicios
             });
         }
@@ -322,8 +320,10 @@ public class AlunoController : Controller
         var aluno = await _userManager.GetUserAsync(User);
         if (aluno == null) return Unauthorized();
 
+        // Carrega o treino com os exercícios e suas informações
         var treino = await _context.Treinos
             .Include(t => t.TreinoExercicios)
+                .ThenInclude(te => te.Exercicio)
             .FirstOrDefaultAsync(t => t.Id == vm.TreinoId);
 
         if (treino == null) return NotFound();
@@ -349,15 +349,30 @@ public class AlunoController : Controller
         _context.ExecucoesTreino.Add(execucao);
         await _context.SaveChangesAsync();
 
-        // Registrar cada exercício como concluído (com carga planejada)
+        // Registrar cada exercício baseado no que foi salvo (tempo ou repetições)
         foreach (var te in treino.TreinoExercicios)
         {
+            string repeticoesFeitas;
+            
+            // ⭐ Se tem tempo salvo, registra como tempo
+            if (te.TempoExecucaoSegundos.HasValue && te.TempoExecucaoSegundos.Value > 0)
+            {
+                var minutos = te.TempoExecucaoSegundos.Value / 60;
+                var segundos = te.TempoExecucaoSegundos.Value % 60;
+                repeticoesFeitas = minutos > 0 ? $"{minutos}min" : $"{segundos}s";
+            }
+            else
+            {
+                // Senão, usa as repetições
+                repeticoesFeitas = string.IsNullOrEmpty(te.RepeticoesPlanejadas) ? "12" : te.RepeticoesPlanejadas;
+            }
+
             _context.ExecucoesTreinoExercicios.Add(new ExecucaoTreinoExercicio
             {
                 ExecucaoTreinoId = execucao.Id,
                 TreinoExercicioId = te.Id,
                 SeriesFeitas = te.SeriesPlanejadas,
-                RepeticoesFeitas = te.RepeticoesPlanejadas,
+                RepeticoesFeitas = repeticoesFeitas,
                 CargaUsada = te.CargaPlanejada,
                 Concluido = true,
                 Observacoes = ""

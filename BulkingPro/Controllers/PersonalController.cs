@@ -39,7 +39,6 @@ namespace BulkingPro.Controllers
                 TotalAlunos = alunosIds.Count,
                 TotalPlanos = await _context.PlanosTreino.CountAsync(p => p.TreinadorId == personal.Id),
                 PlanosAtivos = await _context.PlanosTreino.CountAsync(p => p.TreinadorId == personal.Id && p.Status == 1),
-
                 UltimosAlunos = await _userManager.Users
                     .Where(u => alunosIds.Contains(u.Id))
                     .Take(5)
@@ -158,44 +157,11 @@ namespace BulkingPro.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> CadastrarAluno(CriarPersonalViewModel vm)
         {
-            // ========== DEBUG ==========
-            Console.WriteLine("=== CADASTRANDO ALUNO ===");
-            Console.WriteLine($"Nome: {vm.NomeCompleto}");
-            Console.WriteLine($"Email: {vm.Email}");
-            Console.WriteLine($"CPF: {vm.Cpf}");
-            Console.WriteLine($"Telefone: {vm.Telefone}");
-            Console.WriteLine($"HorariosCount: {vm.HorariosAtendimento?.Count ?? 0}");
-            
-            if (vm.HorariosAtendimento != null)
-            {
-                for (int i = 0; i < vm.HorariosAtendimento.Count; i++)
-                {
-                    var h = vm.HorariosAtendimento[i];
-                    Console.WriteLine($"Horario {i}: {h.HoraInicio} - {h.HoraFim}");
-                    Console.WriteLine($"  Seg:{h.Segunda}, Ter:{h.Terca}, Qua:{h.Quarta}, Qui:{h.Quinta}, Sex:{h.Sexta}, Sab:{h.Sabado}, Dom:{h.Domingo}");
-                }
-            }
-            Console.WriteLine("ModelState válido: " + ModelState.IsValid);
-
-            foreach (var key in ModelState.Keys)
-            {
-                var state = ModelState[key];
-                if (state!.Errors.Count > 0)
-                {
-                    foreach (var error in state.Errors)
-                    {
-                        Console.WriteLine($"ERRO no campo '{key}': {error.ErrorMessage}");
-                    }
-                }
-            }
-            // ========== FIM DEBUG ==========
-
             if (!ModelState.IsValid) return View(vm);
 
             var personal = await _userManager.GetUserAsync(User);
             if (personal == null) return Challenge();
 
-            // ⚠️ VALIDAÇÃO DE CONFLITO DE HORÁRIO
             if (vm.HorariosAtendimento != null && vm.HorariosAtendimento.Any())
             {
                 var temConflito = await ExisteConflitoHorario(personal.Id, "", vm.HorariosAtendimento);
@@ -227,7 +193,6 @@ namespace BulkingPro.Controllers
 
             await _userManager.AddToRoleAsync(usuario, "Usuario");
 
-            // Cria plano inicial
             _context.PlanosTreino.Add(new PlanoTreino
             {
                 TreinadorId = personal.Id,
@@ -239,7 +204,6 @@ namespace BulkingPro.Controllers
                 DataCriacao = DateTime.Now
             });
 
-            // Salva os horários de atendimento do aluno
             if (vm.HorariosAtendimento != null && vm.HorariosAtendimento.Any())
             {
                 foreach (var h in vm.HorariosAtendimento)
@@ -247,7 +211,6 @@ namespace BulkingPro.Controllers
                     if (!h.HoraInicio.HasValue || !h.HoraFim.HasValue) continue;
                     
                     var diasSelecionados = h.DiasSelecionados();
-                    Console.WriteLine($"Dias selecionados para {h.HoraInicio}-{h.HoraFim}: {diasSelecionados.Count}");
                     
                     foreach (var dia in diasSelecionados)
                     {
@@ -285,12 +248,10 @@ namespace BulkingPro.Controllers
             var aluno = await _userManager.FindByIdAsync(id);
             if (aluno == null) return NotFound();
 
-            // Busca os horários de atendimento do aluno
             var horarios = await _context.AlunosHorariosAtendimento
                 .Where(h => h.PersonalId == personal.Id && h.AlunoId == id && h.Ativo)
                 .ToListAsync();
 
-            // Agrupa horários por hora para mostrar como blocos com múltiplos dias
             var horariosAgrupados = horarios
                 .GroupBy(h => new { h.HoraInicio, h.HoraFim })
                 .Select(g => new HorarioComDiasEditViewModel
@@ -332,10 +293,8 @@ namespace BulkingPro.Controllers
             var aluno = await _userManager.FindByIdAsync(vm.Id);
             if (aluno == null) return NotFound();
 
-            // ⚠️ VALIDAÇÃO DE CONFLITO DE HORÁRIO (ignorando o próprio aluno)
             if (vm.HorariosAtendimento != null && vm.HorariosAtendimento.Any())
             {
-                // Converte os horários do ViewModel para o tipo esperado
                 var horariosParaValidar = vm.HorariosAtendimento.Select(h => new HorarioComDiasViewModel
                 {
                     HoraInicio = h.HoraInicio,
@@ -357,7 +316,6 @@ namespace BulkingPro.Controllers
                 }
             }
 
-            // Atualiza dados do aluno
             aluno.NomeCompleto = vm.NomeCompleto;
             aluno.Email = vm.Email;
             aluno.UserName = vm.Email;
@@ -376,13 +334,11 @@ namespace BulkingPro.Controllers
                 return View(vm);
             }
 
-            // Remove todos os horários antigos do aluno
             var horariosAntigos = await _context.AlunosHorariosAtendimento
                 .Where(h => h.PersonalId == personal.Id && h.AlunoId == aluno.Id)
                 .ToListAsync();
             _context.AlunosHorariosAtendimento.RemoveRange(horariosAntigos);
 
-            // Adiciona os novos horários
             foreach (var h in vm.HorariosAtendimento.Where(h => h.HoraInicio.HasValue && h.HoraFim.HasValue))
             {
                 var diasSelecionados = h.DiasSelecionados();
@@ -552,10 +508,22 @@ namespace BulkingPro.Controllers
 
                 foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
                 {
+                    // ⭐ CORREÇÃO AQUI: Personal escolhe se usa Repetições ou Tempo
+                    // Prioriza o que foi preenchido
                     int? tempoSegundos = null;
+                    string repeticoes = "";
+
+                    // Se o campo Tempo foi preenchido (maior que 0), usa ele
                     if (ex.TempoExecucao.HasValue && ex.TempoExecucao.Value > 0)
                     {
-                        tempoSegundos = ex.TempoExecucao.Value * 60;
+                        tempoSegundos = (int)(ex.TempoExecucao.Value * 60);
+                        repeticoes = ""; // Limpa repetições
+                    }
+                    // Senão, usa as repetições preenchidas
+                    else if (!string.IsNullOrWhiteSpace(ex.Repeticoes))
+                    {
+                        tempoSegundos = null;
+                        repeticoes = ex.Repeticoes;
                     }
 
                     _context.TreinoExercicios.Add(new TreinoExercicio
@@ -564,7 +532,7 @@ namespace BulkingPro.Controllers
                         ExercicioId = ex.ExercicioId,
                         Ordem = ex.Ordem,
                         SeriesPlanejadas = ex.Series,
-                        RepeticoesPlanejadas = ex.Repeticoes ?? "",
+                        RepeticoesPlanejadas = repeticoes,
                         TempoExecucaoSegundos = tempoSegundos,
                         CargaPlanejada = ex.Carga,
                         TempoDescanso = ex.Descanso,
@@ -914,7 +882,6 @@ namespace BulkingPro.Controllers
             var dataSelecionada = data ?? DateTime.Today;
             var diaSemana = (int)dataSelecionada.DayOfWeek;
 
-            // Busca os horários de atendimento dos alunos para o dia selecionado
             var agendamentos = await _context.AlunosHorariosAtendimento
                 .Include(a => a.Aluno)
                 .Where(a => a.PersonalId == personal.Id && a.Ativo && (int)a.DiaSemana == diaSemana)

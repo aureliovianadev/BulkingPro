@@ -41,6 +41,21 @@
                     </div>
                 </div>
 
+                <!-- CAMPO: Tipo de Execução -->
+                <div class="form-group">
+                    <label class="form-label" asp-for="TipoExecucao">Tipo de execução</label>
+                    <select class="form-control" asp-for="TipoExecucao">
+                        <option value="0">Repetições</option>
+                        <option value="1">Tempo (duração)</option>
+                    </select>
+                    <span asp-validation-for="TipoExecucao" class="field-validation-error"></span>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px;">
+                        <i class="ti ti-info-circle"></i>
+                        <strong>Repetições:</strong> usado para musculação (ex: Supino, Rosca)<br />
+                        <strong>Tempo:</strong> usado para cardio ou exercícios por duração (ex: Esteira, Corda, Prancha)
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label" asp-for="Descricao">Descrição</label>
                     <textarea class="form-control" asp-for="Descricao" rows="3"

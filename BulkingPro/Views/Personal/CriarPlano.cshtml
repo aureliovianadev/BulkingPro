@@ -119,16 +119,16 @@
                                                     <label class="form-label">Exercício</label>
                                                     <select class="form-control exer-sel" data-dia="@i" data-ex="@j"
                                                             name="DiasSemana[@i].Exercicios[@j].ExercicioId" style="font-size:12px">
-                                                        <option value="0">— selecione o grupo —</option>
+                                                        <option value="0">— selecione o exercício —</option>
                                                         @foreach (var e in exercicios)
                                                         {
                                                             if (ex.ExercicioId == e.Id)
                                                             {
-                                                                <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@e.TipoExecucao" selected>@e.Nome</option>
+                                                                <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@((int)e.TipoExecucao)" selected>@e.Nome</option>
                                                             }
                                                             else
                                                             {
-                                                                <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@e.TipoExecucao">@e.Nome</option>
+                                                                <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@((int)e.TipoExecucao)">@e.Nome</option>
                                                             }
                                                         }
                                                     </select>
@@ -144,18 +144,25 @@
                                                            value="@ex.Series" />
                                                     <input type="hidden" name="DiasSemana[@i].Exercicios[@j].Ordem" value="@ex.Ordem" />
                                                 </div>
-                                                <div class="form-group rep-group" style="flex:1" id="rep-group-@i-@j">
+                                                
+                                                <!-- Repetições - SEMPRE VISÍVEL -->
+                                                <div class="form-group" style="flex:1">
                                                     <label class="form-label">Repetições</label>
                                                     <input class="form-control" type="text"
                                                            name="DiasSemana[@i].Exercicios[@j].Repeticoes"
-                                                           value="@ex.Repeticoes" placeholder="12" />
+                                                           value="@ex.Repeticoes" placeholder="Ex: 12, 10-12, 8-10" />
+                                                    <small style="font-size:9px; color:rgba(255,255,255,0.3);">Deixe em branco se for exercício de tempo</small>
                                                 </div>
-                                                <div class="form-group tempo-group" style="flex:1" id="tempo-group-@i-@j">
-                                                    <label class="form-label">Tempo (min)</label>
-                                                    <input class="form-control" type="number" step="1" min="0"
+                                                
+                                                <!-- Tempo - SEMPRE VISÍVEL -->
+                                                <div class="form-group" style="flex:1">
+                                                    <label class="form-label">Tempo (minutos)</label>
+                                                    <input class="form-control" type="number" step="0.5" min="0"
                                                            name="DiasSemana[@i].Exercicios[@j].TempoExecucao"
-                                                           value="@(ex.TempoExecucao.HasValue ? ex.TempoExecucao.Value / 60 : null)" placeholder="ex: 10" />
+                                                           value="@(ex.TempoExecucao.HasValue ? ex.TempoExecucao.Value / 60 : null)" placeholder="Ex: 15" />
+                                                    <small style="font-size:9px; color:rgba(255,255,255,0.3);">Deixe em branco se for exercício de repetições</small>
                                                 </div>
+                                                
                                                 <div class="form-group" style="flex:1">
                                                     <label class="form-label">Carga (kg)</label>
                                                     <input class="form-control" type="number" step="0.5"
@@ -189,7 +196,7 @@
 </form>
 
 <style>
-    .semana-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px; }
+    .semana-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 12px; }
 
     .dia-card {
         background: rgba(255, 255, 255, 0.025);
@@ -253,30 +260,6 @@
             });
             exSel.value = '0';
         });
-    });
-
-    // Mostrar/esconder campo de repetições ou tempo baseado no tipo do exercício
-    document.querySelectorAll('.exer-sel').forEach(sel => {
-        sel.addEventListener('change', function () {
-            const selected = this.options[this.selectedIndex];
-            const tipo = selected?.dataset?.tipo;
-            const dia = this.dataset.dia;
-            const ex = this.dataset.ex;
-
-            const repGroup = document.getElementById(`rep-group-${dia}-${ex}`);
-            const tempoGroup = document.getElementById(`tempo-group-${dia}-${ex}`);
-
-            if (tipo == '1') { // Tempo
-                if (repGroup) repGroup.style.display = 'none';
-                if (tempoGroup) tempoGroup.style.display = '';
-            } else { // Repetições (padrão)
-                if (repGroup) repGroup.style.display = '';
-                if (tempoGroup) tempoGroup.style.display = 'none';
-            }
-        });
-
-        // Trigger inicial
-        sel.dispatchEvent(new Event('change'));
     });
 </script>
 
