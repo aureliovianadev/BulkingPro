@@ -154,3 +154,25 @@
         font-size: 24px;
     }
 }
+
+/* ── Selects no tema escuro ─────────────────────────────────── */
+select.form-control,
+select.form-select {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #2a2a2a;
+}
+
+select.form-control option,
+select.form-select option {
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+select.form-control option:hover,
+select.form-select option:hover,
+select.form-control option:checked,
+select.form-select option:checked {
+    background-color: #e53935;
+    color: #ffffff;
+}
