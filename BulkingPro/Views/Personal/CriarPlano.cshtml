@@ -23,6 +23,16 @@
 <form asp-action="CriarPlano" method="post" id="form-plano">
     @Html.AntiForgeryToken()
 
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" style="margin-bottom:16px">
+            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <div><i class="ti ti-alert-circle"></i> @err.ErrorMessage</div>
+            }
+        </div>
+    }
+
     <!-- INFO GERAL -->
     <div class="card" style="margin-bottom:16px">
         <div class="card-body">
@@ -74,8 +84,10 @@
                         <div class="dia-header">
                             <label class="toggle-label">
                                 <input type="checkbox" name="DiasSemana[@i].Selecionado"
+                                       value="true"
                                        class="toggle-input dia-toggle" data-dia="@i"
                                        @(dia.Selecionado ? "checked" : "") />
+                                <input type="hidden" name="DiasSemana[@i].Selecionado" value="false" />
                                 <span class="toggle-track"></span>
                                 <span class="toggle-text dia-nome">@dia.Nome</span>
                             </label>
@@ -145,22 +157,20 @@
                                                     <input type="hidden" name="DiasSemana[@i].Exercicios[@j].Ordem" value="@ex.Ordem" />
                                                 </div>
                                                 
-                                                <!-- Repetições - SEMPRE VISÍVEL -->
+                                                <!-- Repetições -->
                                                 <div class="form-group" style="flex:1">
                                                     <label class="form-label">Repetições</label>
                                                     <input class="form-control" type="text"
                                                            name="DiasSemana[@i].Exercicios[@j].Repeticoes"
-                                                           value="@ex.Repeticoes" placeholder="Ex: 12, 10-12, 8-10" />
-                                                    <small style="font-size:9px; color:rgba(255,255,255,0.3);">Deixe em branco se for exercício de tempo</small>
+                                                           value="@ex.Repeticoes" placeholder="Ex: 12 ou 10-12" />
                                                 </div>
                                                 
-                                                <!-- Tempo - SEMPRE VISÍVEL -->
+                                                <!-- Tempo -->
                                                 <div class="form-group" style="flex:1">
-                                                    <label class="form-label">Tempo (minutos)</label>
+                                                    <label class="form-label">Tempo (min)</label>
                                                     <input class="form-control" type="number" step="0.5" min="0"
                                                            name="DiasSemana[@i].Exercicios[@j].TempoExecucao"
                                                            value="@(ex.TempoExecucao.HasValue ? ex.TempoExecucao.Value / 60 : null)" placeholder="Ex: 15" />
-                                                    <small style="font-size:9px; color:rgba(255,255,255,0.3);">Deixe em branco se for exercício de repetições</small>
                                                 </div>
                                                 
                                                 <div class="form-group" style="flex:1">
@@ -239,11 +249,21 @@
 </style>
 
 <script>
-    // Mostrar/ocultar corpo do dia
+    // Mostrar/ocultar corpo do dia + desabilitar inputs de dias desmarcados no submit
+    function atualizarDia(cb) {
+        const i = cb.dataset.dia;
+        const body = document.getElementById('dia-body-' + i);
+        body.style.display = cb.checked ? '' : 'none';
+        body.querySelectorAll('input, select, textarea').forEach(el => {
+            el.disabled = !cb.checked;
+        });
+    }
+
     document.querySelectorAll('.dia-toggle').forEach(cb => {
+        // Estado inicial: desabilitar dias desmarcados
+        atualizarDia(cb);
         cb.addEventListener('change', function () {
-            const body = document.getElementById('dia-body-' + this.dataset.dia);
-            body.style.display = this.checked ? '' : 'none';
+            atualizarDia(this);
         });
     });
 

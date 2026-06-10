@@ -55,11 +55,11 @@ namespace BulkingPro.ViewModels
     {
         public int      Ordem          { get; set; }
         public int      ExercicioId    { get; set; }
-        public int      Series         { get; set; } = 3;
-        public string   Repeticoes     { get; set; } = "12";
+        public int?     Series         { get; set; } = 3;
+        public string?  Repeticoes     { get; set; }
         public int?     TempoExecucao  { get; set; }
         public decimal? Carga          { get; set; }
-        public int?     Descanso       { get; set; } = 60;
+        public int?     Descanso       { get; set; }
         public string?  Observacoes    { get; set; }
     }
 

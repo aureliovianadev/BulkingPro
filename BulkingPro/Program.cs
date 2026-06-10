@@ -36,7 +36,24 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 // ── MVC + Razor Pages ────────────────────────────────────────
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Mensagens de erro de model binding em português
+    options.ModelBindingMessageProvider.SetValueIsInvalidAccessor(
+        (x) => $"O valor '{x}' é inválido.");
+    options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(
+        (x) => "Este campo é obrigatório.");
+    options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor(
+        (x, y) => $"O valor '{x}' não é válido para o campo {y}.");
+    options.ModelBindingMessageProvider.SetNonPropertyAttemptedValueIsInvalidAccessor(
+        (x) => $"O valor '{x}' é inválido.");
+    options.ModelBindingMessageProvider.SetUnknownValueIsInvalidAccessor(
+        (x) => $"O valor fornecido é inválido para {x}.");
+    options.ModelBindingMessageProvider.SetMissingBindRequiredValueAccessor(
+        (x) => $"O campo {x} é obrigatório.");
+    options.ModelBindingMessageProvider.SetMissingKeyOrValueAccessor(
+        () => "Chave ou valor obrigatório.");
+});
 builder.Services.AddRazorPages();
 
 // ─────────────────────────────────────────────────────────────

@@ -479,6 +479,34 @@ namespace BulkingPro.Controllers
                 return View(vm);
             }
 
+            // Valida: pelo menos 1 dia selecionado com ao menos 1 exercicio
+            var temExercicio = vm.DiasSemana
+                .Where(d => d.Selecionado)
+                .Any(d => d.Exercicios.Any(e => e.ExercicioId > 0));
+
+            if (!temExercicio)
+            {
+                ModelState.AddModelError("", "Adicione pelo menos 1 exercício em algum dia da semana antes de salvar.");
+                await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                return View(vm);
+            }
+
+            // Valida: cada exercicio adicionado precisa ter Repeticoes OU Tempo preenchido
+            foreach (var dia in vm.DiasSemana.Where(d => d.Selecionado))
+            {
+                foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
+                {
+                    var temRepeticoes = !string.IsNullOrWhiteSpace(ex.Repeticoes);
+                    var temTempo = ex.TempoExecucao.HasValue && ex.TempoExecucao.Value > 0;
+                    if (!temRepeticoes && !temTempo)
+                    {
+                        ModelState.AddModelError("", $"Em {dia.Nome}: um dos exercícios está sem Repetições nem Tempo de execução. Preencha ao menos um dos dois.");
+                        await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                        return View(vm);
+                    }
+                }
+            }
+
             var plano = new PlanoTreino
             {
                 TreinadorId = personal.Id,
@@ -531,7 +559,7 @@ namespace BulkingPro.Controllers
                         TreinoId = treino.Id,
                         ExercicioId = ex.ExercicioId,
                         Ordem = ex.Ordem,
-                        SeriesPlanejadas = ex.Series,
+                        SeriesPlanejadas = ex.Series ?? 3,
                         RepeticoesPlanejadas = repeticoes,
                         TempoExecucaoSegundos = tempoSegundos,
                         CargaPlanejada = ex.Carga,
