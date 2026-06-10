@@ -432,32 +432,151 @@ namespace BulkingPro.Controllers
             return RedirectToAction(nameof(Alunos));
         }
 
-        // ── Planos de Treino ──────────────────────────────────────
-        public async Task<IActionResult> PlanosTreino(string? alunoId)
+        // ═════════════════════════════════════════════════════════════════
+        // PLANOS DE TREINO - VERSÃO REFATORADA
+        // ═════════════════════════════════════════════════════════════════
+
+        // ── Planos de Treino (agrupado por aluno) ──────────────────────
+        public async Task<IActionResult> PlanosTreino()
         {
             var personal = await _userManager.GetUserAsync(User);
             if (personal == null) return Challenge();
 
+            // Buscar todos os planos do personal com dados do aluno
             var planos = await _context.PlanosTreino
                 .Include(p => p.Aluno)
-                .Where(p => p.TreinadorId == personal.Id &&
-                            (alunoId == null || p.AlunoId == alunoId))
-                .OrderByDescending(p => p.DataCriacao)
-                .ToListAsync();
-
-            var alunosIds = await _context.PlanosTreino
                 .Where(p => p.TreinadorId == personal.Id)
-                .Select(p => p.AlunoId).Distinct().ToListAsync();
-            ViewBag.Alunos = await _userManager.Users
-                .Where(u => alunosIds.Contains(u.Id))
-                .Select(u => new { u.Id, u.NomeCompleto })
                 .ToListAsync();
 
-            ViewBag.AlunoIdFiltro = alunoId;
-            return View(planos);
+            // Agrupar por aluno e projetar resumo
+            var alunosResumo = planos
+                .GroupBy(p => new { p.AlunoId, p.Aluno!.NomeCompleto })
+                .Select(g => new AlunoPlanosResumoViewModel
+                {
+                    AlunoId = g.Key.AlunoId,
+                    NomeCompleto = g.Key.NomeCompleto,
+                    UltimaAtualizacao = g.Max(p => p.DataCriacao),
+                    TotalPlanos = g.Count(),
+                    PlanoAtivoNome = g.FirstOrDefault(p => p.Status == 1)?.Titulo,
+                    PlanoAtivoId = g.FirstOrDefault(p => p.Status == 1)?.Id
+                })
+                .OrderByDescending(a => a.UltimaAtualizacao)
+                .ToList();
+
+            return View(alunosResumo);
         }
 
-        // ── Criar Plano de Treino ─────────────────────────────────
+        // ── Planos de um aluno específico ──────────────────────────────
+        public async Task<IActionResult> PlanosDoAluno(string id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            // Verifica se o aluno pertence ao personal
+            var alunoVinculado = await _context.PlanosTreino
+                .AnyAsync(p => p.TreinadorId == personal.Id && p.AlunoId == id);
+            
+            if (!alunoVinculado) return Forbid();
+
+            var aluno = await _userManager.FindByIdAsync(id);
+            if (aluno == null) return NotFound();
+
+            var planos = await _context.PlanosTreino
+                .Where(p => p.TreinadorId == personal.Id && p.AlunoId == id)
+                .OrderByDescending(p => p.DataCriacao)
+                .Select(p => new PlanoTreinoDetailViewModel
+                {
+                    Id = p.Id,
+                    Titulo = p.Titulo,
+                    Objetivo = p.Objetivo,
+                    DataCriacao = p.DataCriacao,
+                    Status = p.Status
+                })
+                .ToListAsync();
+
+            var vm = new PlanosDoAlunoViewModel
+            {
+                AlunoId = id,
+                AlunoNome = aluno.NomeCompleto,
+                Planos = planos
+            };
+
+            return View(vm);
+        }
+
+        // ── Duplicar Plano ────────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DuplicarPlano(int id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            // Buscar plano original com todos os relacionamentos
+            var planoOriginal = await _context.PlanosTreino
+                .Include(p => p.Treinos)
+                    .ThenInclude(t => t.TreinoExercicios)
+                .FirstOrDefaultAsync(p => p.Id == id && p.TreinadorId == personal.Id);
+
+            if (planoOriginal == null) return NotFound();
+
+            // Criar novo plano
+            var novoPlano = new PlanoTreino
+            {
+                TreinadorId = planoOriginal.TreinadorId,
+                AlunoId = planoOriginal.AlunoId,
+                Titulo = $"{planoOriginal.Titulo} (Cópia)",
+                Objetivo = planoOriginal.Objetivo,
+                DataInicio = DateTime.Today,
+                DataFim = planoOriginal.DataFim,
+                Status = 1,
+                DataCriacao = DateTime.Now
+            };
+            _context.PlanosTreino.Add(novoPlano);
+            await _context.SaveChangesAsync();
+
+            // Duplicar treinos e exercícios
+            foreach (var treinoOriginal in planoOriginal.Treinos)
+            {
+                var novoTreino = new Treino
+                {
+                    PlanoTreinoId = novoPlano.Id,
+                    Nome = treinoOriginal.Nome,
+                    OrdemDia = treinoOriginal.OrdemDia,
+                    Observacoes = treinoOriginal.Observacoes,
+                    DataCriacao = DateTime.Now
+                };
+                _context.Treinos.Add(novoTreino);
+                await _context.SaveChangesAsync();
+
+                foreach (var exOriginal in treinoOriginal.TreinoExercicios)
+                {
+                    _context.TreinoExercicios.Add(new TreinoExercicio
+                    {
+                        TreinoId = novoTreino.Id,
+                        ExercicioId = exOriginal.ExercicioId,
+                        Ordem = exOriginal.Ordem,
+                        SeriesPlanejadas = exOriginal.SeriesPlanejadas,
+                        RepeticoesPlanejadas = exOriginal.RepeticoesPlanejadas,
+                        TempoExecucaoSegundos = exOriginal.TempoExecucaoSegundos,
+                        CargaPlanejada = exOriginal.CargaPlanejada,
+                        TempoDescanso = exOriginal.TempoDescanso,
+                        Observacoes = exOriginal.Observacoes,
+                        DataCriacao = DateTime.Now
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Plano \"{novoPlano.Titulo}\" duplicado com sucesso!";
+            return RedirectToAction(nameof(PlanosDoAluno), new { id = planoOriginal.AlunoId });
+        }
+
+        // ═════════════════════════════════════════════════════════════════
+        // FIM DOS MÉTODOS REFATORADOS DE PLANOS
+        // ═════════════════════════════════════════════════════════════════
+
+        // ── Criar Plano de Treino ─────────────────────────────────────
         public async Task<IActionResult> CriarPlano(string? alunoId)
         {
             var personal = await _userManager.GetUserAsync(User);
@@ -536,18 +655,14 @@ namespace BulkingPro.Controllers
 
                 foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
                 {
-                    // ⭐ CORREÇÃO AQUI: Personal escolhe se usa Repetições ou Tempo
-                    // Prioriza o que foi preenchido
                     int? tempoSegundos = null;
                     string repeticoes = "";
 
-                    // Se o campo Tempo foi preenchido (maior que 0), usa ele
                     if (ex.TempoExecucao.HasValue && ex.TempoExecucao.Value > 0)
                     {
                         tempoSegundos = (int)(ex.TempoExecucao.Value * 60);
-                        repeticoes = ""; // Limpa repetições
+                        repeticoes = "";
                     }
-                    // Senão, usa as repetições preenchidas
                     else if (!string.IsNullOrWhiteSpace(ex.Repeticoes))
                     {
                         tempoSegundos = null;

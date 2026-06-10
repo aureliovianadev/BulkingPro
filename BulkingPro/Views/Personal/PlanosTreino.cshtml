@@ -1,17 +1,15 @@
-@model List<BulkingPro.Models.PlanoTreino>
+@model List<BulkingPro.ViewModels.AlunoPlanosResumoViewModel>
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"]      = "Planos de Treino";
+    ViewData["Title"] = "Planos de Treino";
     ViewData["ActivePage"] = "PlanoTreino";
-
-    var alunos = ViewBag.Alunos as System.Collections.IEnumerable;
 }
 
 @section Topbar {
     <div class="topbar">
         <div>
             <div class="topbar-title">Planos de Treino</div>
-            <div class="topbar-sub">@Model.Count plano(s) criado(s)</div>
+            <div class="topbar-sub">@Model.Count aluno(s) com planos cadastrados</div>
         </div>
         <div class="topbar-actions">
             <a class="btn btn-primary" asp-action="CriarPlano">
@@ -21,44 +19,292 @@
     </div>
 }
 
-<div class="table-wrap">
-    <table>
-        <thead>
-            <tr>
-                <th>Plano</th>
-                <th>Aluno</th>
-                <th>Objetivo</th>
-                <th>Início</th>
-                <th>Status</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var p in Model)
-            {
-                <tr>
-                    <td class="bold">@p.Titulo</td>
-                    <td>@p.Aluno?.NomeCompleto</td>
-                    <td>@p.Objetivo</td>
-                    <td>@p.DataInicio.ToString("dd/MM/yyyy")</td>
-                    <td>
-                        @if (p.Status == 1) { <span class="badge badge-active">Ativo</span> }
-                        else                { <span class="badge badge-inactive">Encerrado</span> }
-                    </td>
-                    <td>
-                        <a class="btn btn-ghost btn-sm" asp-action="VisualizarPlano" asp-route-id="@p.Id">
-                            <i class="ti ti-eye"></i> Ver
-                        </a>
-                        <a class="btn btn-ghost btn-sm" asp-action="CriarPlano" asp-route-alunoId="@p.AlunoId">
-                            <i class="ti ti-copy"></i> Novo
-                        </a>
-                    </td>
-                </tr>
-            }
-            @if (!Model.Any())
-            {
-                <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:28px">Nenhum plano criado ainda.</td></tr>
-            }
-        </tbody>
-    </table>
+<div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" id="busca" placeholder="Buscar aluno por nome..." />
 </div>
+
+<div class="alunos-grid" id="alunos-container">
+    @foreach (var aluno in Model)
+    {
+        var diasDiff = (DateTime.Now - aluno.UltimaAtualizacao).Days;
+        var badgeClass = diasDiff <= 7 ? "badge-recente" : (diasDiff <= 30 ? "badge-medio" : "badge-antigo");
+        var badgeIcon = diasDiff <= 7 ? "ti-trending-up" : (diasDiff <= 30 ? "ti-clock" : "ti-calendar-off");
+        var badgeText = diasDiff <= 7 ? "Ativo" : (diasDiff <= 30 ? "Médio" : "Antigo");
+        
+        <div class="aluno-card" data-nome="@aluno.NomeCompleto.ToLower()">
+            <div class="aluno-header">
+                <div class="aluno-info">
+                    <div class="aluno-nome">@aluno.NomeCompleto</div>
+                    <div class="aluno-meta">
+                        <span class="meta-item">
+                            <i class="ti ti-calendar-time"></i> 
+                            Última atualização: @aluno.UltimaAtualizacao.ToString("dd/MM/yyyy")
+                        </span>
+                        <span class="meta-item">
+                            <i class="ti ti-files"></i> 
+                            @aluno.TotalPlanos @(aluno.TotalPlanos == 1 ? "plano" : "planos")
+                        </span>
+                    </div>
+                </div>
+                <div class="aluno-badge @badgeClass">
+                    <i class="ti @badgeIcon"></i> @badgeText
+                </div>
+            </div>
+
+            <div class="plano-ativo">
+                <div class="ativo-label">
+                    <i class="ti ti-star"></i> Plano ativo
+                </div>
+                @if (!string.IsNullOrEmpty(aluno.PlanoAtivoNome))
+                {
+                    <div class="ativo-nome">@aluno.PlanoAtivoNome</div>
+                }
+                else
+                {
+                    <div class="ativo-nome empty">Nenhum plano ativo</div>
+                }
+            </div>
+
+            <div class="aluno-actions">
+                <a class="btn btn-primary" asp-action="PlanosDoAluno" asp-route-id="@aluno.AlunoId">
+                    <i class="ti ti-eye"></i> Ver treinos
+                </a>
+                <a class="btn btn-ghost" asp-action="CriarPlano" asp-route-alunoId="@aluno.AlunoId">
+                    <i class="ti ti-plus"></i> Novo plano
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <i class="ti ti-clipboard-list"></i>
+        <p>Nenhum plano de treino cadastrado ainda.</p>
+        <a class="btn btn-primary" asp-action="CriarPlano">Criar primeiro plano</a>
+    </div>
+}
+
+<style>
+    .search-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #131316;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 10px;
+        padding: 9px 14px;
+        margin-bottom: 20px;
+    }
+
+    .search-bar i {
+        color: var(--muted);
+        font-size: 16px;
+    }
+
+    .search-bar input {
+        background: none;
+        border: none;
+        outline: none;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 13px;
+        flex: 1;
+    }
+
+    .search-bar input::placeholder {
+        color: rgba(255, 255, 255, 0.2);
+    }
+
+    .alunos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 16px;
+    }
+
+    .aluno-card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.2s ease;
+    }
+
+    .aluno-card:hover {
+        border-color: rgba(238, 25, 32, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .aluno-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .aluno-nome {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 6px;
+    }
+
+    .aluno-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--muted);
+    }
+
+    .meta-item i {
+        font-size: 12px;
+        color: var(--gold);
+    }
+
+    .aluno-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-recente {
+        background: rgba(46, 160, 67, 0.12);
+        color: #2ea043;
+        border: 1px solid rgba(46, 160, 67, 0.2);
+    }
+
+    .badge-medio {
+        background: rgba(196, 168, 122, 0.12);
+        color: var(--gold);
+        border: 1px solid rgba(196, 168, 122, 0.2);
+    }
+
+    .badge-antigo {
+        background: rgba(238, 25, 32, 0.12);
+        color: var(--red);
+        border: 1px solid rgba(238, 25, 32, 0.2);
+    }
+
+    .plano-ativo {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 16px;
+    }
+
+    .ativo-label {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.35);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .ativo-label i {
+        color: var(--gold);
+        font-size: 11px;
+    }
+
+    .ativo-nome {
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .ativo-nome.empty {
+        color: var(--muted);
+        font-style: italic;
+    }
+
+    .aluno-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .aluno-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 12px;
+        color: rgba(238, 25, 32, 0.3);
+    }
+
+    .empty-state p {
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    /* Botões padrão do layout */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: opacity .15s;
+    }
+
+    .btn:hover {
+        opacity: .85;
+    }
+
+    .btn-primary {
+        background: var(--red);
+        color: #fff;
+    }
+
+    .btn-ghost {
+        background: rgba(255, 255, 255, .05);
+        color: var(--muted);
+        border: 1px solid var(--border);
+    }
+
+    @@media (max-width: 800px) {
+        .alunos-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('busca')?.addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('.aluno-card').forEach(card => {
+            const nome = card.dataset.nome;
+            card.style.display = nome.includes(q) ? '' : 'none';
+        });
+    });
+</script>

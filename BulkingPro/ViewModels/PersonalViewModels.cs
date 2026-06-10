@@ -141,4 +141,38 @@ namespace BulkingPro.ViewModels
         public string? ObservacoesGerais  { get; set; }
         public DateTime DataAvaliacao     { get; set; } = DateTime.Today;
     }
+
+    // ═════════════════════════════════════════════════════════════════
+    // NOVOS VIEWMODELS PARA PLANOS DE TREINO REFATORADOS
+    // ═════════════════════════════════════════════════════════════════
+
+    // ── Resumo do aluno com seus planos (para tela agrupada) ────────
+    public class AlunoPlanosResumoViewModel
+    {
+        public string AlunoId { get; set; } = null!;
+        public string NomeCompleto { get; set; } = null!;
+        public DateTime UltimaAtualizacao { get; set; }
+        public int TotalPlanos { get; set; }
+        public string? PlanoAtivoNome { get; set; }
+        public int? PlanoAtivoId { get; set; }
+    }
+
+    // ── Detalhes de um plano (para listagem dentro do aluno) ────────
+    public class PlanoTreinoDetailViewModel
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = null!;
+        public string Objetivo { get; set; } = null!;
+        public DateTime DataCriacao { get; set; }
+        public int Status { get; set; }
+        public bool IsAtivo => Status == 1;
+    }
+
+    // ── Todos os planos de um aluno específico ──────────────────────
+    public class PlanosDoAlunoViewModel
+    {
+        public string AlunoId { get; set; } = null!;
+        public string AlunoNome { get; set; } = null!;
+        public List<PlanoTreinoDetailViewModel> Planos { get; set; } = new();
+    }
 }
