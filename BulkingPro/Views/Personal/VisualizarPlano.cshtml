@@ -1,7 +1,7 @@
 @model BulkingPro.Models.PlanoTreino
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"]      = "Plano de Treino";
+    ViewData["Title"] = "Plano de Treino";
     ViewData["ActivePage"] = "PlanoTreino";
 }
 
@@ -16,6 +16,13 @@
             <a class="btn btn-primary" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
                 <i class="ti ti-plus"></i> Novo plano
             </a>
+            <form asp-action="DuplicarPlano" method="post" style="display:inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-gold">
+                    <i class="ti ti-copy"></i> Duplicar
+                </button>
+            </form>
         </div>
     </div>
 }
@@ -23,20 +30,42 @@
 <!-- Info geral -->
 <div class="card" style="margin-bottom:16px">
     <div class="card-body">
-        <div style="display:flex;flex-wrap:wrap;gap:24px">
-            <div><div class="detail-label">Aluno</div><div class="detail-val">@Model.Aluno?.NomeCompleto</div></div>
-            <div><div class="detail-label">Objetivo</div><div class="detail-val">@Model.Objetivo</div></div>
-            <div><div class="detail-label">Início</div><div class="detail-val">@Model.DataInicio.ToString("dd/MM/yyyy")</div></div>
+        <div class="info-grid">
+            <div>
+                <div class="detail-label">Aluno</div>
+                <div class="detail-val">@Model.Aluno?.NomeCompleto</div>
+            </div>
+            <div>
+                <div class="detail-label">Objetivo</div>
+                <div class="detail-val">@Model.Objetivo</div>
+            </div>
+            <div>
+                <div class="detail-label">Início</div>
+                <div class="detail-val">@Model.DataInicio.ToString("dd/MM/yyyy")</div>
+            </div>
             @if (Model.DataFim.HasValue)
             {
-                <div><div class="detail-label">Fim</div><div class="detail-val">@Model.DataFim.Value.ToString("dd/MM/yyyy")</div></div>
+                <div>
+                    <div class="detail-label">Fim</div>
+                    <div class="detail-val">@Model.DataFim.Value.ToString("dd/MM/yyyy")</div>
+                </div>
             }
             <div>
                 <div class="detail-label">Status</div>
                 <div class="detail-val">
-                    @if (Model.Status == 1) { <span class="badge badge-active">Ativo</span> }
-                    else                    { <span class="badge badge-inactive">Encerrado</span> }
+                    @if (Model.Status == 1) 
+                    { 
+                        <span class="badge badge-active">Ativo</span> 
+                    }
+                    else 
+                    { 
+                        <span class="badge badge-inactive">Encerrado</span> 
+                    }
                 </div>
+            </div>
+            <div>
+                <div class="detail-label">Criado em</div>
+                <div class="detail-val">@Model.DataCriacao.ToString("dd/MM/yyyy")</div>
             </div>
         </div>
     </div>
@@ -57,18 +86,20 @@
 
             @if (!treino.TreinoExercicios.Any())
             {
-                <div style="color:var(--muted);font-size:13px">Nenhum exercício cadastrado neste dia.</div>
+                <div style="color:var(--muted);font-size:13px;padding:16px;text-align:center">
+                    <i class="ti ti-barbell-off"></i> Nenhum exercício cadastrado neste dia.
+                </div>
             }
             else
             {
-                <div style="display:flex;flex-direction:column;gap:0">
+                <div class="exercicios-lista">
                     @foreach (var te in treino.TreinoExercicios.OrderBy(te => te.Ordem))
                     {
                         <div class="exer-linha-view">
                             <div class="exer-num-view">@te.Ordem</div>
-                            <div style="flex:1">
-                                <div style="font-size:13px;font-weight:600;color:#fff">@te.Exercicio?.Nome</div>
-                                <div style="font-size:11px;color:var(--muted)">@te.Exercicio?.GrupoMuscular?.Nome</div>
+                            <div class="exer-info-view">
+                                <div class="exer-nome-view">@te.Exercicio?.Nome</div>
+                                <div class="exer-grupo-view">@te.Exercicio?.GrupoMuscular?.Nome</div>
                             </div>
                             <div class="exer-badges">
                                 <span class="info-chip"><i class="ti ti-repeat"></i> @te.SeriesPlanejadas séries</span>
@@ -87,7 +118,7 @@
 
                                 @if (te.CargaPlanejada.HasValue)
                                 {
-                                    <span class="info-chip"><i class="ti ti-barbell"></i> @te.CargaPlanejada kg</span>
+                                    <span class="info-chip"><i class="ti ti-barbell"></i> @te.CargaPlanejada.Value.ToString("F2") kg</span>
                                 }
                                 @if (te.TempoDescanso.HasValue)
                                 {
@@ -102,29 +133,219 @@
     </div>
 }
 
+@if (!Model.Treinos.Any())
+{
+    <div class="empty-state">
+        <i class="ti ti-clipboard-list"></i>
+        <p>Nenhum treino cadastrado neste plano.</p>
+        <a class="btn btn-primary" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
+            <i class="ti ti-plus"></i> Editar plano
+        </a>
+    </div>
+}
+
 <style>
-    .detail-label { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-    .detail-val   { font-size: 14px; font-weight: 500; color: #fff; }
+    .info-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+    }
+
+    .detail-label {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.3);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .detail-val {
+        font-size: 14px;
+        font-weight: 500;
+        color: #fff;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 500;
+        padding: 3px 10px;
+        border-radius: 20px;
+    }
+
+    .badge-active {
+        background: rgba(46, 160, 67, 0.12);
+        color: #2ea043;
+        border: 1px solid rgba(46, 160, 67, 0.2);
+    }
+
+    .badge-inactive {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+        border: 1px solid var(--border);
+    }
+
+    .exercicios-lista {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
 
     .exer-linha-view {
-        display: flex; align-items: center; gap: 14px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
         padding: 12px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
-    .exer-linha-view:last-child { border-bottom: none; }
+
+    .exer-linha-view:last-child {
+        border-bottom: none;
+    }
+
     .exer-num-view {
-        width: 26px; height: 26px; border-radius: 50%;
-        background: rgba(196,168,122,0.15); color: var(--gold);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 11px; font-weight: 700; flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: rgba(196, 168, 122, 0.15);
+        color: var(--gold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        flex-shrink: 0;
     }
-    .exer-badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+
+    .exer-info-view {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .exer-nome-view {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .exer-grupo-view {
+        font-size: 10px;
+        color: var(--muted);
+        margin-top: 2px;
+    }
+
+    .exer-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
     .info-chip {
-        display: inline-flex; align-items: center; gap: 4px;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 20px; padding: 3px 10px;
-        font-size: 11px; color: rgba(255,255,255,0.6);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.6);
         white-space: nowrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: opacity .15s;
+    }
+
+    .btn:hover {
+        opacity: .85;
+    }
+
+    .btn-primary {
+        background: var(--red);
+        color: #fff;
+    }
+
+    .btn-ghost {
+        background: rgba(255, 255, 255, .05);
+        color: var(--muted);
+        border: 1px solid var(--border);
+    }
+
+    .btn-gold {
+        background: rgba(196, 168, 122, 0.15);
+        color: var(--gold);
+        border: 1px solid rgba(196, 168, 122, 0.3);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 12px;
+        color: rgba(238, 25, 32, 0.3);
+    }
+
+    .empty-state p {
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+    }
+
+    .card-body {
+        padding: 18px 20px;
+    }
+
+    .card-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card-title i {
+        color: var(--gold);
+    }
+
+    @@media (max-width: 700px) {
+        .exer-linha-view {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .exer-badges {
+            justify-content: flex-start;
+            margin-top: 8px;
+        }
+        
+        .info-grid {
+            gap: 12px;
+        }
     }
 </style>

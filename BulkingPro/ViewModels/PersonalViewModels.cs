@@ -58,7 +58,11 @@ namespace BulkingPro.ViewModels
         public int?     Series         { get; set; } = 3;
         public string?  Repeticoes     { get; set; }
         public int?     TempoExecucao  { get; set; }
+        
+        [DisplayFormat(DataFormatString = "{0:F2}", ApplyFormatInEditMode = true)]
+        [Range(0, 999.99, ErrorMessage = "Carga deve ter no máximo 2 casas decimais")]
         public decimal? Carga          { get; set; }
+        
         public int?     Descanso       { get; set; }
         public string?  Observacoes    { get; set; }
     }

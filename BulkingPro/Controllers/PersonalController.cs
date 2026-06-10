@@ -442,13 +442,11 @@ namespace BulkingPro.Controllers
             var personal = await _userManager.GetUserAsync(User);
             if (personal == null) return Challenge();
 
-            // Buscar todos os planos do personal com dados do aluno
             var planos = await _context.PlanosTreino
                 .Include(p => p.Aluno)
                 .Where(p => p.TreinadorId == personal.Id)
                 .ToListAsync();
 
-            // Agrupar por aluno e projetar resumo
             var alunosResumo = planos
                 .GroupBy(p => new { p.AlunoId, p.Aluno!.NomeCompleto })
                 .Select(g => new AlunoPlanosResumoViewModel
@@ -472,7 +470,6 @@ namespace BulkingPro.Controllers
             var personal = await _userManager.GetUserAsync(User);
             if (personal == null) return Challenge();
 
-            // Verifica se o aluno pertence ao personal
             var alunoVinculado = await _context.PlanosTreino
                 .AnyAsync(p => p.TreinadorId == personal.Id && p.AlunoId == id);
             
@@ -512,7 +509,6 @@ namespace BulkingPro.Controllers
             var personal = await _userManager.GetUserAsync(User);
             if (personal == null) return Challenge();
 
-            // Buscar plano original com todos os relacionamentos
             var planoOriginal = await _context.PlanosTreino
                 .Include(p => p.Treinos)
                     .ThenInclude(t => t.TreinoExercicios)
@@ -520,7 +516,6 @@ namespace BulkingPro.Controllers
 
             if (planoOriginal == null) return NotFound();
 
-            // Criar novo plano
             var novoPlano = new PlanoTreino
             {
                 TreinadorId = planoOriginal.TreinadorId,
@@ -535,7 +530,6 @@ namespace BulkingPro.Controllers
             _context.PlanosTreino.Add(novoPlano);
             await _context.SaveChangesAsync();
 
-            // Duplicar treinos e exercícios
             foreach (var treinoOriginal in planoOriginal.Treinos)
             {
                 var novoTreino = new Treino
@@ -559,7 +553,7 @@ namespace BulkingPro.Controllers
                         SeriesPlanejadas = exOriginal.SeriesPlanejadas,
                         RepeticoesPlanejadas = exOriginal.RepeticoesPlanejadas,
                         TempoExecucaoSegundos = exOriginal.TempoExecucaoSegundos,
-                        CargaPlanejada = exOriginal.CargaPlanejada,
+                        CargaPlanejada = exOriginal.CargaPlanejada.HasValue ? Math.Round(exOriginal.CargaPlanejada.Value, 2) : null,
                         TempoDescanso = exOriginal.TempoDescanso,
                         Observacoes = exOriginal.Observacoes,
                         DataCriacao = DateTime.Now
@@ -598,7 +592,6 @@ namespace BulkingPro.Controllers
                 return View(vm);
             }
 
-            // Valida: pelo menos 1 dia selecionado com ao menos 1 exercicio
             var temExercicio = vm.DiasSemana
                 .Where(d => d.Selecionado)
                 .Any(d => d.Exercicios.Any(e => e.ExercicioId > 0));
@@ -610,7 +603,6 @@ namespace BulkingPro.Controllers
                 return View(vm);
             }
 
-            // Valida: cada exercicio adicionado precisa ter Repeticoes OU Tempo preenchido
             foreach (var dia in vm.DiasSemana.Where(d => d.Selecionado))
             {
                 foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
@@ -657,6 +649,13 @@ namespace BulkingPro.Controllers
                 {
                     int? tempoSegundos = null;
                     string repeticoes = "";
+                    decimal? cargaArredondada = null;
+
+                    // ⭐ CORREÇÃO: Arredondar carga para 2 casas decimais
+                    if (ex.Carga.HasValue)
+                    {
+                        cargaArredondada = Math.Round(ex.Carga.Value, 2);
+                    }
 
                     if (ex.TempoExecucao.HasValue && ex.TempoExecucao.Value > 0)
                     {
@@ -677,7 +676,7 @@ namespace BulkingPro.Controllers
                         SeriesPlanejadas = ex.Series ?? 3,
                         RepeticoesPlanejadas = repeticoes,
                         TempoExecucaoSegundos = tempoSegundos,
-                        CargaPlanejada = ex.Carga,
+                        CargaPlanejada = cargaArredondada,
                         TempoDescanso = ex.Descanso,
                         Observacoes = ex.Observacoes ?? "",
                         DataCriacao = DateTime.Now
