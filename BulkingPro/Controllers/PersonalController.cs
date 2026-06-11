@@ -566,11 +566,7 @@ namespace BulkingPro.Controllers
             return RedirectToAction(nameof(PlanosDoAluno), new { id = planoOriginal.AlunoId });
         }
 
-        // ═════════════════════════════════════════════════════════════════
-        // FIM DOS MÉTODOS REFATORADOS DE PLANOS
-        // ═════════════════════════════════════════════════════════════════
-
-        // ── Criar Plano de Treino ─────────────────────────────────────
+        // ── Criar Plano de Treino (GET) ───────────────────────────────
         public async Task<IActionResult> CriarPlano(string? alunoId)
         {
             var personal = await _userManager.GetUserAsync(User);
@@ -580,6 +576,7 @@ namespace BulkingPro.Controllers
             return View(new CriarPlanoViewModel { AlunoId = alunoId ?? "", DataInicio = DateTime.Today });
         }
 
+        // ── Criar Plano de Treino (POST) ──────────────────────────────
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> CriarPlano(CriarPlanoViewModel vm)
         {
@@ -651,7 +648,6 @@ namespace BulkingPro.Controllers
                     string repeticoes = "";
                     decimal? cargaArredondada = null;
 
-                    // ⭐ CORREÇÃO: Arredondar carga para 2 casas decimais
                     if (ex.Carga.HasValue)
                     {
                         cargaArredondada = Math.Round(ex.Carga.Value, 2);
@@ -688,6 +684,228 @@ namespace BulkingPro.Controllers
             TempData["Sucesso"] = $"Plano \"{vm.Titulo}\" criado com sucesso!";
             return RedirectToAction(nameof(PlanosTreino));
         }
+
+        // ═════════════════════════════════════════════════════════════════
+        // NOVOS MÉTODOS: EDITAR PLANO
+        // ═════════════════════════════════════════════════════════════════
+
+        // ── Editar Plano (GET) - Carrega os dados do plano existente ─────
+        public async Task<IActionResult> EditarPlano(int id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var plano = await _context.PlanosTreino
+                .Include(p => p.Treinos)
+                    .ThenInclude(t => t.TreinoExercicios)
+                .FirstOrDefaultAsync(p => p.Id == id && p.TreinadorId == personal.Id);
+
+            if (plano == null) return NotFound();
+
+            // Criar ViewModel para edição
+            var vm = new EditarPlanoViewModel
+            {
+                Id = plano.Id,
+                AlunoId = plano.AlunoId,
+                Titulo = plano.Titulo,
+                Objetivo = plano.Objetivo,
+                DataInicio = plano.DataInicio,
+                DataFim = plano.DataFim,
+                DiasSemana = new List<DiaTreinoEditViewModel>()
+            };
+
+            // Carregar os 7 dias da semana
+            for (int i = 1; i <= 7; i++)
+            {
+                var treino = plano.Treinos.FirstOrDefault(t => t.OrdemDia == i);
+                var diaVM = new DiaTreinoEditViewModel
+                {
+                    TreinoId = treino?.Id,
+                    Nome = ObterNomeDia(i),
+                    Ordem = i,
+                    Selecionado = treino != null,
+                    Observacoes = treino?.Observacoes ?? "",
+                    Exercicios = new List<ExercicioEditViewModel>()
+                };
+
+                if (treino != null)
+                {
+                    foreach (var te in treino.TreinoExercicios.OrderBy(te => te.Ordem))
+                    {
+                        diaVM.Exercicios.Add(new ExercicioEditViewModel
+                        {
+                            TreinoExercicioId = te.Id,
+                            Ordem = te.Ordem,
+                            ExercicioId = te.ExercicioId,
+                            Series = te.SeriesPlanejadas,
+                            Repeticoes = te.RepeticoesPlanejadas,
+                            TempoExecucaoSegundos = te.TempoExecucaoSegundos,
+                            Carga = te.CargaPlanejada,
+                            Descanso = te.TempoDescanso,
+                            Observacoes = te.Observacoes
+                        });
+                    }
+                }
+
+                vm.DiasSemana.Add(diaVM);
+            }
+
+            await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+            return View("EditarPlano", vm);
+        }
+
+        // ── Editar Plano (POST) - Atualiza o plano existente ────────────
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarPlano(EditarPlanoViewModel vm)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var plano = await _context.PlanosTreino
+                .Include(p => p.Treinos)
+                    .ThenInclude(t => t.TreinoExercicios)
+                .FirstOrDefaultAsync(p => p.Id == vm.Id && p.TreinadorId == personal.Id);
+
+            if (plano == null) return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                return View("EditarPlano", vm);
+            }
+
+            // Validar se há pelo menos um exercício
+            var temExercicio = vm.DiasSemana
+                .Where(d => d.Selecionado)
+                .Any(d => d.Exercicios.Any(e => e.ExercicioId > 0));
+
+            if (!temExercicio)
+            {
+                ModelState.AddModelError("", "Adicione pelo menos 1 exercício em algum dia da semana antes de salvar.");
+                await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                return View("EditarPlano", vm);
+            }
+
+            // Validar repetições/tempo
+            foreach (var dia in vm.DiasSemana.Where(d => d.Selecionado))
+            {
+                foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
+                {
+                    var temRepeticoes = !string.IsNullOrWhiteSpace(ex.Repeticoes);
+                    var temTempo = ex.TempoExecucaoSegundos.HasValue && ex.TempoExecucaoSegundos.Value > 0;
+                    if (!temRepeticoes && !temTempo)
+                    {
+                        ModelState.AddModelError("", $"Em {dia.Nome}: um dos exercícios está sem Repetições nem Tempo de execução. Preencha ao menos um dos dois.");
+                        await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                        return View("EditarPlano", vm);
+                    }
+                }
+            }
+
+            // Atualizar dados do plano
+            plano.Titulo = vm.Titulo;
+            plano.Objetivo = vm.Objetivo;
+            plano.DataInicio = vm.DataInicio;
+            plano.DataFim = vm.DataFim;
+            plano.DataAtualizacao = DateTime.Now;
+
+            // Remover treinos e exercícios antigos
+            foreach (var treino in plano.Treinos)
+            {
+                _context.TreinoExercicios.RemoveRange(treino.TreinoExercicios);
+            }
+            _context.Treinos.RemoveRange(plano.Treinos);
+            await _context.SaveChangesAsync();
+
+            // Adicionar novos treinos e exercícios
+            foreach (var dia in vm.DiasSemana.Where(d => d.Selecionado))
+            {
+                var treino = new Treino
+                {
+                    PlanoTreinoId = plano.Id,
+                    Nome = dia.Nome,
+                    OrdemDia = dia.Ordem,
+                    Observacoes = dia.Observacoes ?? "",
+                    DataCriacao = DateTime.Now
+                };
+                _context.Treinos.Add(treino);
+                await _context.SaveChangesAsync();
+
+                foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
+                {
+                    int? tempoSegundos = ex.TempoExecucaoSegundos;
+                    string repeticoes = ex.Repeticoes ?? "";
+                    decimal? cargaArredondada = null;
+
+                    if (ex.Carga.HasValue)
+                    {
+                        cargaArredondada = Math.Round(ex.Carga.Value, 2);
+                    }
+
+                    if (tempoSegundos.HasValue && tempoSegundos.Value > 0)
+                    {
+                        repeticoes = "";
+                    }
+
+                    _context.TreinoExercicios.Add(new TreinoExercicio
+                    {
+                        TreinoId = treino.Id,
+                        ExercicioId = ex.ExercicioId,
+                        Ordem = ex.Ordem,
+                        SeriesPlanejadas = ex.Series,
+                        RepeticoesPlanejadas = repeticoes,
+                        TempoExecucaoSegundos = tempoSegundos,
+                        CargaPlanejada = cargaArredondada,
+                        TempoDescanso = ex.Descanso,
+                        Observacoes = ex.Observacoes ?? "",
+                        DataCriacao = DateTime.Now
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Plano \"{plano.Titulo}\" atualizado com sucesso!";
+            return RedirectToAction(nameof(PlanosDoAluno), new { id = plano.AlunoId });
+        }
+
+        // ═════════════════════════════════════════════════════════════════
+        // NOVO MÉTODO: EXCLUIR PLANO
+        // ═════════════════════════════════════════════════════════════════
+
+        // ── Excluir Plano (POST) - Remove o plano com validação de segurança ──
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExcluirPlano(int id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var plano = await _context.PlanosTreino
+                .Include(p => p.Treinos)
+                    .ThenInclude(t => t.TreinoExercicios)
+                .FirstOrDefaultAsync(p => p.Id == id && p.TreinadorId == personal.Id);
+
+            if (plano == null) return NotFound();
+
+            var alunoId = plano.AlunoId;
+            var titulo = plano.Titulo;
+
+            // Remover em ordem correta (exercícios → treinos → plano)
+            foreach (var treino in plano.Treinos)
+            {
+                _context.TreinoExercicios.RemoveRange(treino.TreinoExercicios);
+            }
+            _context.Treinos.RemoveRange(plano.Treinos);
+            _context.PlanosTreino.Remove(plano);
+
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Plano \"{titulo}\" foi excluído com sucesso!";
+            return RedirectToAction(nameof(PlanosDoAluno), new { id = alunoId });
+        }
+
+        // ═════════════════════════════════════════════════════════════════
+        // FIM DOS NOVOS MÉTODOS
+        // ═════════════════════════════════════════════════════════════════
 
         // ── Medidas e IMC ─────────────────────────────────────────
         public async Task<IActionResult> Medidas(string? alunoId)
@@ -1072,6 +1290,22 @@ namespace BulkingPro.Controllers
                 .ToListAsync();
 
             ViewBag.Alunos = new SelectList(alunos, "Id", "NomeCompleto", selecionado);
+        }
+
+        // ── Método auxiliar para obter nome do dia ─────────────────
+        private string ObterNomeDia(int ordem)
+        {
+            return ordem switch
+            {
+                1 => "Segunda-feira",
+                2 => "Terça-feira",
+                3 => "Quarta-feira",
+                4 => "Quinta-feira",
+                5 => "Sexta-feira",
+                6 => "Sábado",
+                7 => "Domingo",
+                _ => ""
+            };
         }
     }
 

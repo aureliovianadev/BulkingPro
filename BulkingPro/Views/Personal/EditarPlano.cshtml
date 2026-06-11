@@ -1,7 +1,8 @@
-@model BulkingPro.ViewModels.CriarPlanoViewModel
+@using BulkingPro.ViewModels
+@model EditarPlanoViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"] = "Criar Plano de Treino";
+    ViewData["Title"] = "Editar Plano de Treino";
     ViewData["ActivePage"] = "PlanoTreino";
 
     var exercicios = ViewBag.Exercicios as List<BulkingPro.Models.Exercicio> ?? new();
@@ -11,8 +12,8 @@
 @section Topbar {
     <div class="topbar">
         <div>
-            <div class="topbar-title">Novo Plano de Treino</div>
-            <div class="topbar-sub">Configure os dias e exercícios</div>
+            <div class="topbar-title">Editar Plano de Treino</div>
+            <div class="topbar-sub">Altere os dados e exercícios do plano</div>
         </div>
         <div class="topbar-actions">
             <a class="btn btn-ghost" asp-action="PlanosTreino"><i class="ti ti-arrow-left"></i> Voltar</a>
@@ -20,8 +21,9 @@
     </div>
 }
 
-<form asp-action="CriarPlano" method="post" id="form-plano">
+<form asp-action="EditarPlano" method="post" id="form-plano">
     @Html.AntiForgeryToken()
+    <input type="hidden" name="Id" value="@Model.Id" />
 
     @if (!ViewData.ModelState.IsValid)
     {
@@ -40,37 +42,35 @@
             <div class="form-row">
                 <div class="form-group" style="flex:2">
                     <label class="form-label">Aluno</label>
-                    <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
+                    <select class="form-control" name="AlunoId" asp-items="ViewBag.Alunos">
                         <option value="">-- selecione o aluno --</option>
                     </select>
-                    <span asp-validation-for="AlunoId" class="field-validation-error"></span>
                 </div>
                 <div class="form-group" style="flex:3">
                     <label class="form-label">Título do plano</label>
-                    <input class="form-control" asp-for="Titulo" placeholder="Ex.: Hipertrofia A - Ciclo 1" />
-                    <span asp-validation-for="Titulo" class="field-validation-error"></span>
+                    <input class="form-control" name="Titulo" placeholder="Ex.: Hipertrofia A - Ciclo 1" value="@Model.Titulo" />
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group" style="flex:2">
                     <label class="form-label">Objetivo</label>
-                    <select class="form-control" asp-for="Objetivo">
+                    <select class="form-control" name="Objetivo">
                         <option value="">-- selecione o objetivo --</option>
-                        <option value="Hipertrofia (ganho de massa muscular)">💪 Hipertrofia</option>
-                        <option value="Emagrecimento">🔥 Emagrecimento</option>
-                        <option value="Condicionamento físico">🏃 Condicionamento físico</option>
-                        <option value="Ganho de força">⚡ Ganho de força</option>
-                        <option value="Reabilitação">🩺 Reabilitação</option>
-                        <option value="Qualidade de vida">🌿 Qualidade de vida</option>
+                        <option value="Hipertrofia (ganho de massa muscular)" selected="@(Model.Objetivo == "Hipertrofia (ganho de massa muscular)")">💪 Hipertrofia</option>
+                        <option value="Emagrecimento" selected="@(Model.Objetivo == "Emagrecimento")">🔥 Emagrecimento</option>
+                        <option value="Condicionamento físico" selected="@(Model.Objetivo == "Condicionamento físico")">🏃 Condicionamento físico</option>
+                        <option value="Ganho de força" selected="@(Model.Objetivo == "Ganho de força")">⚡ Ganho de força</option>
+                        <option value="Reabilitação" selected="@(Model.Objetivo == "Reabilitação")">🩺 Reabilitação</option>
+                        <option value="Qualidade de vida" selected="@(Model.Objetivo == "Qualidade de vida")">🌿 Qualidade de vida</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Data início</label>
-                    <input class="form-control" asp-for="DataInicio" type="date" />
+                    <input class="form-control" name="DataInicio" type="date" value="@Model.DataInicio.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">Data fim (opcional)</label>
-                    <input class="form-control" asp-for="DataFim" type="date" />
+                    <input class="form-control" name="DataFim" type="date" value="@(Model.DataFim?.ToString("yyyy-MM-dd") ?? "")" />
                 </div>
             </div>
         </div>
@@ -124,7 +124,7 @@
                             </div>
                         </div>
 
-                        <input type="hidden" name="DiasSemana[@i].Selecionado" value="true" class="dia-selecionado-input" />
+                        <input type="hidden" name="DiasSemana[@i].Selecionado" value="true" />
                         <input type="hidden" name="DiasSemana[@i].Nome" value="@dia.Nome" />
                         <input type="hidden" name="DiasSemana[@i].Ordem" value="@dia.Ordem" />
 
@@ -132,93 +132,91 @@
                             @for (int j = 0; j < dia.Exercicios.Count; j++)
                             {
                                 var ex = dia.Exercicios[j];
-                                if (ex.ExercicioId > 0)
-                                {
-                                    var grupoSelecionado = exercicios.FirstOrDefault(e => e.Id == ex.ExercicioId)?.GrupoMuscular?.Nome ?? "";
-                                    var tempoValor = ex.TempoExecucao.HasValue ? (ex.TempoExecucao.Value).ToString() : "";
-                                    var cargaValor = ex.Carga.HasValue ? ex.Carga.Value.ToString("F1") : "";
+                                var grupoSelecionado = exercicios.FirstOrDefault(e => e.Id == ex.ExercicioId)?.GrupoMuscular?.Nome ?? "";
+                                var tempoValor = ex.TempoExecucaoSegundos.HasValue ? (ex.TempoExecucaoSegundos.Value / 60).ToString() : "";
+                                var cargaValor = ex.Carga.HasValue ? ex.Carga.Value.ToString("F1") : "";
 
-                                    <div class="exercicio-card-moderno" data-dia="@i" data-ex="@j">
-                                        <div class="exercicio-header-moderno">
-                                            <div class="exercicio-numero-moderno">
-                                                <span class="numero-badge-moderno">@(j + 1)</span>
-                                                <i class="ti ti-grip-vertical drag-handle-moderno"></i>
-                                            </div>
-                                            <button type="button" class="btn-remove-exercicio-moderno" title="Remover exercício">
-                                                <i class="ti ti-trash"></i>
-                                            </button>
+                                <div class="exercicio-card-moderno" data-dia="@i" data-ex="@j">
+                                    <div class="exercicio-header-moderno">
+                                        <div class="exercicio-numero-moderno">
+                                            <span class="numero-badge-moderno">@(j + 1)</span>
+                                            <i class="ti ti-grip-vertical drag-handle-moderno"></i>
                                         </div>
-
-                                        <div class="exercicio-linha1">
-                                            <div class="campo-grupo-moderno">
-                                                <label class="form-label-sm-moderno">Grupo</label>
-                                                <select class="form-control-sm-moderno grupo-sel-moderno" data-dia="@i" data-ex="@j">
-                                                    <option value="">-- grupo --</option>
-                                                    @foreach (var g in grupos)
-                                                    {
-                                                        if (grupoSelecionado == g.Key)
-                                                        {
-                                                            <option value="@g.Key" selected="selected">@g.Key</option>
-                                                        }
-                                                        else
-                                                        {
-                                                            <option value="@g.Key">@g.Key</option>
-                                                        }
-                                                    }
-                                                </select>
-                                            </div>
-                                            <div class="campo-exercicio-moderno">
-                                                <label class="form-label-sm-moderno">Exercício</label>
-                                                <select class="form-control-sm-moderno exer-sel-moderno" data-dia="@i" data-ex="@j" name="DiasSemana[@i].Exercicios[@j].ExercicioId">
-                                                    <option value="0">-- selecione --</option>
-                                                    @foreach (var e in exercicios)
-                                                    {
-                                                        if (ex.ExercicioId == e.Id)
-                                                        {
-                                                            <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@((int)e.TipoExecucao)" selected="selected">@e.Nome</option>
-                                                        }
-                                                        else
-                                                        {
-                                                            <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@((int)e.TipoExecucao)">@e.Nome</option>
-                                                        }
-                                                    }
-                                                </select>
-                                            </div>
-                                            <div class="campo-series-moderno">
-                                                <label class="form-label-sm-moderno">Séries</label>
-                                                <input type="number" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Series" value="@ex.Series" min="1" step="1" />
-                                            </div>
-                                            <div class="campo-repeticoes-moderno">
-                                                <label class="form-label-sm-moderno">Repetições</label>
-                                                <input type="text" class="form-control-sm-moderno rep-input-moderno" data-dia="@i" data-ex="@j" name="DiasSemana[@i].Exercicios[@j].Repeticoes" value="@ex.Repeticoes" placeholder="Ex: 12" />
-                                            </div>
-                                        </div>
-
-                                        <div class="exercicio-linha2">
-                                            <div class="campo-tempo-moderno">
-                                                <label class="form-label-sm-moderno">Tempo</label>
-                                                <input type="number" step="0.5" class="form-control-sm-moderno tempo-input-moderno" data-dia="@i" data-ex="@j" name="DiasSemana[@i].Exercicios[@j].TempoExecucao" value="@tempoValor" placeholder="min" />
-                                            </div>
-                                            <div class="campo-carga-moderno">
-                                                <label class="form-label-sm-moderno">Carga</label>
-                                                <input type="number" step="0.5" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Carga" value="@cargaValor" placeholder="kg" />
-                                            </div>
-                                            <div class="campo-descanso-moderno">
-                                                <label class="form-label-sm-moderno">Descanso</label>
-                                                <input type="number" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Descanso" value="@ex.Descanso" placeholder="s" />
-                                            </div>
-                                        </div>
-
-                                        <div class="exercicio-linha3">
-                                            <div class="campo-obs-moderno">
-                                                <label class="form-label-sm-moderno">Observações</label>
-                                                <input type="text" class="form-control-sm-moderno-obs" name="DiasSemana[@i].Exercicios[@j].Observacoes" value="@ex.Observacoes" placeholder="Ex.: Executar com controle de carga..." />
-                                            </div>
-                                        </div>
-
-                                        <input type="hidden" name="DiasSemana[@i].Exercicios[@j].Ordem" value="@ex.Ordem" />
+                                        <button type="button" class="btn-remove-exercicio-moderno" title="Remover exercício">
+                                            <i class="ti ti-trash"></i>
+                                        </button>
                                     </div>
-                                }
+
+                                    <div class="exercicio-linha1">
+                                        <div class="campo-grupo-moderno">
+                                            <label class="form-label-sm-moderno">Grupo</label>
+                                            <select class="form-control-sm-moderno grupo-sel-moderno" data-dia="@i" data-ex="@j">
+                                                <option value="">-- grupo --</option>
+                                                @foreach (var g in grupos)
+                                                {
+                                                    if (grupoSelecionado == g.Key)
+                                                    {
+                                                        <option value="@g.Key" selected="selected">@g.Key</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@g.Key">@g.Key</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="campo-exercicio-moderno">
+                                            <label class="form-label-sm-moderno">Exercício</label>
+                                            <select class="form-control-sm-moderno exer-sel-moderno" data-dia="@i" data-ex="@j" name="DiasSemana[@i].Exercicios[@j].ExercicioId">
+                                                <option value="0">-- selecione --</option>
+                                                @foreach (var e in exercicios)
+                                                {
+                                                    if (ex.ExercicioId == e.Id)
+                                                    {
+                                                        <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@((int)e.TipoExecucao)" selected="selected">@e.Nome</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@e.Id" data-grupo="@e.GrupoMuscular?.Nome" data-tipo="@((int)e.TipoExecucao)">@e.Nome</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="campo-series-moderno">
+                                            <label class="form-label-sm-moderno">Séries</label>
+                                            <input type="number" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Series" value="@ex.Series" min="1" step="1" />
+                                        </div>
+                                        <div class="campo-repeticoes-moderno">
+                                            <label class="form-label-sm-moderno">Repetições</label>
+                                            <input type="text" class="form-control-sm-moderno rep-input-moderno" data-dia="@i" data-ex="@j" name="DiasSemana[@i].Exercicios[@j].Repeticoes" value="@ex.Repeticoes" placeholder="Ex: 12" />
+                                        </div>
+                                    </div>
+
+                                    <div class="exercicio-linha2">
+                                        <div class="campo-tempo-moderno">
+                                            <label class="form-label-sm-moderno">Tempo</label>
+                                            <input type="number" step="0.5" class="form-control-sm-moderno tempo-input-moderno" data-dia="@i" data-ex="@j" name="DiasSemana[@i].Exercicios[@j].TempoExecucao" value="@tempoValor" placeholder="min" />
+                                        </div>
+                                        <div class="campo-carga-moderno">
+                                            <label class="form-label-sm-moderno">Carga</label>
+                                            <input type="number" step="0.5" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Carga" value="@cargaValor" placeholder="kg" />
+                                        </div>
+                                        <div class="campo-descanso-moderno">
+                                            <label class="form-label-sm-moderno">Descanso</label>
+                                            <input type="number" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Descanso" value="@ex.Descanso" placeholder="s" />
+                                        </div>
+                                    </div>
+
+                                    <div class="exercicio-linha3">
+                                        <div class="campo-obs-moderno">
+                                            <label class="form-label-sm-moderno">Observações</label>
+                                            <input type="text" class="form-control-sm-moderno-obs" name="DiasSemana[@i].Exercicios[@j].Observacoes" value="@ex.Observacoes" placeholder="Ex.: Executar com controle de carga..." />
+                                        </div>
+                                    </div>
+
+                                    <input type="hidden" name="DiasSemana[@i].Exercicios[@j].Ordem" value="@ex.Ordem" />
+                                    <input type="hidden" name="DiasSemana[@i].Exercicios[@j].TreinoExercicioId" value="@ex.TreinoExercicioId" />
+                                </div>
                             }
                         </div>
 
@@ -233,7 +231,7 @@
 
     <div class="form-actions">
         <button type="submit" class="btn btn-primary btn-save">
-            <i class="ti ti-device-floppy"></i> Salvar plano de treino
+            <i class="ti ti-device-floppy"></i> Salvar alterações
         </button>
         <a class="btn btn-ghost" asp-action="PlanosTreino">Cancelar</a>
     </div>
@@ -645,10 +643,6 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .btn-ghost:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
     .btn-save {
         flex: 1;
         justify-content: center;
@@ -667,13 +661,6 @@
         background: rgba(238, 25, 32, 0.12);
         color: #ee1920;
         border: 1px solid rgba(238, 25, 32, 0.25);
-    }
-
-    .field-validation-error {
-        font-size: 11px;
-        color: #ee1920;
-        margin-top: 4px;
-        display: block;
     }
 
     .toast-notification {

@@ -13,9 +13,16 @@
         </div>
         <div class="topbar-actions">
             <a class="btn btn-ghost" asp-action="PlanosTreino"><i class="ti ti-arrow-left"></i> Voltar</a>
+            
+            <!-- NOVO: Botão Editar Plano -->
+            <a class="btn btn-primary" asp-action="EditarPlano" asp-route-id="@Model.Id">
+                <i class="ti ti-edit"></i> Editar plano
+            </a>
+            
             <a class="btn btn-primary" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
                 <i class="ti ti-plus"></i> Novo plano
             </a>
+            
             <form asp-action="DuplicarPlano" method="post" style="display:inline">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
@@ -138,7 +145,7 @@
     <div class="empty-state">
         <i class="ti ti-clipboard-list"></i>
         <p>Nenhum treino cadastrado neste plano.</p>
-        <a class="btn btn-primary" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
+        <a class="btn btn-primary" asp-action="EditarPlano" asp-route-id="@Model.Id">
             <i class="ti ti-plus"></i> Editar plano
         </a>
     </div>
