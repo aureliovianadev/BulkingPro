@@ -606,9 +606,16 @@ namespace BulkingPro.Controllers
                 {
                     var temRepeticoes = !string.IsNullOrWhiteSpace(ex.Repeticoes);
                     var temTempo = ex.TempoExecucao.HasValue && ex.TempoExecucao.Value > 0;
+                    // XOR: deve haver exatamente um dos dois preenchido
                     if (!temRepeticoes && !temTempo)
                     {
-                        ModelState.AddModelError("", $"Em {dia.Nome}: um dos exercícios está sem Repetições nem Tempo de execução. Preencha ao menos um dos dois.");
+                        ModelState.AddModelError("", $"Em {dia.Nome}: um exercício está sem Repetições nem Tempo de execução. Preencha exatamente um dos dois.");
+                        await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                        return View(vm);
+                    }
+                    if (temRepeticoes && temTempo)
+                    {
+                        ModelState.AddModelError("", $"Em {dia.Nome}: um exercício tem Repetições E Tempo preenchidos ao mesmo tempo. Preencha apenas um dos dois.");
                         await CarregarSelectsPlano(personal.Id, vm.AlunoId);
                         return View(vm);
                     }
@@ -646,12 +653,6 @@ namespace BulkingPro.Controllers
                 {
                     int? tempoSegundos = null;
                     string repeticoes = "";
-                    decimal? cargaArredondada = null;
-
-                    if (ex.Carga.HasValue)
-                    {
-                        cargaArredondada = Math.Round(ex.Carga.Value, 2);
-                    }
 
                     if (ex.TempoExecucao.HasValue && ex.TempoExecucao.Value > 0)
                     {
@@ -672,7 +673,7 @@ namespace BulkingPro.Controllers
                         SeriesPlanejadas = ex.Series ?? 3,
                         RepeticoesPlanejadas = repeticoes,
                         TempoExecucaoSegundos = tempoSegundos,
-                        CargaPlanejada = cargaArredondada,
+                        CargaPlanejada = ex.Carga.HasValue ? (decimal)ex.Carga.Value : (decimal?)null,
                         TempoDescanso = ex.Descanso,
                         Observacoes = ex.Observacoes ?? "",
                         DataCriacao = DateTime.Now
@@ -740,7 +741,7 @@ namespace BulkingPro.Controllers
                             Series = te.SeriesPlanejadas,
                             Repeticoes = te.RepeticoesPlanejadas,
                             TempoExecucaoSegundos = te.TempoExecucaoSegundos,
-                            Carga = te.CargaPlanejada,
+                            Carga = te.CargaPlanejada.HasValue ? (int?)((int)te.CargaPlanejada.Value) : null,
                             Descanso = te.TempoDescanso,
                             Observacoes = te.Observacoes
                         });
@@ -786,16 +787,23 @@ namespace BulkingPro.Controllers
                 return View("EditarPlano", vm);
             }
 
-            // Validar repetições/tempo
+            // Validar repetições/tempo (XOR)
             foreach (var dia in vm.DiasSemana.Where(d => d.Selecionado))
             {
                 foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
                 {
                     var temRepeticoes = !string.IsNullOrWhiteSpace(ex.Repeticoes);
                     var temTempo = ex.TempoExecucaoSegundos.HasValue && ex.TempoExecucaoSegundos.Value > 0;
+                    // XOR: deve haver exatamente um dos dois preenchido
                     if (!temRepeticoes && !temTempo)
                     {
-                        ModelState.AddModelError("", $"Em {dia.Nome}: um dos exercícios está sem Repetições nem Tempo de execução. Preencha ao menos um dos dois.");
+                        ModelState.AddModelError("", $"Em {dia.Nome}: um exercício está sem Repetições nem Tempo de execução. Preencha exatamente um dos dois.");
+                        await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                        return View("EditarPlano", vm);
+                    }
+                    if (temRepeticoes && temTempo)
+                    {
+                        ModelState.AddModelError("", $"Em {dia.Nome}: um exercício tem Repetições E Tempo preenchidos ao mesmo tempo. Preencha apenas um dos dois.");
                         await CarregarSelectsPlano(personal.Id, vm.AlunoId);
                         return View("EditarPlano", vm);
                     }
@@ -835,12 +843,6 @@ namespace BulkingPro.Controllers
                 {
                     int? tempoSegundos = ex.TempoExecucaoSegundos;
                     string repeticoes = ex.Repeticoes ?? "";
-                    decimal? cargaArredondada = null;
-
-                    if (ex.Carga.HasValue)
-                    {
-                        cargaArredondada = Math.Round(ex.Carga.Value, 2);
-                    }
 
                     if (tempoSegundos.HasValue && tempoSegundos.Value > 0)
                     {
@@ -855,7 +857,7 @@ namespace BulkingPro.Controllers
                         SeriesPlanejadas = ex.Series,
                         RepeticoesPlanejadas = repeticoes,
                         TempoExecucaoSegundos = tempoSegundos,
-                        CargaPlanejada = cargaArredondada,
+                        CargaPlanejada = ex.Carga.HasValue ? (decimal)ex.Carga.Value : (decimal?)null,
                         TempoDescanso = ex.Descanso,
                         Observacoes = ex.Observacoes ?? "",
                         DataCriacao = DateTime.Now

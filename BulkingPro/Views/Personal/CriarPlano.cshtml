@@ -135,8 +135,8 @@
                                 if (ex.ExercicioId > 0)
                                 {
                                     var grupoSelecionado = exercicios.FirstOrDefault(e => e.Id == ex.ExercicioId)?.GrupoMuscular?.Nome ?? "";
-                                    var tempoValor = ex.TempoExecucao.HasValue ? (ex.TempoExecucao.Value).ToString() : "";
-                                    var cargaValor = ex.Carga.HasValue ? ex.Carga.Value.ToString("F1") : "";
+                                    var tempoValor = ex.TempoExecucao.HasValue ? ex.TempoExecucao.Value.ToString("G", System.Globalization.CultureInfo.InvariantCulture) : "";
+                                    var cargaValor = ex.Carga.HasValue ? ex.Carga.Value.ToString() : "";
 
                                     <div class="exercicio-card-moderno" data-dia="@i" data-ex="@j">
                                         <div class="exercicio-header-moderno">
@@ -201,7 +201,7 @@
                                             </div>
                                             <div class="campo-carga-moderno">
                                                 <label class="form-label-sm-moderno">Carga</label>
-                                                <input type="number" step="0.5" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Carga" value="@cargaValor" placeholder="kg" />
+                                                <input type="number" min="0" step="1" class="form-control-sm-moderno" name="DiasSemana[@i].Exercicios[@j].Carga" value="@cargaValor" placeholder="kg" />
                                             </div>
                                             <div class="campo-descanso-moderno">
                                                 <label class="form-label-sm-moderno">Descanso</label>
@@ -937,7 +937,7 @@
                 '</div>' +
                 '<div class="campo-carga-moderno">' +
                     '<label class="form-label-sm-moderno">Carga</label>' +
-                    '<input type="number" step="0.5" class="form-control-sm-moderno" name="DiasSemana[' + diaIndex + '].Exercicios[' + newIndex + '].Carga" placeholder="kg" />' +
+                    '<input type="number" min="0" step="1" class="form-control-sm-moderno" name="DiasSemana[' + diaIndex + '].Exercicios[' + newIndex + '].Carga" placeholder="kg" />' +
                 '</div>' +
                 '<div class="campo-descanso-moderno">' +
                     '<label class="form-label-sm-moderno">Descanso</label>' +
@@ -1116,6 +1116,31 @@
             if (!temExercicio) {
                 e.preventDefault();
                 mostrarToast('Adicione pelo menos um exercício em algum dia da semana antes de salvar.', true);
+                return;
+            }
+
+            // Validação XOR: exatamente um entre Repetições e Tempo deve estar preenchido
+            var cards = document.querySelectorAll('.exercicio-card-moderno');
+            for (var c = 0; c < cards.length; c++) {
+                var card = cards[c];
+                var exercicioSelect = card.querySelector('select.exer-sel-moderno');
+                if (!exercicioSelect || !exercicioSelect.value || exercicioSelect.value == '0') continue;
+
+                var repInput = card.querySelector('.rep-input-moderno');
+                var tempoInput = card.querySelector('.tempo-input-moderno');
+                var temRep = repInput && repInput.value.trim() !== '';
+                var temTempo = tempoInput && tempoInput.value.trim() !== '' && parseFloat(tempoInput.value) > 0;
+
+                if (!temRep && !temTempo) {
+                    e.preventDefault();
+                    mostrarToast('Um exercício está sem Repetições nem Tempo. Preencha exatamente um dos dois.', true);
+                    return;
+                }
+                if (temRep && temTempo) {
+                    e.preventDefault();
+                    mostrarToast('Um exercício tem Repetições E Tempo preenchidos. Preencha apenas um dos dois.', true);
+                    return;
+                }
             }
         });
     }

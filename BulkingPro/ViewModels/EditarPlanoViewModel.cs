@@ -57,11 +57,11 @@ namespace BulkingPro.ViewModels
 
         public string? Repeticoes { get; set; }
 
-        [Range(0, 3600, ErrorMessage = "Tempo máximo 60 minutos")]
+        [Range(0, int.MaxValue, ErrorMessage = "Tempo deve ser maior ou igual a zero")]
         public int? TempoExecucaoSegundos { get; set; }
 
         [Range(0, 500, ErrorMessage = "Carga máxima 500kg")]
-        public decimal? Carga { get; set; }
+        public int? Carga { get; set; }
 
         [Range(0, 300, ErrorMessage = "Descanso máximo 300 segundos")]
         public int? Descanso { get; set; }
