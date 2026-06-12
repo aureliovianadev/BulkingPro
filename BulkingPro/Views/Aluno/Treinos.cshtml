@@ -16,84 +16,815 @@
 
 @if (ViewBag.Mensagem != null)
 {
-    <div class="alert alert-warning">
+    <div class="alert alert-warning" style="background:rgba(196,168,122,0.12); color:var(--gold); border:1px solid rgba(196,168,122,0.25);">
         <i class="ti ti-info-circle"></i> @ViewBag.Mensagem
     </div>
 }
 
-@foreach (var dia in Model.DiasTreino)
-{
-    <div class="treino-dia">
-        <div class="treino-header">
-            <div class="treino-nome">@dia.Nome</div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                @if (dia.Hoje)
-                {
-                    <span class="treino-badge hoje"><i class="ti ti-calendar"></i> Hoje</span>
-                }
-                @if (!dia.Realizado && dia.Hoje)
-                {
-                    <button class="btn btn-primary btn-sm" onclick="marcarTreinoRealizado(@dia.TreinoId)">
-                        <i class="ti ti-check"></i> Marcar realizado
-                    </button>
-                }
-            </div>
-        </div>
-        <div>
-            @foreach (var ex in dia.Exercicios)
-            {
-                <div class="exercicio-linha">
-                    <div class="exercicio-num">@ex.Ordem</div>
-                    <div class="exercicio-info">
-                        <div class="exercicio-nome">@ex.NomeExercicio</div>
-                        <div class="exercicio-grupo">@ex.GrupoMuscular</div>
-                        <div class="exercicio-detalhes">
-                            <span class="detalhe-chip"><i class="ti ti-repeat"></i> @ex.Series séries</span>
-                            
-                            <!-- Exibe Repetições OU Tempo baseado no que foi preenchido -->
-                            @if (!string.IsNullOrEmpty(ex.RepeticoesOuTempo))
-                            {
-                                if (ex.RepeticoesOuTempo.Contains("min") || ex.RepeticoesOuTempo.Contains("s"))
-                                {
-                                    <span class="detalhe-chip"><i class="ti ti-clock"></i> @ex.RepeticoesOuTempo</span>
-                                }
-                                else
-                                {
-                                    <span class="detalhe-chip"><i class="ti ti-refresh"></i> @ex.RepeticoesOuTempo reps</span>
-                                }
-                            }
+<style>
+    /* Estilos específicos para os cards de treino */
+    .treinos-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
 
-                            @if (ex.Carga.HasValue) 
-                            { 
-                                <span class="detalhe-chip"><i class="ti ti-barbell"></i> @ex.Carga.Value.ToString("F0") kg</span> 
-                            }
-                            @if (ex.Descanso.HasValue) 
-                            { 
-                                <span class="detalhe-chip"><i class="ti ti-hourglass"></i> @ex.Descanso s</span> 
+    /* Card do dia (expansível) */
+    .dia-card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .dia-card:hover {
+        border-color: rgba(238, 25, 32, 0.3);
+    }
+
+    /* Header do card (sempre visível) */
+    .dia-header {
+        padding: 16px 20px;
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .dia-header:hover {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .dia-info {
+        flex: 1;
+    }
+
+    .dia-nome {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .dia-nome i {
+        font-size: 20px;
+        color: var(--gold);
+    }
+
+    .dia-nome h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        margin: 0;
+    }
+
+    .dia-badge-hoje {
+        background: rgba(238, 25, 32, 0.15);
+        color: var(--red);
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 20px;
+    }
+
+    .dia-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .dia-meta span {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .progress-bar-container {
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        margin: 10px 0 6px;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--red), #ff4d52);
+        border-radius: 2px;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        font-size: 11px;
+        color: var(--muted);
+    }
+
+    .dia-expand-icon {
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+    }
+
+    .dia-card.expandido .dia-expand-icon {
+        transform: rotate(180deg);
+    }
+
+    /* Conteúdo expandido */
+    .dia-content {
+        display: none;
+        padding: 0 20px 20px 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .dia-card.expandido .dia-content {
+        display: block;
+    }
+
+    /* Grid de exercícios - CARDS QUADRADOS */
+    .exercicios-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    /* Card do exercício (formato quadrado) */
+    .exercicio-card {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .exercicio-card:hover {
+        border-color: rgba(238, 25, 32, 0.3);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .exercicio-card.concluido {
+        border-left: 3px solid #2ea043;
+        background: rgba(46, 160, 67, 0.05);
+    }
+
+    /* Header do exercício com checkbox */
+    .exercicio-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .exercicio-titulo {
+        flex: 1;
+    }
+
+    .exercicio-nome {
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 4px;
+    }
+
+    .exercicio-grupo {
+        font-size: 10px;
+        color: var(--gold);
+        background: rgba(196, 168, 122, 0.1);
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 20px;
+    }
+
+    /* Checkbox moderno */
+    .checkbox-moderno {
+        display: block;
+        position: relative;
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .checkbox-moderno input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+
+    .checkmark {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 22px;
+        width: 22px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .checkbox-moderno:hover .checkmark {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .checkbox-moderno input:checked ~ .checkmark {
+        background: #2ea043;
+        border-color: #2ea043;
+    }
+
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+    }
+
+    .checkbox-moderno input:checked ~ .checkmark:after {
+        display: block;
+    }
+
+    .checkbox-moderno .checkmark:after {
+        left: 7px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    /* Detalhes do exercício */
+    .exercicio-detalhes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0;
+    }
+
+    .detalhe-chip {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 4px 10px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .detalhe-chip i {
+        font-size: 11px;
+        color: var(--gold);
+    }
+
+    /* Observações do personal */
+    .obs-personal {
+        background: rgba(196, 168, 122, 0.08);
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin: 10px 0;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Comentário do aluno */
+    .comentario-aluno {
+        background: rgba(238, 25, 32, 0.08);
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin: 10px 0;
+        font-size: 11px;
+        color: var(--gold);
+    }
+
+    /* Área de anotação */
+    .anotacao-area {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    .anotacao-preview {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+
+    .anotacao-preview:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--gold);
+    }
+
+    .anotacao-preview i {
+        font-size: 14px;
+    }
+
+    .anotacao-editor {
+        display: none;
+    }
+
+    .anotacao-editor.ativo {
+        display: block;
+    }
+
+    .anotacao-textarea {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        color: #fff;
+        font-size: 12px;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    .anotacao-textarea:focus {
+        outline: none;
+        border-color: var(--red);
+    }
+
+    .anotacao-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .btn-anotacao {
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        border-radius: 8px;
+        padding: 5px 12px;
+        font-size: 11px;
+        color: var(--muted);
+        cursor: pointer;
+    }
+
+    .btn-anotacao.salvar {
+        background: var(--red);
+        color: #fff;
+    }
+
+    .btn-anotacao:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Botão de comentário */
+    .btn-comentario-exercicio {
+        background: none;
+        border: none;
+        color: var(--gold);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 8px;
+    }
+
+    .btn-comentario-exercicio:hover {
+        background: rgba(196, 168, 122, 0.15);
+    }
+
+    /* Resumo do dia */
+    .resumo-dia {
+        background: linear-gradient(135deg, rgba(238, 25, 32, 0.08), rgba(0, 0, 0, 0.2));
+        border-radius: 16px;
+        padding: 16px;
+        margin-top: 20px;
+        border: 1px solid rgba(238, 25, 32, 0.15);
+    }
+
+    .resumo-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .resumo-header i {
+        font-size: 18px;
+        color: var(--gold);
+    }
+
+    .resumo-header h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        margin: 0;
+    }
+
+    .resumo-mensagem {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .resumo-mensagem.concluido {
+        color: #2ea043;
+    }
+
+    /* Botão marcar treino */
+    .btn-marcar-treino {
+        width: 100%;
+        margin-top: 16px;
+        justify-content: center;
+    }
+
+    /* Sem treino */
+    .sem-treino-message {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+    }
+
+    .sem-treino-message i {
+        font-size: 48px;
+        color: rgba(238, 25, 32, 0.3);
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    /* Responsivo */
+    @@media (max-width: 700px) {
+        .exercicios-grid {
+            grid-template-columns: 1fr;
+        }
+        .dia-header {
+            padding: 12px 16px;
+        }
+        .dia-nome h3 {
+            font-size: 14px;
+        }
+    }
+</style>
+
+<div class="treinos-container">
+    @if (!Model.DiasTreino.Any())
+    {
+        <div class="sem-treino-message">
+            <i class="ti ti-barbell-off"></i>
+            <p>Nenhum treino cadastrado ainda.</p>
+            <p style="font-size: 12px; margin-top: 8px;">Aguarde seu personal trainer montar seu plano de treino.</p>
+        </div>
+    }
+    else
+    {
+        @for (int i = 0; i < Model.DiasTreino.Count; i++)
+        {
+            var dia = Model.DiasTreino[i];
+            var totalExercicios = dia.Exercicios.Count;
+            var hoje = DateTime.Today;
+            var isHoje = dia.DiaSemana == hoje.DayOfWeek;
+
+            <div class="dia-card" data-dia-index="@i">
+                <div class="dia-header" onclick="toggleDia(this)">
+                    <div class="dia-info">
+                        <div class="dia-nome">
+                            <i class="ti ti-calendar-event"></i>
+                            <h3>@dia.Nome</h3>
+                            @if (isHoje)
+                            {
+                                <span class="dia-badge-hoje">HOJE</span>
                             }
                         </div>
-                        @if (!string.IsNullOrEmpty(ex.Observacoes))
+                        <div class="dia-meta">
+                            <span><i class="ti ti-barbell"></i> @totalExercicios @(totalExercicios == 1 ? "exercício" : "exercícios")</span>
+                            @if (dia.Realizado)
+                            {
+                                <span style="color:#2ea043"><i class="ti ti-circle-check"></i> Realizado hoje</span>
+                            }
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progress-fill-@i" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="progress-text-@i">0/@totalExercicios exercícios concluídos</div>
+                    </div>
+                    <div class="dia-expand-icon">
+                        <i class="ti ti-chevron-down"></i>
+                    </div>
+                </div>
+
+                <div class="dia-content">
+                    <!-- Grid de cards dos exercícios -->
+                    <div class="exercicios-grid" id="exercicios-grid-@i">
+                        @foreach (var ex in dia.Exercicios.OrderBy(e => e.Ordem))
                         {
-                            <div style="font-size: 11px; color: var(--muted); margin-top: 6px;"><i class="ti ti-notes"></i> @ex.Observacoes</div>
-                        }
-                        @if (!string.IsNullOrEmpty(ex.MeuComentario))
-                        {
-                            <div class="comentario-texto"><i class="ti ti-message"></i> @ex.MeuComentario</div>
+                            <div class="exercicio-card" data-exercicio-id="@ex.TreinoExercicioId" data-dia-index="@i">
+                                <div class="exercicio-header">
+                                    <div class="exercicio-titulo">
+                                        <div class="exercicio-nome">@ex.NomeExercicio</div>
+                                        <span class="exercicio-grupo">@ex.GrupoMuscular</span>
+                                    </div>
+                                    <label class="checkbox-moderno">
+                                        <input type="checkbox" class="exercicio-checkbox" data-exercicio-id="@ex.TreinoExercicioId" data-dia-index="@i" />
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+
+                                <div class="exercicio-detalhes">
+                                    <span class="detalhe-chip"><i class="ti ti-repeat"></i> @ex.Series séries</span>
+                                    @if (!string.IsNullOrEmpty(ex.RepeticoesOuTempo))
+                                    {
+                                        if (ex.RepeticoesOuTempo.Contains("min") || ex.RepeticoesOuTempo.Contains("s"))
+                                        {
+                                            <span class="detalhe-chip"><i class="ti ti-clock"></i> @ex.RepeticoesOuTempo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="detalhe-chip"><i class="ti ti-refresh"></i> @ex.RepeticoesOuTempo reps</span>
+                                        }
+                                    }
+                                    @if (ex.Carga.HasValue)
+                                    {
+                                        <span class="detalhe-chip"><i class="ti ti-barbell"></i> @ex.Carga.Value.ToString("F0") kg</span>
+                                    }
+                                    @if (ex.Descanso.HasValue)
+                                    {
+                                        <span class="detalhe-chip"><i class="ti ti-hourglass"></i> @ex.Descanso s</span>
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(ex.Observacoes))
+                                {
+                                    <div class="obs-personal">
+                                        <i class="ti ti-notes"></i> @ex.Observacoes
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(ex.MeuComentario))
+                                {
+                                    <div class="comentario-aluno">
+                                        <i class="ti ti-message"></i> Meu comentário: @ex.MeuComentario
+                                    </div>
+                                }
+
+                                <!-- Área de anotações do aluno -->
+                                <div class="anotacao-area">
+                                    <div class="anotacao-preview" data-exercicio-id="@ex.TreinoExercicioId" data-dia-index="@i">
+                                        <i class="ti ti-message"></i>
+                                        <span class="anotacao-texto-preview">Clique para adicionar anotação...</span>
+                                    </div>
+                                    <div class="anotacao-editor">
+                                        <textarea class="anotacao-textarea" rows="2" placeholder="Digite sua anotação...&#10;Ex: Aumentei a carga, senti desconforto..."></textarea>
+                                        <div class="anotacao-actions">
+                                            <button class="btn-anotacao salvar">Salvar</button>
+                                            <button class="btn-anotacao cancelar">Cancelar</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Botão comentário para o personal -->
+                                <button class="btn-comentario-exercicio" onclick="abrirModal(@ex.TreinoExercicioId, '@ex.NomeExercicio.Replace("'", "\\'")', '@(ex.MeuComentario?.Replace("'", "\\'") ?? "")')">
+                                    <i class="ti ti-message"></i> Falar com o personal
+                                </button>
+                            </div>
                         }
                     </div>
-                    <button class="btn-comentario" onclick="abrirModal(@ex.TreinoExercicioId, '@ex.NomeExercicio.Replace("'", "\\'")', '@(ex.MeuComentario?.Replace("'", "\\'") ?? "")')">
-                        <i class="ti ti-message"></i>
-                    </button>
-                </div>
-            }
-        </div>
-    </div>
-}
 
-@if (!Model.DiasTreino.Any())
-{
-    <div style="text-align: center; padding: 60px 20px; color: var(--muted);">
-        <i class="ti ti-barbell-off" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
-        <p>Nenhum treino cadastrado ainda.</p>
-    </div>
+                    <!-- Resumo do dia -->
+                    <div class="resumo-dia" id="resumo-dia-@i">
+                        <div class="resumo-header">
+                            <i class="ti ti-chart-bar"></i>
+                            <h4>Resumo do treino</h4>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="resumo-fill-@i" style="width: 0%"></div>
+                        </div>
+                        <div class="resumo-mensagem" id="resumo-mensagem-@i">
+                            <i class="ti ti-barbell"></i> Nenhum exercício concluído ainda. Comece agora! 💪
+                        </div>
+                    </div>
+
+                    <!-- Botão marcar treino como realizado -->
+                    @if (!dia.Realizado && isHoje)
+                    {
+                        <button class="btn btn-primary btn-marcar-treino" onclick="marcarTreinoRealizado(@dia.TreinoId)">
+                            <i class="ti ti-check"></i> Marcar treino como realizado
+                        </button>
+                    }
+                    @if (dia.Realizado)
+                    {
+                        <div style="margin-top: 16px; text-align: center;">
+                            <div style="background: rgba(46,160,67,0.12); display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; color: #2ea043;">
+                                <i class="ti ti-circle-check"></i> Treino realizado hoje!
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<script>
+    // Função para expandir/recolher o card do dia
+    function toggleDia(element) {
+        var card = element.closest('.dia-card');
+        card.classList.toggle('expandido');
+    }
+
+    // Inicializar checkboxes e anotações
+    document.addEventListener('DOMContentLoaded', function() {
+        // Carregar estados salvos dos checkboxes
+        document.querySelectorAll('.exercicio-checkbox').forEach(function(checkbox) {
+            var exercicioId = checkbox.getAttribute('data-exercicio-id');
+            var diaIndex = checkbox.getAttribute('data-dia-index');
+            var key = 'exercicio_' + diaIndex + '_' + exercicioId;
+            var saved = localStorage.getItem(key);
+            
+            if (saved === 'true') {
+                checkbox.checked = true;
+                marcarConcluido(checkbox.closest('.exercicio-card'), true);
+            }
+            
+            checkbox.addEventListener('change', function() {
+                var isChecked = this.checked;
+                var card = this.closest('.exercicio-card');
+                var exId = this.getAttribute('data-exercicio-id');
+                var dIndex = this.getAttribute('data-dia-index');
+                
+                marcarConcluido(card, isChecked);
+                localStorage.setItem('exercicio_' + dIndex + '_' + exId, isChecked);
+                atualizarProgressoDia(dIndex);
+            });
+        });
+        
+        // Carregar anotações salvas
+        document.querySelectorAll('.anotacao-preview').forEach(function(preview) {
+            var exercicioId = preview.getAttribute('data-exercicio-id');
+            var diaIndex = preview.getAttribute('data-dia-index');
+            var key = 'anotacao_' + diaIndex + '_' + exercicioId;
+            var saved = localStorage.getItem(key);
+            
+            if (saved && saved.trim() !== '') {
+                var textoSpan = preview.querySelector('.anotacao-texto-preview');
+                if (textoSpan) {
+                    textoSpan.textContent = saved.length > 40 ? saved.substring(0, 37) + '...' : saved;
+                    textoSpan.style.color = 'var(--gold)';
+                }
+                preview.style.opacity = '1';
+            }
+            
+            preview.addEventListener('click', function(e) {
+                e.stopPropagation();
+                abrirEditorAnotacao(this);
+            });
+        });
+        
+        // Atualizar todos os progressos
+        for (var i = 0; i < @Model.DiasTreino.Count; i++) {
+            atualizarProgressoDia(i);
+        }
+    });
+    
+    function marcarConcluido(card, isConcluido) {
+        if (!card) return;
+        if (isConcluido) {
+            card.classList.add('concluido');
+        } else {
+            card.classList.remove('concluido');
+        }
+    }
+    
+    function atualizarProgressoDia(diaIndex) {
+        var grid = document.getElementById('exercicios-grid-' + diaIndex);
+        if (!grid) return;
+        
+        var checkboxes = grid.querySelectorAll('.exercicio-checkbox');
+        var total = checkboxes.length;
+        var concluidos = 0;
+        
+        checkboxes.forEach(function(cb) {
+            if (cb.checked) concluidos++;
+        });
+        
+        var percentual = total > 0 ? (concluidos / total) * 100 : 0;
+        
+        var progressFill = document.getElementById('progress-fill-' + diaIndex);
+        var progressText = document.getElementById('progress-text-' + diaIndex);
+        var resumoFill = document.getElementById('resumo-fill-' + diaIndex);
+        var resumoMsg = document.getElementById('resumo-mensagem-' + diaIndex);
+        
+        if (progressFill) progressFill.style.width = percentual + '%';
+        if (progressText) progressText.textContent = concluidos + '/' + total + ' exercícios concluídos';
+        if (resumoFill) resumoFill.style.width = percentual + '%';
+        
+        if (resumoMsg) {
+            if (percentual === 100) {
+                resumoMsg.innerHTML = '<i class="ti ti-circle-check"></i> Treino completo! Parabéns! 🎉';
+                resumoMsg.classList.add('concluido');
+            } else if (percentual >= 70) {
+                resumoMsg.innerHTML = '<i class="ti ti-trending-up"></i> ' + percentual.toFixed(0) + '% concluído! Continue assim! 💪';
+                resumoMsg.classList.remove('concluido');
+            } else if (percentual >= 50) {
+                resumoMsg.innerHTML = '<i class="ti ti-hourglass"></i> ' + percentual.toFixed(0) + '% concluído. Metade do caminho! 🏃';
+                resumoMsg.classList.remove('concluido');
+            } else if (percentual > 0) {
+                resumoMsg.innerHTML = '<i class="ti ti-alarm"></i> ' + percentual.toFixed(0) + '% concluído. Vamos finalizar! 🔥';
+                resumoMsg.classList.remove('concluido');
+            } else {
+                resumoMsg.innerHTML = '<i class="ti ti-barbell"></i> Nenhum exercício concluído ainda. Comece agora! 💪';
+                resumoMsg.classList.remove('concluido');
+            }
+        }
+    }
+    
+    function abrirEditorAnotacao(preview) {
+        var editor = preview.nextElementSibling;
+        var textarea = editor ? editor.querySelector('.anotacao-textarea') : null;
+        var textoSpan = preview.querySelector('.anotacao-texto-preview');
+        var textoAtual = textoSpan && textoSpan.textContent !== 'Clique para adicionar anotação...' ? textoSpan.textContent : '';
+        
+        if (editor && textarea) {
+            textarea.value = textoAtual;
+            preview.style.display = 'none';
+            editor.classList.add('ativo');
+            textarea.focus();
+            
+            var salvarBtn = editor.querySelector('.salvar');
+            var cancelarBtn = editor.querySelector('.cancelar');
+            
+            var newSalvarBtn = salvarBtn.cloneNode(true);
+            salvarBtn.parentNode.replaceChild(newSalvarBtn, salvarBtn);
+            newSalvarBtn.addEventListener('click', function() {
+                salvarAnotacao(preview, editor, textarea);
+            });
+            
+            var newCancelarBtn = cancelarBtn.cloneNode(true);
+            cancelarBtn.parentNode.replaceChild(newCancelarBtn, cancelarBtn);
+            newCancelarBtn.addEventListener('click', function() {
+                cancelarAnotacao(preview, editor);
+            });
+        }
+    }
+    
+    function salvarAnotacao(preview, editor, textarea) {
+        var novoTexto = textarea.value.trim();
+        var textoSpan = preview.querySelector('.anotacao-texto-preview');
+        var exercicioId = preview.getAttribute('data-exercicio-id');
+        var diaIndex = preview.getAttribute('data-dia-index');
+        var key = 'anotacao_' + diaIndex + '_' + exercicioId;
+        
+        if (novoTexto !== '') {
+            localStorage.setItem(key, novoTexto);
+            if (textoSpan) {
+                textoSpan.textContent = novoTexto.length > 40 ? novoTexto.substring(0, 37) + '...' : novoTexto;
+                textoSpan.style.color = 'var(--gold)';
+            }
+        } else {
+            localStorage.removeItem(key);
+            if (textoSpan) {
+                textoSpan.textContent = 'Clique para adicionar anotação...';
+                textoSpan.style.color = 'var(--muted)';
+            }
+        }
+        
+        preview.style.display = 'flex';
+        editor.classList.remove('ativo');
+        
+        mostrarToast('Anotação salva!');
+    }
+    
+    function cancelarAnotacao(preview, editor) {
+        preview.style.display = 'flex';
+        editor.classList.remove('ativo');
+    }
+    
+    function mostrarToast(mensagem) {
+        var toast = document.createElement('div');
+        toast.innerHTML = '<i class="ti ti-circle-check"></i> ' + mensagem;
+        toast.style.cssText = 'position:fixed;bottom:30px;right:30px;background:#2ea043;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;z-index:1000;animation:fadeIn 0.3s ease';
+        document.body.appendChild(toast);
+        setTimeout(function() { toast.remove(); }, 2500);
+    }
+</script>
+
+@section Scripts {
+    @* Scripts carregados pelo layout *@
 }

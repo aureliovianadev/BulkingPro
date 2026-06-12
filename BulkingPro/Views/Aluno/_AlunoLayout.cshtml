@@ -15,6 +15,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] — BulkingPro</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+    
+    <!-- Estilos específicos para treinos do aluno -->
+    <link rel="stylesheet" href="~/css/aluno-treinos.css" />
+    
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -135,7 +139,7 @@
         .alert-success { background: rgba(46,160,67,.12); color: #2ea043; border: 1px solid rgba(46,160,67,.2); }
         .alert-danger  { background: rgba(238,25,32,.12); color: var(--red); border: 1px solid rgba(238,25,32,.25); }
 
-        /* Tabela treinos */
+        /* Tabela treinos (legado - manter para compatibilidade) */
         .treino-dia { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
         .treino-header { padding: 12px 18px; background: rgba(255,255,255,.03); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
         .treino-nome { font-size: 14px; font-weight: 600; color: #fff; }
@@ -330,6 +334,10 @@
         }
     }
 </script>
+
+<!-- Scripts específicos para treinos do aluno -->
+<script src="~/js/aluno-treinos.js"></script>
+
 @RenderSection("Scripts", required: false)
 </body>
 </html>

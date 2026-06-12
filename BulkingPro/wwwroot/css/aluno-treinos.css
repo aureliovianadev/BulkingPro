@@ -1,0 +1,544 @@
+/* ============================================
+   BULKINGPRO - ALUNO TREINOS MODERNOS
+   ============================================ */
+
+/* Container principal */
+.treinos-modernos {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 4px 0;
+}
+
+/* ============================================
+   CARD DO DIA (FECHADO)
+   ============================================ */
+.dia-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.dia-card:hover {
+    border-color: rgba(238, 25, 32, 0.3);
+    transform: translateY(-2px);
+}
+
+.dia-card.expanded {
+    border-color: rgba(238, 25, 32, 0.5);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Header do card */
+.dia-header {
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+}
+
+.dia-info {
+    flex: 1;
+}
+
+.dia-nome {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.dia-nome i {
+    font-size: 24px;
+    color: var(--gold);
+}
+
+.dia-nome h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.dia-badge-hoje {
+    background: rgba(238, 25, 32, 0.15);
+    color: var(--red);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+}
+
+.dia-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+}
+
+.dia-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dia-meta i {
+    font-size: 13px;
+    color: var(--gold);
+}
+
+/* Barra de progresso */
+.dia-progresso {
+    margin-top: 8px;
+}
+
+.progress-bar-container {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), #ff4d52);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+/* Ícone de expandir */
+.dia-expand-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.dia-expand-icon i {
+    font-size: 20px;
+    color: var(--muted);
+    transition: transform 0.3s ease;
+}
+
+.dia-card.expanded .dia-expand-icon i {
+    transform: rotate(180deg);
+}
+
+/* ============================================
+   CONTEÚDO EXPANDIDO
+   ============================================ */
+.dia-content {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border-top: 1px solid transparent;
+}
+
+.dia-card.expanded .dia-content {
+    max-height: 2000px;
+    opacity: 1;
+    border-top-color: var(--border);
+    padding: 20px;
+}
+
+/* Lista de exercícios */
+.exercicios-lista-moderna {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+/* Card do exercício */
+.exercicio-card-moderno-aluno {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.exercicio-card-moderno-aluno:hover {
+    border-color: rgba(238, 25, 32, 0.3);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.exercicio-card-moderno-aluno.completed {
+    border-left: 3px solid #2ea043;
+    background: rgba(46, 160, 67, 0.05);
+}
+
+/* Checkbox moderno */
+.exercicio-check {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+}
+
+.checkbox-moderno {
+    display: block;
+    position: relative;
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+}
+
+.checkbox-moderno input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 24px;
+    width: 24px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.checkbox-moderno:hover input ~ .checkmark {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.checkbox-moderno input:checked ~ .checkmark {
+    background: #2ea043;
+    border-color: #2ea043;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-moderno input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.checkbox-moderno .checkmark:after {
+    left: 7px;
+    top: 3px;
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Corpo do exercício */
+.exercicio-body {
+    padding: 16px;
+    padding-right: 48px;
+}
+
+.exercicio-nome {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.exercicio-grupo {
+    font-size: 10px;
+    font-weight: 500;
+    background: rgba(196, 168, 122, 0.15);
+    color: var(--gold);
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.exercicio-detalhes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.detalhe-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.detalhe-chip i {
+    font-size: 12px;
+    color: var(--gold);
+}
+
+/* Área de anotações */
+.anotacao-area {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.anotacao-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--gold);
+    background: rgba(196, 168, 122, 0.08);
+    padding: 8px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.anotacao-preview:hover {
+    background: rgba(196, 168, 122, 0.15);
+}
+
+.anotacao-preview i {
+    font-size: 14px;
+}
+
+.anotacao-preview span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anotacao-preview.vazio {
+    color: var(--muted);
+}
+
+.anotacao-editor {
+    display: none;
+    margin-top: 8px;
+}
+
+.anotacao-editor.active {
+    display: block;
+}
+
+.anotacao-textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 13px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.anotacao-textarea:focus {
+    outline: none;
+    border-color: var(--red);
+}
+
+.anotacao-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.btn-anotacao {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-anotacao.salvar {
+    background: var(--red);
+    color: #fff;
+}
+
+.btn-anotacao:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================
+   RESUMO DO DIA
+   ============================================ */
+.resumo-dia {
+    background: linear-gradient(135deg, rgba(238, 25, 32, 0.08), rgba(0, 0, 0, 0.2));
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 20px;
+    border: 1px solid rgba(238, 25, 32, 0.15);
+}
+
+.resumo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.resumo-header i {
+    font-size: 20px;
+    color: var(--gold);
+}
+
+.resumo-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.resumo-progresso {
+    margin-bottom: 12px;
+}
+
+.resumo-progresso .progress-bar-container {
+    height: 8px;
+    margin-bottom: 8px;
+}
+
+.resumo-mensagem {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.resumo-mensagem i {
+    font-size: 16px;
+}
+
+.resumo-mensagem.concluido {
+    color: #2ea043;
+}
+
+.resumo-mensagem.parcial {
+    color: var(--gold);
+}
+
+/* ============================================
+   MENSAGEM SEM TREINO
+   ============================================ */
+.sem-treino-message {
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+}
+
+.sem-treino-message i {
+    font-size: 48px;
+    color: rgba(238, 25, 32, 0.3);
+    margin-bottom: 16px;
+    display: block;
+}
+
+.sem-treino-message p {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* ============================================
+   RESPONSIVO
+   ============================================ */
+@media (max-width: 768px) {
+    .dia-header {
+        padding: 14px 16px;
+    }
+    
+    .dia-nome h3 {
+        font-size: 14px;
+    }
+    
+    .dia-meta {
+        gap: 8px;
+        font-size: 11px;
+    }
+    
+    .exercicio-body {
+        padding: 12px;
+        padding-right: 44px;
+    }
+    
+    .exercicio-nome {
+        font-size: 13px;
+    }
+    
+    .detalhe-chip {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+    
+    .dia-card.expanded .dia-content {
+        padding: 16px;
+    }
+    
+    .resumo-dia {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .exercicio-detalhes {
+        gap: 6px;
+    }
+    
+    .detalhe-chip {
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+    
+    .checkbox-moderno {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .checkmark {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .checkbox-moderno .checkmark:after {
+        left: 6px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+    }
+}

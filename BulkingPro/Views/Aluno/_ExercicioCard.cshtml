@@ -1,0 +1,104 @@
+@model BulkingPro.ViewModels.ExercicioTreinoAlunoViewModel
+@{
+    var diaIndex = ViewBag.DiaIndex ?? 0;
+    var isComentarioPermitido = ViewBag.PermitirComentario ?? true;
+}
+
+<div class="exercicio-card-moderno-aluno" data-exercicio-id="@Model.TreinoExercicioId">
+    <!-- Checkbox de conclusão -->
+    <label class="exercicio-check checkbox-moderno">
+        <input type="checkbox" 
+               data-exercicio-id="@Model.TreinoExercicioId" 
+               data-dia-index="@diaIndex" />
+        <span class="checkmark"></span>
+    </label>
+    
+    <div class="exercicio-body">
+        <!-- Nome e grupo muscular -->
+        <div class="exercicio-nome">
+            @Model.NomeExercicio
+            <span class="exercicio-grupo">@Model.GrupoMuscular</span>
+        </div>
+        
+        <!-- Detalhes do exercício -->
+        <div class="exercicio-detalhes">
+            <span class="detalhe-chip">
+                <i class="ti ti-repeat"></i> @Model.Series séries
+            </span>
+            
+            @if (!string.IsNullOrEmpty(Model.RepeticoesOuTempo))
+            {
+                if (Model.RepeticoesOuTempo.Contains("min") || Model.RepeticoesOuTempo.Contains("s"))
+                {
+                    <span class="detalhe-chip">
+                        <i class="ti ti-clock"></i> @Model.RepeticoesOuTempo
+                    </span>
+                }
+                else
+                {
+                    <span class="detalhe-chip">
+                        <i class="ti ti-refresh"></i> @Model.RepeticoesOuTempo reps
+                    </span>
+                }
+            }
+            
+            @if (Model.Carga.HasValue)
+            {
+                <span class="detalhe-chip">
+                    <i class="ti ti-barbell"></i> @Model.Carga.Value.ToString("F0") kg
+                </span>
+            }
+            
+            @if (Model.Descanso.HasValue)
+            {
+                <span class="detalhe-chip">
+                    <i class="ti ti-hourglass"></i> @Model.Descanso s
+                </span>
+            }
+        </div>
+        
+        <!-- Observações do personal trainer -->
+        @if (!string.IsNullOrEmpty(Model.Observacoes))
+        {
+            <div class="detalhe-chip observacao-personal" style="margin-top: 4px; background:rgba(196,168,122,0.1); width: fit-content;">
+                <i class="ti ti-notes"></i> Personal: @Model.Observacoes
+            </div>
+        }
+        
+        <!-- Comentário do aluno (enviado para o personal) -->
+        @if (!string.IsNullOrEmpty(Model.MeuComentario))
+        {
+            <div class="comentario-texto" style="margin-top: 8px;">
+                <i class="ti ti-message"></i> Meu comentário: @Model.MeuComentario
+            </div>
+        }
+        
+        <!-- Área de anotações pessoais do aluno -->
+        <div class="anotacao-area">
+            <div class="anotacao-preview vazio" 
+                 data-exercicio-id="@Model.TreinoExercicioId" 
+                 data-dia-index="@diaIndex">
+                <i class="ti ti-message"></i>
+                <span>Clique para adicionar anotação...</span>
+            </div>
+            <div class="anotacao-editor">
+                <textarea class="anotacao-textarea" rows="2" 
+                    placeholder="Digite suas observações sobre este exercício...&#10;Ex: Aumentei a carga, senti desconforto, tive dúvida na execução..."></textarea>
+                <div class="anotacao-actions">
+                    <button type="button" class="btn-anotacao salvar">Salvar</button>
+                    <button type="button" class="btn-anotacao cancelar">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de comentário para o personal (se permitido) -->
+    @if (isComentarioPermitido)
+    {
+        <button class="btn-comentario" 
+                onclick="abrirModal(@Model.TreinoExercicioId, '@Model.NomeExercicio.Replace("'", "\\'")', '@(Model.MeuComentario?.Replace("'", "\\'") ?? "")')" 
+                style="position: absolute; bottom: 12px; right: 12px;">
+            <i class="ti ti-message"></i>
+        </button>
+    }
+</div>
