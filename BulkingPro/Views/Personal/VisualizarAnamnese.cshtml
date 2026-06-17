@@ -27,18 +27,21 @@
     </div>
 }
 
+<!-- Filtro de aluno - CORRIGIDO (sem placeholder manual) -->
 <form method="get" style="margin-bottom:20px">
     <select name="alunoId" class="form-control" style="max-width:280px" onchange="this.form.submit()">
-        <option value="">— selecione o aluno —</option>
-        @foreach (var item in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Alunos)
+        @if (ViewBag.Alunos != null)
         {
-            if (item.Value == alunoId)
+            foreach (var item in (IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Alunos)
             {
-                <option value="@item.Value" selected>@item.Text</option>
-            }
-            else
-            {
-                <option value="@item.Value">@item.Text</option>
+                if (item.Value == alunoId)
+                {
+                    <option value="@item.Value" selected>@item.Text</option>
+                }
+                else
+                {
+                    <option value="@item.Value">@item.Text</option>
+                }
             }
         }
     </select>
