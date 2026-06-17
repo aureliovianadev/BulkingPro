@@ -20,8 +20,17 @@ namespace BulkingPro.Controllers
         // GET: /Account/Login
         public IActionResult Login()
         {
+            // Se já estiver logado, redireciona para o dashboard apropriado
             if (_signInManager.IsSignedIn(User))
+            {
+                if (User.IsInRole("Administrador"))
+                    return RedirectToAction("Index", "Admin");
+                if (User.IsInRole("Moderador"))
+                    return RedirectToAction("Index", "Personal");
+                if (User.IsInRole("Usuario"))
+                    return RedirectToAction("Index", "Aluno");
                 return RedirectToAction("Index", "Home");
+            }
 
             return View();
         }
@@ -46,12 +55,22 @@ namespace BulkingPro.Controllers
             if (result.Succeeded)
             {
                 var user = await _userManager.FindByEmailAsync(email);
-                if (await _userManager.IsInRoleAsync(user!, "Administrador"))
+                if (user == null)
+                {
+                    ViewBag.Erro = "Usuário não encontrado.";
+                    return View();
+                }
+
+                if (await _userManager.IsInRoleAsync(user, "Administrador"))
                     return RedirectToAction("Index", "Admin");
 
-                if (await _userManager.IsInRoleAsync(user!, "Moderador"))
+                if (await _userManager.IsInRoleAsync(user, "Moderador"))
                     return RedirectToAction("Index", "Personal");
 
+                if (await _userManager.IsInRoleAsync(user, "Usuario"))
+                    return RedirectToAction("Index", "Aluno");
+
+                // Se não tiver role específica, vai para Home
                 return RedirectToAction("Index", "Home");
             }
 
@@ -154,4 +173,3 @@ namespace BulkingPro.Controllers
         }
     }
 }
-

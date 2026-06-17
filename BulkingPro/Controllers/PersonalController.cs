@@ -433,10 +433,182 @@ namespace BulkingPro.Controllers
         }
 
         // ═════════════════════════════════════════════════════════════════
-        // PLANOS DE TREINO - VERSÃO REFATORADA
+        // AGENDA SEMANAL
         // ═════════════════════════════════════════════════════════════════
 
-        // ── Planos de Treino (agrupado por aluno) ──────────────────────
+        public async Task<IActionResult> Agenda(DateTime? data)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var dataRef = data ?? DateTime.Today;
+            
+            var inicioSemana = dataRef.AddDays(-(int)dataRef.DayOfWeek + (int)DayOfWeek.Monday);
+            if (dataRef.DayOfWeek == DayOfWeek.Sunday)
+                inicioSemana = dataRef.AddDays(-6);
+            
+            var fimSemana = inicioSemana.AddDays(6);
+
+            var agendamentos = await _context.AlunosHorariosAtendimento
+                .Include(a => a.Aluno)
+                .Where(a => a.PersonalId == personal.Id && a.Ativo)
+                .ToListAsync();
+
+            var dias = new List<DiaAgendaViewModel>();
+            var totalAulas = 0;
+            var totalHoras = 0;
+            var proximoAtendimento = "Nenhum agendamento";
+
+            for (int i = 0; i < 7; i++)
+            {
+                var dia = inicioSemana.AddDays(i);
+                var agendamentosDoDia = agendamentos
+                    .Where(a => a.DiaSemana == dia.DayOfWeek)
+                    .OrderBy(a => a.HoraInicio)
+                    .ToList();
+
+                var cards = new List<AgendamentoCardViewModel>();
+
+                foreach (var ag in agendamentosDoDia)
+                {
+                    var planoAtivo = await _context.PlanosTreino
+                        .Include(p => p.Treinos)
+                            .ThenInclude(t => t.TreinoExercicios)
+                                .ThenInclude(te => te.Exercicio)
+                                    .ThenInclude(e => e.GrupoMuscular)
+                        .FirstOrDefaultAsync(p => p.AlunoId == ag.AlunoId && p.Status == 1);
+
+                    var ordemDia = (int)dia.DayOfWeek;
+                    if (ordemDia == 0) ordemDia = 7;
+                    
+                    var treinoDoDia = planoAtivo?.Treinos
+                        .FirstOrDefault(t => t.OrdemDia == ordemDia);
+
+                    var exercicios = new List<ExercicioResumoViewModel>();
+
+                    if (treinoDoDia != null)
+                    {
+                        foreach (var te in treinoDoDia.TreinoExercicios.OrderBy(te => te.Ordem))
+                        {
+                            string repsOuTempo;
+                            if (te.TempoExecucaoSegundos.HasValue && te.TempoExecucaoSegundos.Value > 0)
+                            {
+                                var minutos = te.TempoExecucaoSegundos.Value / 60;
+                                var segundos = te.TempoExecucaoSegundos.Value % 60;
+                                repsOuTempo = minutos > 0 ? $"{minutos}min {segundos}s" : $"{segundos}s";
+                            }
+                            else
+                            {
+                                repsOuTempo = string.IsNullOrEmpty(te.RepeticoesPlanejadas) ? "—" : te.RepeticoesPlanejadas;
+                            }
+
+                            exercicios.Add(new ExercicioResumoViewModel
+                            {
+                                Nome = te.Exercicio?.Nome ?? "—",
+                                GrupoMuscular = te.Exercicio?.GrupoMuscular?.Nome ?? "—",
+                                Series = te.SeriesPlanejadas,
+                                RepeticoesOuTempo = repsOuTempo,
+                                Carga = te.CargaPlanejada,
+                                Descanso = te.TempoDescanso,
+                                Observacoes = te.Observacoes
+                            });
+                        }
+                    }
+
+                    var duracao = (ag.HoraFim - ag.HoraInicio).TotalHours;
+                    totalAulas++;
+                    totalHoras += (int)Math.Round(duracao);
+
+                    var nomeCompleto = ag.Aluno?.NomeCompleto ?? "Aluno";
+                    var iniciais = nomeCompleto.Length >= 2
+                        ? $"{nomeCompleto[0]}{nomeCompleto.Split(' ').Last()[0]}".ToUpper()
+                        : nomeCompleto[0].ToString().ToUpper();
+
+                    cards.Add(new AgendamentoCardViewModel
+                    {
+                        Id = ag.Id,
+                        AlunoId = ag.AlunoId,
+                        AlunoNome = nomeCompleto,
+                        Iniciais = iniciais,
+                        HoraInicio = ag.HoraInicio,
+                        HoraFim = ag.HoraFim,
+                        Status = "Confirmado",
+                        Objetivo = planoAtivo?.Objetivo,
+                        PlanoTreinoId = planoAtivo?.Id,
+                        TreinoDiaNome = treinoDoDia?.Nome,
+                        Exercicios = exercicios
+                    });
+
+                    if (proximoAtendimento == "Nenhum agendamento" && 
+                        (dia > DateTime.Today || 
+                         (dia == DateTime.Today && ag.HoraInicio > DateTime.Now.TimeOfDay)))
+                    {
+                        proximoAtendimento = $"{dia:dd/MM} às {ag.HoraInicio:hh\\:mm} - {ag.Aluno?.NomeCompleto}";
+                    }
+                }
+
+                dias.Add(new DiaAgendaViewModel
+                {
+                    DiaSemana = dia.DayOfWeek,
+                    NomeDia = ObterNomeDiaCompleto(dia.DayOfWeek),
+                    NomeDiaAbreviado = ObterNomeDiaAbreviado(dia.DayOfWeek),
+                    Data = dia,
+                    Hoje = dia.Date == DateTime.Today.Date,
+                    Agendamentos = cards
+                });
+            }
+
+            var vm = new AgendaSemanalViewModel
+            {
+                DataReferencia = dataRef,
+                InicioSemana = inicioSemana,
+                FimSemana = fimSemana,
+                Dias = dias,
+                Resumo = new ResumoAgendaViewModel
+                {
+                    TotalAulas = totalAulas,
+                    TotalHoras = totalHoras,
+                    ProximoAtendimento = proximoAtendimento
+                }
+            };
+
+            return View(vm);
+        }
+
+        private string ObterNomeDiaCompleto(DayOfWeek dia)
+        {
+            return dia switch
+            {
+                DayOfWeek.Sunday => "Domingo",
+                DayOfWeek.Monday => "Segunda-feira",
+                DayOfWeek.Tuesday => "Terça-feira",
+                DayOfWeek.Wednesday => "Quarta-feira",
+                DayOfWeek.Thursday => "Quinta-feira",
+                DayOfWeek.Friday => "Sexta-feira",
+                DayOfWeek.Saturday => "Sábado",
+                _ => ""
+            };
+        }
+
+        private string ObterNomeDiaAbreviado(DayOfWeek dia)
+        {
+            return dia switch
+            {
+                DayOfWeek.Sunday => "DOM",
+                DayOfWeek.Monday => "SEG",
+                DayOfWeek.Tuesday => "TER",
+                DayOfWeek.Wednesday => "QUA",
+                DayOfWeek.Thursday => "QUI",
+                DayOfWeek.Friday => "SEX",
+                DayOfWeek.Saturday => "SÁB",
+                _ => ""
+            };
+        }
+
+        // ═════════════════════════════════════════════════════════════════
+        // PLANOS DE TREINO
+        // ═════════════════════════════════════════════════════════════════
+
         public async Task<IActionResult> PlanosTreino()
         {
             var personal = await _userManager.GetUserAsync(User);
@@ -464,7 +636,6 @@ namespace BulkingPro.Controllers
             return View(alunosResumo);
         }
 
-        // ── Planos de um aluno específico ──────────────────────────────
         public async Task<IActionResult> PlanosDoAluno(string id)
         {
             var personal = await _userManager.GetUserAsync(User);
@@ -501,7 +672,6 @@ namespace BulkingPro.Controllers
             return View(vm);
         }
 
-        // ── Duplicar Plano ────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DuplicarPlano(int id)
@@ -606,7 +776,6 @@ namespace BulkingPro.Controllers
                 {
                     var temRepeticoes = !string.IsNullOrWhiteSpace(ex.Repeticoes);
                     var temTempo = ex.TempoExecucao.HasValue && ex.TempoExecucao.Value > 0;
-                    // XOR: deve haver exatamente um dos dois preenchido
                     if (!temRepeticoes && !temTempo)
                     {
                         ModelState.AddModelError("", $"Em {dia.Nome}: um exercício está sem Repetições nem Tempo de execução. Preencha exatamente um dos dois.");
@@ -686,11 +855,6 @@ namespace BulkingPro.Controllers
             return RedirectToAction(nameof(PlanosTreino));
         }
 
-        // ═════════════════════════════════════════════════════════════════
-        // NOVOS MÉTODOS: EDITAR PLANO
-        // ═════════════════════════════════════════════════════════════════
-
-        // ── Editar Plano (GET) - Carrega os dados do plano existente ─────
         public async Task<IActionResult> EditarPlano(int id)
         {
             var personal = await _userManager.GetUserAsync(User);
@@ -703,7 +867,6 @@ namespace BulkingPro.Controllers
 
             if (plano == null) return NotFound();
 
-            // Criar ViewModel para edição
             var vm = new EditarPlanoViewModel
             {
                 Id = plano.Id,
@@ -715,7 +878,6 @@ namespace BulkingPro.Controllers
                 DiasSemana = new List<DiaTreinoEditViewModel>()
             };
 
-            // Carregar os 7 dias da semana
             for (int i = 1; i <= 7; i++)
             {
                 var treino = plano.Treinos.FirstOrDefault(t => t.OrdemDia == i);
@@ -755,7 +917,6 @@ namespace BulkingPro.Controllers
             return View("EditarPlano", vm);
         }
 
-        // ── Editar Plano (POST) - Atualiza o plano existente ────────────
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> EditarPlano(EditarPlanoViewModel vm)
         {
@@ -775,7 +936,6 @@ namespace BulkingPro.Controllers
                 return View("EditarPlano", vm);
             }
 
-            // Validar se há pelo menos um exercício
             var temExercicio = vm.DiasSemana
                 .Where(d => d.Selecionado)
                 .Any(d => d.Exercicios.Any(e => e.ExercicioId > 0));
@@ -787,14 +947,12 @@ namespace BulkingPro.Controllers
                 return View("EditarPlano", vm);
             }
 
-            // Validar repetições/tempo (XOR)
             foreach (var dia in vm.DiasSemana.Where(d => d.Selecionado))
             {
                 foreach (var ex in dia.Exercicios.Where(e => e.ExercicioId > 0))
                 {
                     var temRepeticoes = !string.IsNullOrWhiteSpace(ex.Repeticoes);
                     var temTempo = ex.TempoExecucaoSegundos.HasValue && ex.TempoExecucaoSegundos.Value > 0;
-                    // XOR: deve haver exatamente um dos dois preenchido
                     if (!temRepeticoes && !temTempo)
                     {
                         ModelState.AddModelError("", $"Em {dia.Nome}: um exercício está sem Repetições nem Tempo de execução. Preencha exatamente um dos dois.");
@@ -810,14 +968,12 @@ namespace BulkingPro.Controllers
                 }
             }
 
-            // Atualizar dados do plano
             plano.Titulo = vm.Titulo;
             plano.Objetivo = vm.Objetivo;
             plano.DataInicio = vm.DataInicio;
             plano.DataFim = vm.DataFim;
             plano.DataAtualizacao = DateTime.Now;
 
-            // Remover treinos e exercícios antigos
             foreach (var treino in plano.Treinos)
             {
                 _context.TreinoExercicios.RemoveRange(treino.TreinoExercicios);
@@ -825,7 +981,6 @@ namespace BulkingPro.Controllers
             _context.Treinos.RemoveRange(plano.Treinos);
             await _context.SaveChangesAsync();
 
-            // Adicionar novos treinos e exercícios
             foreach (var dia in vm.DiasSemana.Where(d => d.Selecionado))
             {
                 var treino = new Treino
@@ -870,11 +1025,6 @@ namespace BulkingPro.Controllers
             return RedirectToAction(nameof(PlanosDoAluno), new { id = plano.AlunoId });
         }
 
-        // ═════════════════════════════════════════════════════════════════
-        // NOVO MÉTODO: EXCLUIR PLANO
-        // ═════════════════════════════════════════════════════════════════
-
-        // ── Excluir Plano (POST) - Remove o plano com validação de segurança ──
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ExcluirPlano(int id)
         {
@@ -891,7 +1041,6 @@ namespace BulkingPro.Controllers
             var alunoId = plano.AlunoId;
             var titulo = plano.Titulo;
 
-            // Remover em ordem correta (exercícios → treinos → plano)
             foreach (var treino in plano.Treinos)
             {
                 _context.TreinoExercicios.RemoveRange(treino.TreinoExercicios);
@@ -904,10 +1053,6 @@ namespace BulkingPro.Controllers
             TempData["Sucesso"] = $"Plano \"{titulo}\" foi excluído com sucesso!";
             return RedirectToAction(nameof(PlanosDoAluno), new { id = alunoId });
         }
-
-        // ═════════════════════════════════════════════════════════════════
-        // FIM DOS NOVOS MÉTODOS
-        // ═════════════════════════════════════════════════════════════════
 
         // ── Medidas e IMC ─────────────────────────────────────────
         public async Task<IActionResult> Medidas(string? alunoId)
@@ -1235,40 +1380,49 @@ namespace BulkingPro.Controllers
             return View(plano);
         }
 
-        // ── Agenda / Horários de Atendimento ───────────────────────
-        public async Task<IActionResult> Agenda(DateTime? data)
-        {
-            var personal = await _userManager.GetUserAsync(User);
-            if (personal == null) return Challenge();
+        // ═════════════════════════════════════════════════════════════════
+        // HELPERS - CARREGAMENTO DE ALUNOS (CORRIGIDO - SEM DUPLICAÇÃO)
+        // ═════════════════════════════════════════════════════════════════
 
-            var dataSelecionada = data ?? DateTime.Today;
-            var diaSemana = (int)dataSelecionada.DayOfWeek;
-
-            var agendamentos = await _context.AlunosHorariosAtendimento
-                .Include(a => a.Aluno)
-                .Where(a => a.PersonalId == personal.Id && a.Ativo && (int)a.DiaSemana == diaSemana)
-                .OrderBy(a => a.HoraInicio)
-                .ToListAsync();
-
-            ViewBag.DataSelecionada = dataSelecionada;
-            ViewBag.Agendamentos = agendamentos;
-            
-            return View();
-        }
-
-        // ── Helpers ───────────────────────────────────────────────
+        // ── Carregar alunos para o select de planos de treino ──
         private async Task CarregarSelectsPlano(string personalId, string? alunoIdSel)
         {
+            // Busca os IDs dos alunos vinculados ao personal através dos planos de treino
             var alunosIds = await _context.PlanosTreino
                 .Where(p => p.TreinadorId == personalId)
-                .Select(p => p.AlunoId).Distinct().ToListAsync();
+                .Select(p => p.AlunoId)
+                .Distinct()
+                .ToListAsync();
 
+            // Busca os usuários que estão na lista de IDs
             var alunos = await _userManager.Users
                 .Where(u => alunosIds.Contains(u.Id))
                 .OrderBy(u => u.NomeCompleto)
                 .ToListAsync();
 
-            ViewBag.Alunos = new SelectList(alunos, "Id", "NomeCompleto", alunoIdSel);
+            // Cria a lista COM APENAS UM placeholder
+            var lista = new List<SelectListItem>();
+            
+            // Adiciona o placeholder APENAS SE houver alunos
+            if (alunos.Any())
+            {
+                lista.Add(new SelectListItem 
+                { 
+                    Value = "", 
+                    Text = "— selecione o aluno —", 
+                    Selected = string.IsNullOrEmpty(alunoIdSel) 
+                });
+            }
+            
+            // Adiciona os alunos
+            lista.AddRange(alunos.Select(a => new SelectListItem
+            {
+                Value = a.Id,
+                Text = a.NomeCompleto,
+                Selected = a.Id == alunoIdSel
+            }));
+
+            ViewBag.Alunos = new SelectList(lista, "Value", "Text", alunoIdSel);
             ViewBag.Exercicios = await _context.Exercicios
                 .Include(e => e.GrupoMuscular)
                 .Where(e => e.Ativo)
@@ -1280,18 +1434,51 @@ namespace BulkingPro.Controllers
                 .ToListAsync();
         }
 
+        // ── Carregar alunos para outras telas (Medidas, Anamnese, etc) ──
         private async Task CarregarAlunosSelect(string personalId, string? selecionado)
         {
+            // Busca os IDs dos alunos vinculados ao personal através dos planos de treino
             var alunosIds = await _context.PlanosTreino
                 .Where(p => p.TreinadorId == personalId)
-                .Select(p => p.AlunoId).Distinct().ToListAsync();
+                .Select(p => p.AlunoId)
+                .Distinct()
+                .ToListAsync();
 
+            // Busca os usuários que estão na lista de IDs
             var alunos = await _userManager.Users
                 .Where(u => alunosIds.Contains(u.Id))
                 .OrderBy(u => u.NomeCompleto)
                 .ToListAsync();
 
-            ViewBag.Alunos = new SelectList(alunos, "Id", "NomeCompleto", selecionado);
+            // Verifica se o aluno selecionado ainda está na lista (caso tenha sido desvinculado)
+            if (!string.IsNullOrEmpty(selecionado) && !alunos.Any(a => a.Id == selecionado))
+            {
+                selecionado = null;
+            }
+
+            // Cria a lista COM APENAS UM placeholder
+            var lista = new List<SelectListItem>();
+            
+            // Adiciona o placeholder APENAS SE houver alunos
+            if (alunos.Any())
+            {
+                lista.Add(new SelectListItem 
+                { 
+                    Value = "", 
+                    Text = "— selecione o aluno —", 
+                    Selected = string.IsNullOrEmpty(selecionado) 
+                });
+            }
+            
+            // Adiciona os alunos
+            lista.AddRange(alunos.Select(a => new SelectListItem
+            {
+                Value = a.Id,
+                Text = a.NomeCompleto,
+                Selected = a.Id == selecionado
+            }));
+
+            ViewBag.Alunos = new SelectList(lista, "Value", "Text", selecionado);
         }
 
         // ── Método auxiliar para obter nome do dia ─────────────────

@@ -1,276 +1,1807 @@
+@model BulkingPro.ViewModels.AgendaSemanalViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
     ViewData["Title"] = "Minha Agenda";
     ViewData["ActivePage"] = "Agenda";
-    
-    var horarios = ViewBag.Horarios as List<BulkingPro.Models.HorarioTrabalhoPersonal> ?? new();
-    var agendamentos = ViewBag.Agendamentos as List<BulkingPro.Models.AgendamentoAluno> ?? new();
-    var alunos = ViewBag.Alunos as List<BulkingPro.Models.Usuario> ?? new();
-    var dataSelecionada = (DateTime)ViewBag.DataSelecionada;
+
+    var coresAvatar = new[] { "r", "g", "b", "p" };
+    var hoje = DateTime.Today;
+    var dataSelecionada = Model.DataReferencia;
 }
 
 @section Topbar {
     <div class="topbar">
         <div>
             <div class="topbar-title">Minha Agenda</div>
-            <div class="topbar-sub">Gerencie seus horários de atendimento</div>
+            <div class="topbar-sub">Visualize seus atendimentos da semana</div>
         </div>
         <div class="topbar-actions">
-            <a class="btn btn-primary" asp-action="DefinirHorarios">
-                <i class="ti ti-clock-plus"></i> Definir horários
-            </a>
+            <div class="nav-semana">
+                <button class="btn btn-ghost btn-sm btn-semana" onclick="irParaSemana(-1)">
+                    <i class="ti ti-chevron-left"></i>
+                </button>
+                
+                <span class="semana-label" id="semanaLabel">
+                    @Model.InicioSemana.ToString("dd/MM/yyyy") - @Model.FimSemana.ToString("dd/MM/yyyy")
+                </span>
+                
+                <button class="btn btn-ghost btn-sm btn-semana" onclick="irParaSemana(1)">
+                    <i class="ti ti-chevron-right"></i>
+                </button>
+                
+                <button class="btn btn-ghost btn-sm btn-calendario" onclick="abrirCalendarioVisual()" title="Selecionar data">
+                    <i class="ti ti-calendar"></i>
+                </button>
+                
+                <button class="btn btn-ghost btn-sm btn-hoje" onclick="irParaHoje()">
+                    <i class="ti ti-calendar-event"></i> Hoje
+                </button>
+            </div>
         </div>
     </div>
 }
 
-<div style="display:grid;grid-template-columns: 1fr 1.5fr; gap: 20px;">
+@if (dataSelecionada != DateTime.Today)
+{
+    <div class="data-selecionada-banner">
+        <i class="ti ti-calendar-check"></i>
+        Visualizando semana de <strong>@Model.InicioSemana.ToString("dd/MM/yyyy")</strong> a <strong>@Model.FimSemana.ToString("dd/MM/yyyy")</strong>
+        <button class="btn btn-ghost btn-sm" onclick="irParaHoje()" style="margin-left:12px">
+            <i class="ti ti-arrow-back"></i> Voltar para hoje
+        </button>
+    </div>
+}
 
-    <!-- COLUNA ESQUERDA: Horários Fixos do Personal -->
-    <div>
-        <div class="card" style="margin-bottom:16px">
-            <div class="card-body">
-                <div class="card-title"><i class="ti ti-calendar-clock"></i> Meus Horários de Trabalho</div>
-                
-                @if (!horarios.Any())
-                {
-                    <div style="text-align:center;padding:30px;color:var(--muted)">
-                        <i class="ti ti-clock" style="font-size:40px;display:block;margin-bottom:12px"></i>
-                        <p>Nenhum horário definido ainda.</p>
-                        <a class="btn btn-primary btn-sm" asp-action="DefinirHorarios" style="margin-top:12px">
-                            <i class="ti ti-plus"></i> Definir horários
-                        </a>
-                    </div>
-                }
-                else
-                {
-                    <div style="display:flex;flex-direction:column;gap:8px">
-                        @foreach (var h in horarios.OrderBy(h => h.DiaSemana))
-                        {
-                            var diaNome = h.DiaSemana switch
-                            {
-                                DayOfWeek.Sunday => "Domingo",
-                                DayOfWeek.Monday => "Segunda-feira",
-                                DayOfWeek.Tuesday => "Terça-feira",
-                                DayOfWeek.Wednesday => "Quarta-feira",
-                                DayOfWeek.Thursday => "Quinta-feira",
-                                DayOfWeek.Friday => "Sexta-feira",
-                                DayOfWeek.Saturday => "Sábado",
-                                _ => ""
-                            };
-                            <div class="horario-item">
-                                <div>
-                                    <div class="dia-semana">@diaNome</div>
-                                    <div class="horario-hora">@h.HoraInicio.ToString(@"hh\:mm") - @h.HoraFim.ToString(@"hh\:mm")</div>
-                                </div>
-                                <form asp-action="RemoverHorario" method="post" onsubmit="return confirm('Remover este horário?')">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@h.Id" />
-                                    <button type="submit" class="btn btn-danger btn-sm">
-                                        <i class="ti ti-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        }
-                    </div>
-                }
-            </div>
+<div class="resumo-grid">
+    <div class="resumo-card">
+        <div class="resumo-icon gold"><i class="ti ti-calendar-event"></i></div>
+        <div>
+            <div class="resumo-valor">@Model.Resumo.TotalAulas</div>
+            <div class="resumo-label">Total de aulas</div>
         </div>
     </div>
+    <div class="resumo-card">
+        <div class="resumo-icon red"><i class="ti ti-clock"></i></div>
+        <div>
+            <div class="resumo-valor">@Model.Resumo.TotalHoras</div>
+            <div class="resumo-label">Horas agendadas</div>
+        </div>
+    </div>
+    <div class="resumo-card">
+        <div class="resumo-icon green"><i class="ti ti-arrow-right"></i></div>
+        <div>
+            <div class="resumo-valor" style="font-size:13px;font-weight:500;color:var(--gold)">
+                @Model.Resumo.ProximoAtendimento
+            </div>
+            <div class="resumo-label">Próximo atendimento</div>
+        </div>
+    </div>
+</div>
 
-    <!-- COLUNA DIREITA: Agendamentos dos Alunos -->
-    <div>
-        <div class="card">
-            <div class="card-body">
-                <div class="card-title"><i class="ti ti-calendar"></i> Agendamentos dos Alunos</div>
-                
-                <!-- Seletor de data -->
-                <form method="get" style="margin-bottom:20px">
-                    <div style="display:flex;gap:10px">
-                        <input type="date" name="data" value="@dataSelecionada.ToString("yyyy-MM-dd")" 
-                               class="form-control" style="flex:1" onchange="this.form.submit()" />
-                    </div>
-                </form>
-
-                <!-- Data atual -->
-                <div style="text-align:center;margin-bottom:16px">
-                    <div style="font-size:16px;font-weight:600;color:#fff">
-                        @dataSelecionada.ToString("dddd, dd/MM/yyyy")
-                    </div>
+<div class="agenda-grid">
+    @foreach (var dia in Model.Dias)
+    {
+        var isHoje = dia.Data.Date == DateTime.Today.Date;
+        var isSelecionada = dia.Data.Date == dataSelecionada.Date;
+        
+        <div class="dia-card @(isHoje ? "hoje" : "") @(isSelecionada ? "selecionada" : "")">
+            <div class="dia-header">
+                <div class="dia-nome">
+                    <span class="dia-nome-completo">@dia.NomeDia</span>
+                    <span class="dia-nome-abreviado">@dia.NomeDiaAbreviado</span>
+                    @if (isHoje)
+                    {
+                        <span class="dia-badge-hoje">HOJE</span>
+                    }
+                    @if (isSelecionada && !isHoje)
+                    {
+                        <span class="dia-badge-selecionada">SELECIONADA</span>
+                    }
                 </div>
+                <div class="dia-data">@dia.Data.ToString("dd/MM")</div>
+                <div class="dia-contagem">
+                    @dia.TotalAgendamentos @(dia.TotalAgendamentos == 1 ? "aula" : "aulas")
+                </div>
+            </div>
 
-                <!-- Filtra agendamentos pelo dia selecionado -->
-                @{
-                    var agendamentosDoDia = agendamentos
-                        .Where(a => a.DiaSemana == dataSelecionada.DayOfWeek)
-                        .OrderBy(a => a.HoraInicio)
-                        .ToList();
-                }
-
-                @if (!agendamentosDoDia.Any())
+            <div class="dia-content">
+                @if (!dia.TemAgendamentos)
                 {
-                    <div style="text-align:center;padding:40px;color:var(--muted)">
-                        <i class="ti ti-calendar-off" style="font-size:40px;display:block;margin-bottom:12px"></i>
-                        <p>Nenhum agendamento para este dia.</p>
+                    <div class="sem-agendamento">
+                        <i class="ti ti-calendar-off"></i>
+                        <span>Nenhum atendimento agendado</span>
                     </div>
                 }
                 else
                 {
-                    <div style="display:flex;flex-direction:column;gap:10px">
-                        @foreach (var a in agendamentosDoDia)
-                        {
-                            var statusClass = a.Status switch
-                            {
-                                1 => "status-confirmado",
-                                2 => "status-concluido",
-                                _ => "status-cancelado"
-                            };
-                            var statusText = a.Status switch
-                            {
-                                1 => "Confirmado",
-                                2 => "Concluído",
-                                _ => "Cancelado"
-                            };
+                    @foreach (var ag in dia.Agendamentos)
+                    {
+                        var cor = coresAvatar[Math.Abs(ag.AlunoId.GetHashCode()) % coresAvatar.Length];
+                        var isProximo = isHoje && ag.HoraInicio > DateTime.Now.TimeOfDay;
+                        
+                        <div class="agendamento-card @(isProximo ? "proximo" : "")" 
+                             data-aluno-id="@ag.AlunoId"
+                             data-plano-id="@ag.PlanoTreinoId"
+                             data-dia="@dia.Data.ToString("yyyy-MM-dd")"
+                             data-nome="@ag.AlunoNome"
+                             data-objetivo="@ag.Objetivo"
+                             data-iniciais="@ag.Iniciais"
+                             data-hora-inicio="@ag.HoraInicio.ToString(@"hh\:mm")"
+                             data-hora-fim="@ag.HoraFim.ToString(@"hh\:mm")"
+                             data-treino-dia="@ag.TreinoDiaNome"
+                             onclick="abrirModal(this)">
                             
-                            <div class="agendamento-item @statusClass">
-                                <div style="display:flex;align-items:center;gap:12px;flex:1">
-                                    <div class="horario-badge">@a.HoraInicio.ToString(@"hh\:mm")</div>
-                                    <div style="flex:1">
-                                        <div class="aluno-nome">@a.Aluno?.NomeCompleto</div>
-                                    </div>
-                                    <div class="status-badge @statusClass">@statusText</div>
-                                </div>
-                                <div style="display:flex;gap:6px;margin-top:8px;margin-left:48px">
-                                    @if (a.Status == 1)
-                                    {
-                                        <form asp-action="ConcluirAgendamento" method="post" style="display:inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@a.Id" />
-                                            <button type="submit" class="btn btn-success btn-sm">
-                                                <i class="ti ti-check"></i> Concluir
-                                            </button>
-                                        </form>
-                                        <form asp-action="CancelarAgendamento" method="post" style="display:inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@a.Id" />
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="ti ti-x"></i> Cancelar
-                                            </button>
-                                        </form>
-                                    }
+                            <div class="agendamento-horario">
+                                @ag.HoraInicio.ToString(@"hh\:mm") - @ag.HoraFim.ToString(@"hh\:mm")
+                            </div>
+                            
+                            <div class="agendamento-aluno">
+                                <div class="avatar-mini @cor">@ag.Iniciais</div>
+                                <div class="agendamento-info">
+                                    <div class="agendamento-nome">@ag.AlunoNome</div>
+                                    <div class="agendamento-objetivo">@(ag.Objetivo ?? "Sem objetivo definido")</div>
                                 </div>
                             </div>
-                        }
-                    </div>
+                            
+                            <div class="agendamento-status">
+                                <span class="status-badge confirmado">
+                                    <i class="ti ti-check"></i> @ag.Status
+                                </span>
+                            </div>
+                        </div>
+                    }
                 }
+            </div>
+        </div>
+    }
+</div>
 
-                <!-- Formulário de novo agendamento -->
-                <div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.07)">
-                    <div class="card-title"><i class="ti ti-plus"></i> Novo Agendamento</div>
-                    
-                    <form asp-action="AgendarAula" method="post">
-                        @Html.AntiForgeryToken()
-                        
-                        <div class="form-row">
-                            <div class="form-group" style="flex:2">
-                                <label class="form-label">Aluno</label>
-                                <select name="AlunoId" class="form-control" required>
-                                    <option value="">Selecione</option>
-                                    @foreach (var a in alunos)
-                                    {
-                                        <option value="@a.Id">@a.NomeCompleto</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="form-group" style="flex:1">
-                                <label class="form-label">Data</label>
-                                <input type="date" name="DataAgendamento" class="form-control" 
-                                       value="@dataSelecionada.ToString("yyyy-MM-dd")" required />
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group" style="flex:1">
-                                <label class="form-label">Horário início</label>
-                                <input type="time" name="HoraInicio" class="form-control" required />
-                            </div>
-                            <div class="form-group" style="flex:1">
-                                <label class="form-label">Horário fim</label>
-                                <input type="time" name="HoraFim" class="form-control" required />
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary" style="width:100%">
-                            <i class="ti ti-calendar-plus"></i> Agendar aula
-                        </button>
-                    </form>
+<!-- CALENDÁRIO VISUAL CUSTOMIZADO COM SELEÇÃO DE ANO INFINITA -->
+<div id="modalCalendarioVisual" class="modal-overlay" style="display:none">
+    <div class="modal-container calendario-container">
+        <div class="modal-content calendario-content">
+            <div class="calendario-header">
+                <div class="calendario-titulo">
+                    <i class="ti ti-calendar"></i> Selecionar data
                 </div>
+                <button class="modal-close" onclick="fecharCalendarioVisual()">
+                    <i class="ti ti-x"></i>
+                </button>
+            </div>
+
+            <div class="calendario-nav">
+                <button class="btn-calendario-nav" onclick="navegarMesVisual(-1)">
+                    <i class="ti ti-chevron-left"></i>
+                </button>
+                
+                <div class="calendario-nav-center">
+                    <select class="calendario-select-mes" id="calendarioSelectMes" onchange="atualizarCalendarioVisual()">
+                        <option value="0">Janeiro</option>
+                        <option value="1">Fevereiro</option>
+                        <option value="2">Março</option>
+                        <option value="3">Abril</option>
+                        <option value="4">Maio</option>
+                        <option value="5">Junho</option>
+                        <option value="6">Julho</option>
+                        <option value="7">Agosto</option>
+                        <option value="8">Setembro</option>
+                        <option value="9">Outubro</option>
+                        <option value="10">Novembro</option>
+                        <option value="11">Dezembro</option>
+                    </select>
+                    
+                    <div class="calendario-ano-wrapper">
+                        <input type="number" class="calendario-input-ano" id="calendarioInputAno" 
+                               min="1900" max="2100" 
+                               onchange="irParaAnoVisual(this.value)"
+                               onfocus="this.select()" />
+                        <div class="calendario-ano-seta-up" onclick="navegarAnoVisual(1)">▲</div>
+                        <div class="calendario-ano-seta-down" onclick="navegarAnoVisual(-1)">▼</div>
+                    </div>
+                </div>
+                
+                <button class="btn-calendario-nav" onclick="navegarMesVisual(1)">
+                    <i class="ti ti-chevron-right"></i>
+                </button>
+            </div>
+
+            <div class="calendario-dias-semana">
+                <span>DOM</span>
+                <span>SEG</span>
+                <span>TER</span>
+                <span>QUA</span>
+                <span>QUI</span>
+                <span>SEX</span>
+                <span>SÁB</span>
+            </div>
+
+            <div class="calendario-grid" id="calendarioGridVisual">
+            </div>
+
+            <div class="calendario-atalhos">
+                <button class="btn btn-ghost btn-sm" onclick="irParaHoje(); fecharCalendarioVisual();">
+                    <i class="ti ti-calendar-event"></i> Hoje
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="irParaSemana(-1); fecharCalendarioVisual();">
+                    <i class="ti ti-arrow-left"></i> Semana passada
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="irParaSemana(1); fecharCalendarioVisual();">
+                    <i class="ti ti-arrow-right"></i> Próxima semana
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="fecharCalendarioVisual()">
+                    <i class="ti ti-x"></i> Fechar
+                </button>
+            </div>
+
+            <div class="calendario-footer">
+                <button class="btn btn-primary" id="btnConfirmarDataVisual" onclick="confirmarDataVisual()">
+                    <i class="ti ti-check"></i> Ir para data
+                </button>
             </div>
         </div>
     </div>
+</div>
 
+<!-- MODAL AGENDAMENTO -->
+<div id="modalAgendamento" class="modal-overlay" style="display:none">
+    <div class="modal-container">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-left">
+                    <div class="modal-avatar" id="modalAvatar">J</div>
+                    <div>
+                        <div class="modal-nome" id="modalNome">João Silva</div>
+                        <div class="modal-horario" id="modalHorario">08:00 - 09:30</div>
+                    </div>
+                </div>
+                <div class="modal-header-right">
+                    <span class="status-badge confirmado" id="modalStatus">
+                        <i class="ti ti-check"></i> Confirmado
+                    </span>
+                    <button class="modal-close" onclick="fecharModal()">
+                        <i class="ti ti-x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-info-row">
+                    <span class="modal-info-label">Objetivo</span>
+                    <span class="modal-info-value" id="modalObjetivo">Hipertrofia</span>
+                </div>
+                <div class="modal-info-row">
+                    <span class="modal-info-label">Treino do dia</span>
+                    <span class="modal-info-value" id="modalTreinoDia">Treino A</span>
+                </div>
+
+                <div class="modal-divider"></div>
+
+                <div class="modal-exercicios">
+                    <div class="modal-exercicios-titulo">
+                        <i class="ti ti-barbell"></i> Exercícios
+                    </div>
+                    <div id="modalExercicios"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="fecharModal()">Fechar</button>
+                <a class="btn btn-primary" id="modalBtnPlano" href="#">
+                    <i class="ti ti-eye"></i> Ver plano completo
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
-    .horario-item {
+    .resumo-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+
+    .resumo-card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 22px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        transition: border-color .2s;
+    }
+
+    .resumo-card:hover {
+        border-color: rgba(238, 25, 32, 0.3);
+    }
+
+    .resumo-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .resumo-icon.gold {
+        background: rgba(196, 168, 122, 0.15);
+        color: var(--gold);
+    }
+    .resumo-icon.red {
+        background: rgba(238, 25, 32, 0.15);
+        color: var(--red);
+    }
+    .resumo-icon.green {
+        background: rgba(46, 160, 67, 0.15);
+        color: #2ea043;
+    }
+
+    .resumo-valor {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.2;
+    }
+
+    .resumo-label {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+    }
+
+    .nav-semana {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 4px 8px;
+        border-radius: 30px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .btn-semana {
+        padding: 4px 10px;
+        border-radius: 20px;
+        min-width: 32px;
+        justify-content: center;
+    }
+
+    .btn-calendario {
+        padding: 4px 10px;
+        border-radius: 20px;
+        color: var(--gold);
+        border-color: rgba(196, 168, 122, 0.3);
+    }
+
+    .btn-calendario:hover {
+        background: rgba(196, 168, 122, 0.1);
+    }
+
+    .semana-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.7);
+        min-width: 140px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .btn-hoje {
+        padding: 4px 12px;
+        border-radius: 20px;
+        color: var(--red);
+        border-color: rgba(238, 25, 32, 0.3);
+    }
+
+    .btn-hoje:hover {
+        background: rgba(238, 25, 32, 0.1);
+    }
+
+    .data-selecionada-banner {
+        background: rgba(196, 168, 122, 0.08);
+        border: 1px solid rgba(196, 168, 122, 0.2);
+        border-radius: 12px;
+        padding: 10px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 13px;
+    }
+
+    .data-selecionada-banner i {
+        color: var(--gold);
+        font-size: 18px;
+    }
+
+    .data-selecionada-banner strong {
+        color: #fff;
+    }
+
+    .agenda-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 12px;
+    }
+
+    .dia-card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all .2s ease;
+        min-height: 300px;
+    }
+
+    .dia-card:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .dia-card.hoje {
+        border-color: var(--red);
+        box-shadow: 0 0 20px rgba(238, 25, 32, 0.08);
+    }
+
+    .dia-card.hoje .dia-header {
+        background: rgba(238, 25, 32, 0.06);
+    }
+
+    .dia-card.selecionada {
+        border-color: var(--gold);
+        box-shadow: 0 0 25px rgba(196, 168, 122, 0.15);
+    }
+
+    .dia-card.selecionada .dia-header {
+        background: rgba(196, 168, 122, 0.08);
+    }
+
+    .dia-header {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .dia-nome {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .dia-nome-completo {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .dia-nome-abreviado {
+        display: none;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .dia-badge-hoje {
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: var(--red);
+        color: #fff;
+        padding: 1px 6px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+    }
+
+    .dia-badge-selecionada {
+        font-size: 8px;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: var(--gold);
+        color: #fff;
+        padding: 1px 6px;
+        border-radius: 20px;
+        letter-spacing: 0.5px;
+    }
+
+    .dia-data {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 500;
+    }
+
+    .dia-contagem {
+        font-size: 10px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1px 8px;
+        border-radius: 20px;
+    }
+
+    .dia-content {
+        padding: 10px 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 220px;
+    }
+
+    .sem-agendamento {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 28px 12px;
+        color: var(--muted);
+        text-align: center;
+        flex: 1;
+    }
+
+    .sem-agendamento i {
+        font-size: 32px;
+        color: rgba(255, 255, 255, 0.08);
+        margin-bottom: 8px;
+    }
+
+    .sem-agendamento span {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.25);
+    }
+
+    .agendamento-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: all .2s ease;
+        position: relative;
+    }
+
+    .agendamento-card:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(238, 25, 32, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .agendamento-card.proximo {
+        border-color: rgba(196, 168, 122, 0.3);
+        background: rgba(196, 168, 122, 0.05);
+    }
+
+    .agendamento-horario {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--gold);
+        margin-bottom: 6px;
+        font-family: monospace;
+        letter-spacing: 0.5px;
+    }
+
+    .agendamento-aluno {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .avatar-mini {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+
+    .avatar-mini.r {
+        background: rgba(238, 25, 32, 0.2);
+        color: var(--red);
+    }
+    .avatar-mini.g {
+        background: rgba(196, 168, 122, 0.2);
+        color: var(--gold);
+    }
+    .avatar-mini.b {
+        background: rgba(56, 139, 253, 0.2);
+        color: #388bfd;
+    }
+    .avatar-mini.p {
+        background: rgba(160, 80, 200, 0.2);
+        color: #a050c8;
+    }
+
+    .agendamento-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .agendamento-nome {
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .agendamento-objetivo {
+        font-size: 10px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .agendamento-status {
+        margin-top: 6px;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 9px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 20px;
+        letter-spacing: 0.3px;
+    }
+
+    .status-badge.confirmado {
+        background: rgba(46, 160, 67, 0.12);
+        color: #2ea043;
+        border: 1px solid rgba(46, 160, 67, 0.15);
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn .25s ease;
+    }
+
+    .modal-container {
+        width: 100%;
+        max-width: 540px;
+        margin: 20px;
+        animation: slideUp .3s ease;
+    }
+
+    .modal-content {
+        background: var(--bg2);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .modal-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(196, 168, 122, 0.2);
+        color: var(--gold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 700;
+        flex-shrink: 0;
+        text-transform: uppercase;
+    }
+
+    .modal-nome {
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .modal-horario {
+        font-size: 12px;
+        color: var(--gold);
+        font-family: monospace;
+        margin-top: 2px;
+    }
+
+    .modal-header-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .modal-close {
+        background: rgba(255, 255, 255, 0.06);
+        border: none;
+        color: var(--muted);
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 18px;
+        transition: all .2s;
+    }
+
+    .modal-close:hover {
+        background: rgba(238, 25, 32, 0.15);
+        color: var(--red);
+    }
+
+    .modal-body {
+        padding: 20px 24px;
+    }
+
+    .modal-info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .modal-info-row:last-of-type {
+        border-bottom: none;
+    }
+
+    .modal-info-label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.35);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .modal-info-value {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.85);
+        font-weight: 500;
+        text-align: right;
+        max-width: 60%;
+    }
+
+    .modal-divider {
+        margin: 16px 0;
+        border-top: 1px solid var(--border);
+    }
+
+    .modal-exercicios-titulo {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .modal-exercicios-titulo i {
+        color: var(--gold);
+    }
+
+    .modal-exercicio-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .modal-exercicio-item:last-child {
+        border-bottom: none;
+    }
+
+    .modal-exercicio-bullet {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: rgba(196, 168, 122, 0.12);
+        color: var(--gold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .modal-exercicio-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .modal-exercicio-nome {
+        font-size: 13px;
+        color: #fff;
+        font-weight: 500;
+    }
+
+    .modal-exercicio-grupo {
+        font-size: 10px;
+        color: var(--muted);
+    }
+
+    .modal-exercicio-detalhes {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 2px;
+    }
+
+    .modal-exercicio-chip {
+        font-size: 9px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 1px 6px;
+        border-radius: 20px;
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .sem-treino-msg {
+        text-align: center;
+        padding: 24px 12px;
+        color: var(--muted);
+    }
+
+    .sem-treino-msg i {
+        font-size: 32px;
+        color: rgba(255, 255, 255, 0.06);
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .sem-treino-msg span {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* ── CALENDÁRIO VISUAL ── */
+    .calendario-container {
+        max-width: 420px;
+    }
+
+    .calendario-content {
+        background: #0f1117;
+        border: 1px solid rgba(238, 25, 32, 0.2);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .calendario-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.06);
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .dia-semana {
-        font-size: 13px;
+
+    .calendario-titulo {
+        font-size: 15px;
         font-weight: 600;
         color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-    .horario-hora {
-        font-size: 11px;
-        color: var(--gold);
-        margin-top: 2px;
-    }
-    
-    .agendamento-item {
-        padding: 12px;
-        background: rgba(255,255,255,0.03);
-        border-radius: 10px;
-        border-left: 3px solid var(--gold);
-    }
-    .agendamento-item.status-concluido {
-        border-left-color: #2ea043;
-        opacity: 0.7;
-    }
-    .agendamento-item.status-cancelado {
-        border-left-color: #ee1920;
-        opacity: 0.5;
-    }
-    .horario-badge {
-        width: 60px;
-        font-size: 13px;
-        font-weight: 600;
+
+    .calendario-titulo i {
         color: var(--gold);
     }
-    .aluno-nome {
+
+    .calendario-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 8px;
+    }
+
+    .calendario-nav-center {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-calendario-nav {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.5);
+        transition: all .2s ease;
+        font-size: 16px;
+    }
+
+    .btn-calendario-nav:hover {
+        background: rgba(238, 25, 32, 0.15);
+        border-color: var(--red);
+        color: #fff;
+    }
+
+    .calendario-select-mes {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #fff;
+        padding: 6px 10px;
         font-size: 13px;
         font-weight: 500;
+        cursor: pointer;
+        outline: none;
+        transition: all .2s ease;
+        font-family: inherit;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23c4a87a' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        padding-right: 28px;
+        min-width: 90px;
+    }
+
+    .calendario-select-mes:hover {
+        border-color: rgba(238, 25, 32, 0.4);
+    }
+
+    .calendario-select-mes:focus {
+        border-color: var(--red);
+        box-shadow: 0 0 0 2px rgba(238, 25, 32, 0.15);
+    }
+
+    .calendario-select-mes option {
+        background: #0f1117;
         color: #fff;
     }
-    .status-badge {
+
+    /* ── SELETOR DE ANO COM INPUT + SETAS ── */
+    .calendario-ano-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 2px 4px;
+        transition: all .2s ease;
+        position: relative;
+    }
+
+    .calendario-ano-wrapper:hover {
+        border-color: rgba(238, 25, 32, 0.4);
+    }
+
+    .calendario-ano-wrapper:focus-within {
+        border-color: var(--red);
+        box-shadow: 0 0 0 2px rgba(238, 25, 32, 0.15);
+    }
+
+    .calendario-input-ano {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 4px;
+        width: 50px;
+        text-align: center;
+        outline: none;
+        font-family: inherit;
+        -moz-appearance: textfield;
+    }
+
+    .calendario-input-ano::-webkit-outer-spin-button,
+    .calendario-input-ano::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .calendario-input-ano:focus {
+        outline: none;
+    }
+
+    .calendario-ano-seta-up,
+    .calendario-ano-seta-down {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 14px;
+        font-size: 8px;
+        color: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition: all .2s ease;
+        user-select: none;
+        border-radius: 4px;
+    }
+
+    .calendario-ano-seta-up:hover,
+    .calendario-ano-seta-down:hover {
+        background: rgba(238, 25, 32, 0.15);
+        color: #fff;
+    }
+
+    .calendario-ano-seta-up:active,
+    .calendario-ano-seta-down:active {
+        transform: scale(0.9);
+    }
+
+    .calendario-dias-semana {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-bottom: 12px;
+    }
+
+    .calendario-dias-semana span {
         font-size: 10px;
-        padding: 3px 8px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.3);
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 6px 0;
+    }
+
+    .calendario-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        margin-bottom: 20px;
+    }
+
+    .calendario-dia {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all .2s ease;
+        background: transparent;
+        border: none;
+        width: 100%;
+        padding: 0;
+        font-family: inherit;
+        position: relative;
+    }
+
+    .calendario-dia:hover {
+        background: rgba(238, 25, 32, 0.15);
+        color: #fff;
+        transform: scale(1.05);
+    }
+
+    .calendario-dia.outro-mes {
+        color: rgba(255, 255, 255, 0.15);
+    }
+
+    .calendario-dia.outro-mes:hover {
+        background: rgba(255, 255, 255, 0.03);
+        transform: none;
+    }
+
+    .calendario-dia.hoje {
+        border: 2px solid rgba(238, 25, 32, 0.4);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .calendario-dia.hoje:hover {
+        border-color: var(--red);
+    }
+
+    .calendario-dia.selecionado {
+        background: var(--red);
+        color: #fff;
+        font-weight: 700;
+        box-shadow: 0 0 20px rgba(238, 25, 32, 0.3);
+    }
+
+    .calendario-dia.selecionado:hover {
+        background: var(--red);
+        opacity: 0.9;
+        transform: scale(1.05);
+    }
+
+    .calendario-dia.tem-agendamento::after {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--gold);
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .calendario-dia.selecionado.tem-agendamento::after {
+        background: #fff;
+    }
+
+    .calendario-atalhos {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 12px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        margin-bottom: 16px;
+    }
+
+    .calendario-atalhos .btn-ghost {
+        font-size: 11px;
+        padding: 4px 12px;
         border-radius: 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.06);
     }
-    .status-badge.status-confirmado {
-        background: rgba(196,168,122,0.15);
-        color: var(--gold);
+
+    .calendario-atalhos .btn-ghost:hover {
+        background: rgba(238, 25, 32, 0.1);
+        border-color: var(--red);
     }
-    .status-badge.status-concluido {
-        background: rgba(46,160,67,0.15);
-        color: #2ea043;
+
+    .calendario-footer {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
     }
-    .status-badge.status-cancelado {
-        background: rgba(238,25,32,0.15);
-        color: #ee1920;
+
+    .calendario-footer .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: all .2s;
+    }
+
+    .btn:hover {
+        opacity: .85;
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ee1920, #c41218);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 4px 15px rgba(238, 25, 32, 0.3);
+    }
+
+    .btn-ghost {
+        background: rgba(255, 255, 255, .05);
+        color: var(--muted);
+        border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+        background: rgba(255, 255, 255, .08);
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 11px;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @@media (max-width: 1200px) {
+        .agenda-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .resumo-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .agenda-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .resumo-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dia-nome-completo {
+            display: none;
+        }
+
+        .dia-nome-abreviado {
+            display: inline;
+        }
+
+        .nav-semana {
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .semana-label {
+            min-width: 120px;
+            font-size: 11px;
+        }
+
+        .data-selecionada-banner {
+            font-size: 12px;
+            padding: 8px 12px;
+        }
+
+        .calendario-container {
+            max-width: 100%;
+            margin: 10px;
+        }
+
+        .calendario-content {
+            padding: 16px;
+        }
+
+        .calendario-nav-center {
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .calendario-select-mes {
+            font-size: 12px;
+            padding: 4px 8px;
+            padding-right: 24px;
+            min-width: 80px;
+        }
+
+        .calendario-input-ano {
+            font-size: 12px;
+            padding: 4px 2px;
+            width: 45px;
+        }
+
+        .calendario-ano-seta-up,
+        .calendario-ano-seta-down {
+            width: 16px;
+            height: 12px;
+            font-size: 7px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .agenda-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-container {
+            margin: 10px;
+        }
+
+        .modal-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .modal-header-right {
+            justify-content: space-between;
+        }
+
+        .modal-footer {
+            flex-direction: column;
+        }
+
+        .modal-footer .btn {
+            justify-content: center;
+        }
+
+        .calendario-content {
+            padding: 12px;
+        }
+
+        .calendario-dia {
+            font-size: 11px;
+        }
+
+        .semana-label {
+            font-size: 10px;
+            min-width: 100px;
+        }
+
+        .nav-semana {
+            padding: 2px 4px;
+            gap: 2px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-semana, .btn-calendario, .btn-hoje {
+            padding: 3px 8px;
+            font-size: 11px;
+        }
+
+        .btn-hoje {
+            display: none;
+        }
+
+        .calendario-footer {
+            flex-direction: column;
+        }
+
+        .calendario-footer .btn {
+            justify-content: center;
+        }
+
+        .topbar-actions {
+            flex-wrap: wrap;
+        }
+
+        .data-selecionada-banner {
+            font-size: 11px;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .calendario-atalhos .btn-ghost {
+            font-size: 10px;
+            padding: 3px 8px;
+        }
+
+        .calendario-nav-center {
+            flex-direction: row;
+        }
+
+        .calendario-input-ano {
+            width: 40px;
+            font-size: 11px;
+        }
     }
 </style>
+
+<script>
+    var dadosAgendamentos = {};
+
+    @{
+        var jsData = new System.Text.StringBuilder();
+        foreach (var dia in Model.Dias)
+        {
+            foreach (var ag in dia.Agendamentos)
+            {
+                jsData.Append($"dadosAgendamentos['{ag.AlunoId}'] = {{");
+                jsData.Append($"nome: '{ag.AlunoNome}',");
+                jsData.Append($"iniciais: '{ag.Iniciais}',");
+                jsData.Append($"objetivo: '{(ag.Objetivo ?? "Sem objetivo definido")}',");
+                jsData.Append($"horario: '{ag.HoraInicio.ToString(@"hh\:mm")} - {ag.HoraFim.ToString(@"hh\:mm")}',");
+                jsData.Append($"treinoDia: '{(ag.TreinoDiaNome ?? "Treino do dia")}',");
+                jsData.Append($"planoId: '{(ag.PlanoTreinoId.HasValue ? ag.PlanoTreinoId.Value.ToString() : "")}',");
+                jsData.Append("exercicios: [");
+
+                var exercicios = ag.Exercicios;
+                for (int i = 0; i < exercicios.Count; i++)
+                {
+                    var ex = exercicios[i];
+                    jsData.Append("{");
+                    jsData.Append($"nome: '{ex.Nome.Replace("'", "\\'")}',");
+                    jsData.Append($"grupo: '{ex.GrupoMuscular.Replace("'", "\\'")}',");
+                    jsData.Append($"series: {ex.Series},");
+                    jsData.Append($"repsTempo: '{ex.RepeticoesOuTempo.Replace("'", "\\'")}',");
+                    jsData.Append($"carga: {(ex.Carga.HasValue ? ex.Carga.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null")},");
+                    jsData.Append($"descanso: {(ex.Descanso.HasValue ? ex.Descanso.Value.ToString() : "null")},");
+                    jsData.Append($"obs: '{(ex.Observacoes?.Replace("'", "\\'") ?? "")}'");
+                    jsData.Append("}");
+                    if (i < exercicios.Count - 1) jsData.Append(",");
+                }
+
+                jsData.Append("]");
+                jsData.Append("};");
+            }
+        }
+    }
+
+    @Html.Raw(jsData.ToString())
+
+    function abrirModal(elemento) {
+        var alunoId = elemento.dataset.alunoId;
+        var dados = dadosAgendamentos[alunoId];
+
+        if (!dados) {
+            console.error('Dados não encontrados para aluno:', alunoId);
+            return;
+        }
+
+        document.getElementById('modalAvatar').textContent = dados.iniciais;
+        document.getElementById('modalNome').textContent = dados.nome;
+        document.getElementById('modalHorario').textContent = dados.horario;
+        document.getElementById('modalObjetivo').textContent = dados.objetivo;
+        document.getElementById('modalTreinoDia').textContent = dados.treinoDia;
+
+        var btnPlano = document.getElementById('modalBtnPlano');
+        if (dados.planoId && dados.planoId !== '') {
+            btnPlano.href = '/Personal/VisualizarPlano/' + dados.planoId;
+            btnPlano.style.display = 'inline-flex';
+        } else {
+            btnPlano.style.display = 'none';
+        }
+
+        var container = document.getElementById('modalExercicios');
+
+        if (dados.exercicios && dados.exercicios.length > 0) {
+            var html = '';
+            dados.exercicios.forEach(function(ex, index) {
+                var detalhes = [];
+                if (ex.series) detalhes.push(ex.series + ' séries');
+                if (ex.repsTempo) {
+                    if (ex.repsTempo.includes('min') || ex.repsTempo.includes('s')) {
+                        detalhes.push('⏱ ' + ex.repsTempo);
+                    } else {
+                        detalhes.push('🔄 ' + ex.repsTempo + ' reps');
+                    }
+                }
+                if (ex.carga) detalhes.push('🏋️ ' + ex.carga + ' kg');
+                if (ex.descanso) detalhes.push('⏳ ' + ex.descanso + 's');
+
+                html += `
+                    <div class="modal-exercicio-item">
+                        <div class="modal-exercicio-bullet">${index + 1}</div>
+                        <div class="modal-exercicio-info">
+                            <div class="modal-exercicio-nome">${ex.nome}</div>
+                            <div class="modal-exercicio-grupo">${ex.grupo || '—'}</div>
+                            <div class="modal-exercicio-detalhes">
+                                ${detalhes.map(d => `<span class="modal-exercicio-chip">${d}</span>`).join('')}
+                            </div>
+                            ${ex.obs ? `<div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px">📝 ${ex.obs}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `
+                <div class="sem-treino-msg">
+                    <i class="ti ti-barbell-off"></i>
+                    <span>Nenhum treino cadastrado para este dia</span>
+                </div>
+            `;
+        }
+
+        document.getElementById('modalAgendamento').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function fecharModal() {
+        document.getElementById('modalAgendamento').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('modalAgendamento').addEventListener('click', function(e) {
+        if (e.target === this) fecharModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (document.getElementById('modalAgendamento').style.display === 'flex') fecharModal();
+            if (document.getElementById('modalCalendarioVisual').style.display === 'flex') fecharCalendarioVisual();
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // CALENDÁRIO VISUAL COM SELEÇÃO DE ANO INFINITA (INPUT + SETAS)
+    // ═══════════════════════════════════════════════════════════════════
+
+    var dataCalendarioVisual = new Date();
+    var dataSelecionadaCalendarioVisual = null;
+    var diasComAgendamentoVisual = [];
+
+    function abrirCalendarioVisual() {
+        var modal = document.getElementById('modalCalendarioVisual');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        
+        dataSelecionadaCalendarioVisual = null;
+        
+        // Atualiza input de ano
+        document.getElementById('calendarioInputAno').value = dataCalendarioVisual.getFullYear();
+        document.getElementById('calendarioSelectMes').value = dataCalendarioVisual.getMonth();
+        
+        carregarDiasComAgendamentoVisual();
+        renderizarCalendarioVisual();
+    }
+
+    function fecharCalendarioVisual() {
+        document.getElementById('modalCalendarioVisual').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function carregarDiasComAgendamentoVisual() {
+        diasComAgendamentoVisual = [];
+        var mesAtual = dataCalendarioVisual.getMonth();
+        var anoAtual = dataCalendarioVisual.getFullYear();
+        
+        var agendamentosNaSemana = document.querySelectorAll('.agendamento-card');
+        agendamentosNaSemana.forEach(function(card) {
+            var dataStr = card.dataset.dia;
+            if (dataStr) {
+                var partes = dataStr.split('-');
+                var data = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+                if (data.getMonth() === mesAtual && data.getFullYear() === anoAtual) {
+                    if (!diasComAgendamentoVisual.includes(data.getDate())) {
+                        diasComAgendamentoVisual.push(data.getDate());
+                    }
+                }
+            }
+        });
+    }
+
+    function renderizarCalendarioVisual() {
+        var ano = dataCalendarioVisual.getFullYear();
+        var mes = dataCalendarioVisual.getMonth();
+        var hoje = new Date();
+        var hojeDia = hoje.getDate();
+        var hojeMes = hoje.getMonth();
+        var hojeAno = hoje.getFullYear();
+
+        var primeiroDia = new Date(ano, mes, 1);
+        var diaSemanaInicio = primeiroDia.getDay();
+
+        var ultimoDia = new Date(ano, mes + 1, 0);
+        var totalDias = ultimoDia.getDate();
+
+        var diasMesAnterior = new Date(ano, mes, 0).getDate();
+
+        var grid = document.getElementById('calendarioGridVisual');
+        grid.innerHTML = '';
+
+        for (var i = diaSemanaInicio - 1; i >= 0; i--) {
+            var dia = diasMesAnterior - i;
+            var btn = criarDiaCalendarioVisual(dia, true);
+            grid.appendChild(btn);
+        }
+
+        for (var d = 1; d <= totalDias; d++) {
+            var btn = criarDiaCalendarioVisual(d, false);
+            
+            if (d === hojeDia && mes === hojeMes && ano === hojeAno) {
+                btn.classList.add('hoje');
+            }
+            
+            if (diasComAgendamentoVisual.includes(d)) {
+                btn.classList.add('tem-agendamento');
+            }
+            
+            grid.appendChild(btn);
+        }
+
+        var totalCelulas = diaSemanaInicio + totalDias;
+        var diasRestantes = (7 - (totalCelulas % 7)) % 7;
+        for (var r = 1; r <= diasRestantes; r++) {
+            var btn = criarDiaCalendarioVisual(r, true);
+            grid.appendChild(btn);
+        }
+    }
+
+    function criarDiaCalendarioVisual(dia, isOutroMes) {
+        var btn = document.createElement('button');
+        btn.className = 'calendario-dia';
+        if (isOutroMes) btn.classList.add('outro-mes');
+        btn.textContent = dia;
+        
+        var ano = dataCalendarioVisual.getFullYear();
+        var mes = dataCalendarioVisual.getMonth();
+        var dataClick = new Date(ano, mes, dia);
+        
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#calendarioGridVisual .calendario-dia.selecionado').forEach(function(el) {
+                el.classList.remove('selecionado');
+            });
+            this.classList.add('selecionado');
+            dataSelecionadaCalendarioVisual = dataClick;
+        });
+        
+        return btn;
+    }
+
+    function navegarMesVisual(direcao) {
+        dataCalendarioVisual.setMonth(dataCalendarioVisual.getMonth() + direcao);
+        atualizarInputsVisual();
+        carregarDiasComAgendamentoVisual();
+        renderizarCalendarioVisual();
+    }
+
+    function navegarAnoVisual(direcao) {
+        var anoAtual = parseInt(document.getElementById('calendarioInputAno').value) || dataCalendarioVisual.getFullYear();
+        var novoAno = anoAtual + direcao;
+        if (novoAno >= 1900 && novoAno <= 2100) {
+            irParaAnoVisual(novoAno);
+        }
+    }
+
+    function irParaAnoVisual(ano) {
+        var anoInt = parseInt(ano);
+        if (isNaN(anoInt) || anoInt < 1900 || anoInt > 2100) {
+            // Restaura o valor atual se for inválido
+            document.getElementById('calendarioInputAno').value = dataCalendarioVisual.getFullYear();
+            return;
+        }
+        
+        dataCalendarioVisual = new Date(anoInt, dataCalendarioVisual.getMonth(), 1);
+        atualizarInputsVisual();
+        carregarDiasComAgendamentoVisual();
+        renderizarCalendarioVisual();
+    }
+
+    function atualizarInputsVisual() {
+        document.getElementById('calendarioInputAno').value = dataCalendarioVisual.getFullYear();
+        document.getElementById('calendarioSelectMes').value = dataCalendarioVisual.getMonth();
+    }
+
+    function atualizarCalendarioVisual() {
+        var mes = parseInt(document.getElementById('calendarioSelectMes').value);
+        var ano = parseInt(document.getElementById('calendarioInputAno').value);
+        
+        if (isNaN(ano) || ano < 1900 || ano > 2100) {
+            document.getElementById('calendarioInputAno').value = dataCalendarioVisual.getFullYear();
+            return;
+        }
+        
+        dataCalendarioVisual = new Date(ano, mes, 1);
+        carregarDiasComAgendamentoVisual();
+        renderizarCalendarioVisual();
+    }
+
+    function confirmarDataVisual() {
+        if (!dataSelecionadaCalendarioVisual) {
+            var hoje = new Date();
+            var ano = dataCalendarioVisual.getFullYear();
+            var mes = dataCalendarioVisual.getMonth();
+            var dia = dataSelecionadaCalendarioVisual ? dataSelecionadaCalendarioVisual.getDate() : hoje.getDate();
+            dataSelecionadaCalendarioVisual = new Date(ano, mes, dia);
+        }
+        
+        var dataStr = dataSelecionadaCalendarioVisual.getFullYear() + '-' + 
+                      String(dataSelecionadaCalendarioVisual.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(dataSelecionadaCalendarioVisual.getDate()).padStart(2, '0');
+        
+        fecharCalendarioVisual();
+        window.location.href = '/Personal/Agenda?data=' + dataStr;
+    }
+
+    document.getElementById('modalCalendarioVisual').addEventListener('click', function(e) {
+        if (e.target === this) fecharCalendarioVisual();
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var hoje = new Date();
+        dataCalendarioVisual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    });
+
+    // ── ENTER NO INPUT DE ANO ──
+    document.getElementById('calendarioInputAno').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            irParaAnoVisual(this.value);
+        }
+    });
+
+    // ── VALIDAÇÃO DO INPUT DE ANO ──
+    document.getElementById('calendarioInputAno').addEventListener('blur', function() {
+        var val = parseInt(this.value);
+        if (isNaN(val) || val < 1900 || val > 2100) {
+            this.value = dataCalendarioVisual.getFullYear();
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════════
+    // NAVEGAÇÃO
+    // ═══════════════════════════════════════════════════════════════════
+
+    function irParaData(dataStr) {
+        if (!dataStr) return;
+        window.location.href = '/Personal/Agenda?data=' + dataStr;
+    }
+
+    function irParaHoje() {
+        var hoje = new Date();
+        var dataStr = hoje.getFullYear() + '-' + 
+                      String(hoje.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(hoje.getDate()).padStart(2, '0');
+        window.location.href = '/Personal/Agenda?data=' + dataStr;
+    }
+
+    function irParaSemana(direcao) {
+        var currentUrl = new URL(window.location.href);
+        var dataParam = currentUrl.searchParams.get('data');
+        var dataAtual;
+        
+        if (dataParam) {
+            var partes = dataParam.split('-');
+            dataAtual = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]));
+        } else {
+            dataAtual = new Date();
+        }
+        
+        dataAtual.setDate(dataAtual.getDate() + (direcao * 7));
+        
+        var dataStr = dataAtual.getFullYear() + '-' + 
+                      String(dataAtual.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(dataAtual.getDate()).padStart(2, '0');
+        
+        window.location.href = '/Personal/Agenda?data=' + dataStr;
+    }
+</script>

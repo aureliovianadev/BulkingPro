@@ -1,32 +1,46 @@
 @model BulkingPro.Models.PlanoTreino
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"] = "Plano de Treino";
+    ViewData["Title"] = "Plano de Treino - " + Model.Aluno?.NomeCompleto;
     ViewData["ActivePage"] = "PlanoTreino";
+
+    var coresExercicio = new[] { "peito", "costas", "biceps", "triceps", "ombro", "perna", "abdomen", "gluteo", "panturrilha", "cardio" };
 }
 
 @section Topbar {
     <div class="topbar">
         <div>
-            <div class="topbar-title">@Model.Titulo</div>
-            <div class="topbar-sub">@Model.Aluno?.NomeCompleto · @Model.Objetivo</div>
+            <div class="topbar-title">
+                <i class="ti ti-barbell" style="color:var(--gold);margin-right:8px"></i>
+                @Model.Titulo
+            </div>
+            <div class="topbar-sub">
+                @Model.Aluno?.NomeCompleto · 
+                <span style="color:var(--gold)">@Model.Objetivo</span>
+                @if (Model.Status == 1)
+                {
+                    <span class="badge badge-active" style="margin-left:10px">Ativo</span>
+                }
+                else
+                {
+                    <span class="badge badge-inactive" style="margin-left:10px">Encerrado</span>
+                }
+            </div>
         </div>
         <div class="topbar-actions">
-            <a class="btn btn-ghost" asp-action="PlanosTreino"><i class="ti ti-arrow-left"></i> Voltar</a>
-            
-            <!-- NOVO: Botão Editar Plano -->
+            <a class="btn btn-ghost" asp-action="PlanosDoAluno" asp-route-id="@Model.AlunoId">
+                <i class="ti ti-arrow-left"></i> Voltar
+            </a>
             <a class="btn btn-primary" asp-action="EditarPlano" asp-route-id="@Model.Id">
                 <i class="ti ti-edit"></i> Editar plano
             </a>
-            
-            <a class="btn btn-primary" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
+            <a class="btn btn-ghost" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
                 <i class="ti ti-plus"></i> Novo plano
             </a>
-            
             <form asp-action="DuplicarPlano" method="post" style="display:inline">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" class="btn btn-gold">
+                <button type="submit" class="btn btn-gold btn-sm">
                     <i class="ti ti-copy"></i> Duplicar
                 </button>
             </form>
@@ -34,144 +48,200 @@
     </div>
 }
 
-<!-- Info geral -->
-<div class="card" style="margin-bottom:16px">
-    <div class="card-body">
-        <div class="info-grid">
-            <div>
-                <div class="detail-label">Aluno</div>
-                <div class="detail-val">@Model.Aluno?.NomeCompleto</div>
+<!-- Info do Plano -->
+<div class="plano-header-card">
+    <div class="plano-header-info">
+        <div class="plano-header-item">
+            <span class="plano-header-label">Aluno</span>
+            <span class="plano-header-value">@Model.Aluno?.NomeCompleto</span>
+        </div>
+        <div class="plano-header-item">
+            <span class="plano-header-label">Objetivo</span>
+            <span class="plano-header-value" style="color:var(--gold)">@Model.Objetivo</span>
+        </div>
+        <div class="plano-header-item">
+            <span class="plano-header-label">Início</span>
+            <span class="plano-header-value">@Model.DataInicio.ToString("dd/MM/yyyy")</span>
+        </div>
+        @if (Model.DataFim.HasValue)
+        {
+            <div class="plano-header-item">
+                <span class="plano-header-label">Fim</span>
+                <span class="plano-header-value">@Model.DataFim.Value.ToString("dd/MM/yyyy")</span>
             </div>
-            <div>
-                <div class="detail-label">Objetivo</div>
-                <div class="detail-val">@Model.Objetivo</div>
-            </div>
-            <div>
-                <div class="detail-label">Início</div>
-                <div class="detail-val">@Model.DataInicio.ToString("dd/MM/yyyy")</div>
-            </div>
-            @if (Model.DataFim.HasValue)
-            {
-                <div>
-                    <div class="detail-label">Fim</div>
-                    <div class="detail-val">@Model.DataFim.Value.ToString("dd/MM/yyyy")</div>
-                </div>
-            }
-            <div>
-                <div class="detail-label">Status</div>
-                <div class="detail-val">
-                    @if (Model.Status == 1) 
-                    { 
-                        <span class="badge badge-active">Ativo</span> 
-                    }
-                    else 
-                    { 
-                        <span class="badge badge-inactive">Encerrado</span> 
-                    }
-                </div>
-            </div>
-            <div>
-                <div class="detail-label">Criado em</div>
-                <div class="detail-val">@Model.DataCriacao.ToString("dd/MM/yyyy")</div>
-            </div>
+        }
+        <div class="plano-header-item">
+            <span class="plano-header-label">Criado em</span>
+            <span class="plano-header-value">@Model.DataCriacao.ToString("dd/MM/yyyy")</span>
         </div>
     </div>
 </div>
 
-<!-- Dias de treino -->
-@foreach (var treino in Model.Treinos.OrderBy(t => t.OrdemDia))
-{
-    <div class="card" style="margin-bottom:12px">
-        <div class="card-body">
-            <div class="card-title">
-                <i class="ti ti-calendar-event"></i> @treino.Nome
-                @if (!string.IsNullOrWhiteSpace(treino.Observacoes))
-                {
-                    <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">— @treino.Observacoes</span>
-                }
-            </div>
-
-            @if (!treino.TreinoExercicios.Any())
-            {
-                <div style="color:var(--muted);font-size:13px;padding:16px;text-align:center">
-                    <i class="ti ti-barbell-off"></i> Nenhum exercício cadastrado neste dia.
+<!-- Dias da Semana -->
+<div class="dias-container">
+    @if (!Model.Treinos.Any())
+    {
+        <div class="empty-treino">
+            <i class="ti ti-barbell-off"></i>
+            <p>Nenhum treino cadastrado neste plano.</p>
+            <a class="btn btn-primary" asp-action="EditarPlano" asp-route-id="@Model.Id">
+                <i class="ti ti-plus"></i> Adicionar treinos
+            </a>
+        </div>
+    }
+    else
+    {
+        @foreach (var treino in Model.Treinos.OrderBy(t => t.OrdemDia))
+        {
+            <div class="dia-card-plano">
+                <div class="dia-header-plano" onclick="toggleDia(this)">
+                    <div class="dia-header-left">
+                        <i class="ti ti-calendar-event" style="color:var(--gold)"></i>
+                        <span class="dia-nome-plano">@treino.Nome</span>
+                        <span class="dia-exercicios-count">@treino.TreinoExercicios.Count exercícios</span>
+                        @if (!string.IsNullOrWhiteSpace(treino.Observacoes))
+                        {
+                            <span class="dia-obs-tag">@treino.Observacoes</span>
+                        }
+                    </div>
+                    <div class="dia-header-right">
+                        <i class="ti ti-chevron-down dia-toggle-icon"></i>
+                    </div>
                 </div>
-            }
-            else
-            {
-                <div class="exercicios-lista">
-                    @foreach (var te in treino.TreinoExercicios.OrderBy(te => te.Ordem))
+
+                <div class="dia-body-plano" style="display:none">
+                    @if (!treino.TreinoExercicios.Any())
                     {
-                        <div class="exer-linha-view">
-                            <div class="exer-num-view">@te.Ordem</div>
-                            <div class="exer-info-view">
-                                <div class="exer-nome-view">@te.Exercicio?.Nome</div>
-                                <div class="exer-grupo-view">@te.Exercicio?.GrupoMuscular?.Nome</div>
-                            </div>
-                            <div class="exer-badges">
-                                <span class="info-chip"><i class="ti ti-repeat"></i> @te.SeriesPlanejadas séries</span>
+                        <div class="sem-exercicios">
+                            <i class="ti ti-barbell-off"></i>
+                            <span>Nenhum exercício cadastrado</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="exercicios-grid-plano">
+                            @foreach (var te in treino.TreinoExercicios.OrderBy(te => te.Ordem))
+                            {
+                                var cor = coresExercicio[Math.Abs(te.ExercicioId) % coresExercicio.Length];
+                                <div class="exercicio-card-plano">
+                                    <div class="exercicio-header-plano">
+                                        <span class="exercicio-numero">@te.Ordem</span>
+                                        <div class="exercicio-info-plano">
+                                            <div class="exercicio-nome-plano">@te.Exercicio?.Nome</div>
+                                            <div class="exercicio-grupo-plano @cor">@te.Exercicio?.GrupoMuscular?.Nome</div>
+                                        </div>
+                                    </div>
+                                    <div class="exercicio-detalhes-plano">
+                                        <span class="detalhe-chip-plano">
+                                            <i class="ti ti-repeat"></i> @te.SeriesPlanejadas séries
+                                        </span>
 
-                                @if (te.Exercicio?.TipoExecucao == BulkingPro.Models.TipoExecucao.Tempo && te.TempoExecucaoSegundos.HasValue)
-                                {
-                                    var min = te.TempoExecucaoSegundos.Value / 60;
-                                    var seg = te.TempoExecucaoSegundos.Value % 60;
-                                    var tempo = min > 0 ? $"{min}min {seg}s" : $"{seg}s";
-                                    <span class="info-chip"><i class="ti ti-clock"></i> @tempo</span>
-                                }
-                                else
-                                {
-                                    <span class="info-chip"><i class="ti ti-refresh"></i> @te.RepeticoesPlanejadas reps</span>
-                                }
+                                        @if (te.Exercicio?.TipoExecucao == BulkingPro.Models.TipoExecucao.Tempo && te.TempoExecucaoSegundos.HasValue)
+                                        {
+                                            var min = te.TempoExecucaoSegundos.Value / 60;
+                                            var seg = te.TempoExecucaoSegundos.Value % 60;
+                                            var tempo = min > 0 ? $"{min}min {seg}s" : $"{seg}s";
+                                            <span class="detalhe-chip-plano">
+                                                <i class="ti ti-clock"></i> @tempo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="detalhe-chip-plano">
+                                                <i class="ti ti-refresh"></i> @te.RepeticoesPlanejadas reps
+                                            </span>
+                                        }
 
-                                @if (te.CargaPlanejada.HasValue)
-                                {
-                                    <span class="info-chip"><i class="ti ti-barbell"></i> @te.CargaPlanejada.Value.ToString("F2") kg</span>
-                                }
-                                @if (te.TempoDescanso.HasValue)
-                                {
-                                    <span class="info-chip"><i class="ti ti-hourglass"></i> @te.TempoDescanso s</span>
-                                }
-                            </div>
+                                        @if (te.CargaPlanejada.HasValue)
+                                        {
+                                            <span class="detalhe-chip-plano">
+                                                <i class="ti ti-barbell"></i> @te.CargaPlanejada.Value.ToString("F0") kg
+                                            </span>
+                                        }
+                                        @if (te.TempoDescanso.HasValue)
+                                        {
+                                            <span class="detalhe-chip-plano">
+                                                <i class="ti ti-hourglass"></i> @te.TempoDescanso s
+                                            </span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(te.Observacoes))
+                                    {
+                                        <div class="exercicio-obs-plano">
+                                            <i class="ti ti-notes"></i> @te.Observacoes
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                     }
                 </div>
-            }
-        </div>
-    </div>
-}
+            </div>
+        }
+    }
+</div>
 
-@if (!Model.Treinos.Any())
-{
-    <div class="empty-state">
-        <i class="ti ti-clipboard-list"></i>
-        <p>Nenhum treino cadastrado neste plano.</p>
-        <a class="btn btn-primary" asp-action="EditarPlano" asp-route-id="@Model.Id">
-            <i class="ti ti-plus"></i> Editar plano
-        </a>
-    </div>
-}
+<!-- Ações rápidas -->
+<div class="acoes-rapidas">
+    <a class="btn btn-primary" asp-action="EditarPlano" asp-route-id="@Model.Id">
+        <i class="ti ti-edit"></i> Editar plano
+    </a>
+    <a class="btn btn-ghost" asp-action="CriarPlano" asp-route-alunoId="@Model.AlunoId">
+        <i class="ti ti-plus"></i> Novo plano
+    </a>
+    <form asp-action="DuplicarPlano" method="post" style="display:inline">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-gold">
+            <i class="ti ti-copy"></i> Duplicar plano
+        </button>
+    </form>
+    <form asp-action="ExcluirPlano" method="post" style="display:inline" 
+          onsubmit="return confirm('Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.')">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-danger">
+            <i class="ti ti-trash"></i> Excluir plano
+        </button>
+    </form>
+</div>
 
 <style>
-    .info-grid {
+    /* ── CARD HEADER DO PLANO ── */
+    .plano-header-card {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+
+    .plano-header-info {
         display: flex;
         flex-wrap: wrap;
         gap: 24px;
     }
 
-    .detail-label {
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.3);
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        margin-bottom: 4px;
+    .plano-header-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
     }
 
-    .detail-val {
+    .plano-header-label {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .plano-header-value {
         font-size: 14px;
         font-weight: 500;
         color: #fff;
     }
 
+    /* ── BADGES ── */
     .badge {
         display: inline-flex;
         align-items: center;
@@ -194,25 +264,150 @@
         border: 1px solid var(--border);
     }
 
-    .exercicios-lista {
+    /* ── DIAS DA SEMANA ── */
+    .dias-container {
         display: flex;
         flex-direction: column;
-        gap: 0;
+        gap: 12px;
+        margin-bottom: 24px;
     }
 
-    .exer-linha-view {
+    .dia-card-plano {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all .2s ease;
+    }
+
+    .dia-card-plano:hover {
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .dia-header-plano {
+        padding: 16px 20px;
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background .2s;
+        user-select: none;
+    }
+
+    .dia-header-plano:hover {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .dia-header-left {
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 12px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
-    .exer-linha-view:last-child {
-        border-bottom: none;
+    .dia-nome-plano {
+        font-size: 15px;
+        font-weight: 600;
+        color: #fff;
     }
 
-    .exer-num-view {
+    .dia-exercicios-count {
+        font-size: 11px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 2px 10px;
+        border-radius: 20px;
+    }
+
+    .dia-obs-tag {
+        font-size: 11px;
+        color: var(--gold);
+        background: rgba(196, 168, 122, 0.1);
+        padding: 2px 10px;
+        border-radius: 20px;
+    }
+
+    .dia-header-right {
+        color: var(--muted);
+        transition: transform .3s ease;
+    }
+
+    .dia-card-plano.expandido .dia-toggle-icon {
+        transform: rotate(180deg);
+    }
+
+    .dia-body-plano {
+        padding: 16px 20px 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    /* ── SEM EXERCÍCIOS ── */
+    .sem-exercicios {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px;
+        color: var(--muted);
+        font-size: 13px;
+        justify-content: center;
+    }
+
+    .sem-exercicios i {
+        font-size: 20px;
+        color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* ── EMPTY TREINO ── */
+    .empty-treino {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+    }
+
+    .empty-treino i {
+        font-size: 48px;
+        color: rgba(255, 255, 255, 0.06);
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .empty-treino p {
+        font-size: 14px;
+        color: var(--muted);
+        margin-bottom: 16px;
+    }
+
+    /* ── EXERCÍCIOS GRID ── */
+    .exercicios-grid-plano {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+    }
+
+    .exercicio-card-plano {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 14px 16px;
+        transition: all .2s ease;
+    }
+
+    .exercicio-card-plano:hover {
+        border-color: rgba(238, 25, 32, 0.3);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .exercicio-header-plano {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .exercicio-numero {
         width: 28px;
         height: 28px;
         border-radius: 50%;
@@ -221,48 +416,124 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 700;
         flex-shrink: 0;
     }
 
-    .exer-info-view {
+    .exercicio-info-plano {
         flex: 1;
         min-width: 0;
     }
 
-    .exer-nome-view {
-        font-size: 13px;
+    .exercicio-nome-plano {
+        font-size: 14px;
         font-weight: 600;
         color: #fff;
+        margin-bottom: 4px;
     }
 
-    .exer-grupo-view {
+    .exercicio-grupo-plano {
         font-size: 10px;
-        color: var(--muted);
-        margin-top: 2px;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 20px;
+        display: inline-block;
     }
 
-    .exer-badges {
+    .exercicio-grupo-plano.peito {
+        background: rgba(238, 25, 32, 0.15);
+        color: #ee1920;
+    }
+    .exercicio-grupo-plano.costas {
+        background: rgba(56, 139, 253, 0.15);
+        color: #388bfd;
+    }
+    .exercicio-grupo-plano.biceps {
+        background: rgba(196, 168, 122, 0.2);
+        color: var(--gold);
+    }
+    .exercicio-grupo-plano.triceps {
+        background: rgba(46, 160, 67, 0.15);
+        color: #2ea043;
+    }
+    .exercicio-grupo-plano.ombro {
+        background: rgba(160, 80, 200, 0.2);
+        color: #a050c8;
+    }
+    .exercicio-grupo-plano.perna {
+        background: rgba(238, 120, 25, 0.15);
+        color: #ee7819;
+    }
+    .exercicio-grupo-plano.abdomen {
+        background: rgba(255, 200, 0, 0.15);
+        color: #ffc800;
+    }
+    .exercicio-grupo-plano.gluteo {
+        background: rgba(255, 100, 150, 0.15);
+        color: #ff6496;
+    }
+    .exercicio-grupo-plano.panturrilha {
+        background: rgba(0, 200, 200, 0.15);
+        color: #00c8c8;
+    }
+    .exercicio-grupo-plano.cardio {
+        background: rgba(255, 100, 50, 0.15);
+        color: #ff6432;
+    }
+
+    .exercicio-detalhes-plano {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        justify-content: flex-end;
+        margin-top: 4px;
     }
 
-    .info-chip {
+    .detalhe-chip-plano {
         display: inline-flex;
         align-items: center;
         gap: 4px;
         background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-radius: 20px;
-        padding: 3px 10px;
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.6);
-        white-space: nowrap;
+        padding: 2px 10px;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
     }
 
+    .detalhe-chip-plano i {
+        font-size: 10px;
+        color: var(--gold);
+    }
+
+    .exercicio-obs-plano {
+        margin-top: 8px;
+        padding: 6px 10px;
+        background: rgba(196, 168, 122, 0.06);
+        border-radius: 8px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .exercicio-obs-plano i {
+        color: var(--gold);
+        font-size: 12px;
+    }
+
+    /* ── AÇÕES RÁPIDAS ── */
+    .acoes-rapidas {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+    }
+
+    /* ── BOTÕES ── */
     .btn {
         display: inline-flex;
         align-items: center;
@@ -274,15 +545,21 @@
         cursor: pointer;
         border: none;
         text-decoration: none;
-        transition: opacity .15s;
+        transition: all .2s;
     }
 
     .btn:hover {
         opacity: .85;
+        transform: translateY(-1px);
+    }
+
+    .btn-sm {
+        padding: 5px 12px;
+        font-size: 11px;
     }
 
     .btn-primary {
-        background: var(--red);
+        background: linear-gradient(135deg, #ee1920, #c41218);
         color: #fff;
     }
 
@@ -295,64 +572,109 @@
     .btn-gold {
         background: rgba(196, 168, 122, 0.15);
         color: var(--gold);
-        border: 1px solid rgba(196, 168, 122, 0.3);
+        border: 1px solid rgba(196, 168, 122, 0.25);
     }
 
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: rgba(255, 255, 255, 0.3);
+    .btn-gold:hover {
+        background: rgba(196, 168, 122, 0.25);
     }
 
-    .empty-state i {
-        font-size: 48px;
-        display: block;
-        margin-bottom: 12px;
-        color: rgba(238, 25, 32, 0.3);
+    .btn-danger {
+        background: rgba(238, 25, 32, 0.15);
+        color: #ee1920;
+        border: 1px solid rgba(238, 25, 32, 0.25);
     }
 
-    .empty-state p {
-        margin-bottom: 20px;
-        font-size: 14px;
+    .btn-danger:hover {
+        background: rgba(238, 25, 32, 0.25);
     }
 
-    .card {
-        background: var(--bg3);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-    }
+    /* ── RESPONSIVO ── */
+    @@media (max-width: 768px) {
+        .exercicios-grid-plano {
+            grid-template-columns: 1fr;
+        }
 
-    .card-body {
-        padding: 18px 20px;
-    }
+        .plano-header-info {
+            gap: 12px;
+        }
 
-    .card-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.7);
-        margin-bottom: 14px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .card-title i {
-        color: var(--gold);
-    }
-
-    @@media (max-width: 700px) {
-        .exer-linha-view {
+        .dia-header-left {
             flex-direction: column;
             align-items: flex-start;
+            gap: 6px;
         }
-        
-        .exer-badges {
-            justify-content: flex-start;
-            margin-top: 8px;
+
+        .dia-header-plano {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
         }
-        
-        .info-grid {
-            gap: 12px;
+
+        .dia-header-right {
+            align-self: flex-end;
+        }
+
+        .topbar-actions {
+            flex-wrap: wrap;
+        }
+
+        .acoes-rapidas {
+            flex-direction: column;
+        }
+
+        .acoes-rapidas .btn {
+            justify-content: center;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .plano-header-card {
+            padding: 14px 16px;
+        }
+
+        .dia-header-plano {
+            padding: 12px 14px;
+        }
+
+        .dia-body-plano {
+            padding: 12px 14px 16px;
+        }
+
+        .exercicio-card-plano {
+            padding: 12px;
+        }
+
+        .exercicio-nome-plano {
+            font-size: 13px;
         }
     }
 </style>
+
+<script>
+    // ── EXPANDIR/RECOLHER DIA ──
+    function toggleDia(header) {
+        var card = header.closest('.dia-card-plano');
+        var body = card.querySelector('.dia-body-plano');
+        
+        if (body.style.display === 'none') {
+            body.style.display = 'block';
+            card.classList.add('expandido');
+        } else {
+            body.style.display = 'none';
+            card.classList.remove('expandido');
+        }
+    }
+
+    // ── EXPANDIR PRIMEIRO DIA POR PADRÃO ──
+    document.addEventListener('DOMContentLoaded', function() {
+        var primeiroCard = document.querySelector('.dia-card-plano');
+        if (primeiroCard) {
+            var primeiroBody = primeiroCard.querySelector('.dia-body-plano');
+            if (primeiroBody) {
+                primeiroBody.style.display = 'block';
+                primeiroCard.classList.add('expandido');
+            }
+        }
+    });
+</script>

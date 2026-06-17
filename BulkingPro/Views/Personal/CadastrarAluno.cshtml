@@ -31,24 +31,24 @@
             <div class="form-row">
                 <div class="form-group" style="flex:2">
                     <label class="form-label" asp-for="NomeCompleto">Nome completo</label>
-                    <input class="form-control" asp-for="NomeCompleto" placeholder="Nome completo do aluno" />
+                    <input class="form-control" asp-for="NomeCompleto" placeholder="Nome completo do aluno" value="" />
                     <span asp-validation-for="NomeCompleto" class="field-validation-error"></span>
                 </div>
                 <div class="form-group" style="flex:1">
                     <label class="form-label" asp-for="Cpf">CPF</label>
-                    <input class="form-control" asp-for="Cpf" id="cpf" placeholder="000.000.000-00" />
+                    <input class="form-control" asp-for="Cpf" id="cpf" placeholder="000.000.000-00" value="" />
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group" style="flex:2">
                     <label class="form-label" asp-for="Email">E-mail</label>
-                    <input class="form-control" asp-for="Email" type="email" placeholder="aluno@email.com" />
+                    <input class="form-control" asp-for="Email" type="email" placeholder="aluno@email.com" value="" />
                     <span asp-validation-for="Email" class="field-validation-error"></span>
                 </div>
                 <div class="form-group" style="flex:1">
                     <label class="form-label" asp-for="Telefone">WhatsApp</label>
-                    <input class="form-control" asp-for="Telefone" id="telefone" placeholder="(00) 00000-0000" />
+                    <input class="form-control" asp-for="Telefone" id="telefone" placeholder="(00) 00000-0000" value="" />
                 </div>
             </div>
 
@@ -56,7 +56,7 @@
                 <div class="form-group" style="flex:1">
                     <label class="form-label" asp-for="Senha">Senha</label>
                     <div class="senha-wrapper">
-                        <input class="form-control" asp-for="Senha" type="password" id="senha" placeholder="Mínimo 6 caracteres" />
+                        <input class="form-control" asp-for="Senha" type="password" id="senha" placeholder="Crie uma senha segura" value="" />
                         <button type="button" class="btn-eye" onclick="toggleSenha('senha', 'eye-senha')">
                             <i class="ti ti-eye" id="eye-senha"></i>
                         </button>
@@ -66,7 +66,7 @@
                 <div class="form-group" style="flex:1">
                     <label class="form-label" for="confirmarSenha">Confirmar senha</label>
                     <div class="senha-wrapper">
-                        <input class="form-control" type="password" id="confirmarSenha" placeholder="Digite novamente" />
+                        <input class="form-control" type="password" id="confirmarSenha" placeholder="Confirme a senha criada" value="" />
                         <button type="button" class="btn-eye" onclick="toggleSenha('confirmarSenha', 'eye-confirmar')">
                             <i class="ti ti-eye" id="eye-confirmar"></i>
                         </button>
