@@ -1,37 +1,73 @@
 @model BulkingPro.ViewModels.MedidasViewModel
 @{
     Layout = "~/Views/Personal/_PersonalLayout.cshtml";
-    ViewData["Title"]      = "Medidas e IMC";
+    ViewData["Title"] = "Medidas Corporais e IMC";
     ViewData["ActivePage"] = "Medidas";
+    var isEditing = ViewBag.AvaliacaoId != null;
 }
 
 @section Topbar {
     <div class="topbar">
         <div>
-            <div class="topbar-title">Medidas Corporais e IMC</div>
-            <div class="topbar-sub">Registro de avaliação física</div>
+            <div class="topbar-title">@(isEditing ? "Editar Avaliação" : "Medidas Corporais e IMC")</div>
+            <div class="topbar-sub">
+                @(isEditing ? "Altere os dados da avaliação" : "Registro de avaliação física")
+            </div>
         </div>
+        @if (isEditing)
+        {
+            <div class="topbar-actions">
+                <a class="btn btn-ghost" asp-action="HistoricoMedidas" asp-route-alunoId="@Model.AlunoId">
+                    <i class="ti ti-arrow-left"></i> Voltar
+                </a>
+            </div>
+        }
     </div>
 }
 
-<form asp-action="SalvarMedidas" method="post">
+@if (isEditing)
+{
+    <div style="margin-bottom: 16px; padding: 12px 16px; background: rgba(196,168,122,0.08); border: 1px solid rgba(196,168,122,0.2); border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.7);">
+        <i class="ti ti-info-circle" style="color: var(--gold);"></i>
+        Editando avaliação de <strong>@Model.DataAvaliacao.ToString("dd/MM/yyyy")</strong>
+    </div>
+}
+
+<form asp-action="@(isEditing ? "AtualizarMedida" : "SalvarMedidas")" method="post" id="form-medidas">
     @Html.AntiForgeryToken()
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+    @if (isEditing)
+    {
+        <input type="hidden" name="id" value="@ViewBag.AvaliacaoId" />
+        <input type="hidden" asp-for="AlunoId" />
+    }
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start">
 
         <!-- COLUNA ESQUERDA: dados principais + IMC -->
-        <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex; flex-direction:column; gap:16px">
 
             <!-- Aluno e data -->
             <div class="card">
                 <div class="card-body">
                     <div class="card-title"><i class="ti ti-user"></i> Identificação</div>
+                    
                     <div class="form-group">
                         <label class="form-label">Aluno</label>
-                        <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
-                            <option value="">— selecione —</option>
-                        </select>
-                        <span asp-validation-for="AlunoId" class="field-validation-error"></span>
+                        @if (isEditing)
+                        {
+                            var alunoNome = ViewBag.AlunoNome as string ?? "Aluno";
+                            <div style="padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);">
+                                <i class="ti ti-user" style="color: var(--gold);"></i> @alunoNome
+                            </div>
+                        }
+                        else
+                        {
+                            <select class="form-control" asp-for="AlunoId" asp-items="ViewBag.Alunos">
+                                <option value="">— selecione —</option>
+                            </select>
+                            <span asp-validation-for="AlunoId" class="field-validation-error"></span>
+                        }
                     </div>
                     <div class="form-group">
                         <label class="form-label">Data da avaliação</label>
@@ -50,6 +86,7 @@
                             <input class="form-control" asp-for="Altura" type="number"
                                    step="0.01" min="0.5" max="2.5"
                                    placeholder="1.75" id="input-altura"
+                                   value="@(Model.Altura.HasValue ? Model.Altura.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")"
                                    oninput="calcularIMC()" />
                         </div>
                         <div class="form-group">
@@ -57,14 +94,17 @@
                             <input class="form-control" asp-for="Peso" type="number"
                                    step="0.1" min="1" max="500"
                                    placeholder="75.0" id="input-peso"
+                                   value="@(Model.Peso.HasValue ? Model.Peso.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")"
                                    oninput="calcularIMC()" />
                         </div>
                     </div>
 
                     <!-- Resultado IMC -->
-                    <div class="imc-result" id="imc-result" style="display:none">
-                        <div class="imc-valor" id="imc-valor">—</div>
-                        <div class="imc-class" id="imc-class">—</div>
+                    <div class="imc-result" id="imc-result" style="display:@(Model.IMC.HasValue ? "" : "none")">
+                        <div class="imc-valor" id="imc-valor" style="color:@(Model.IMC.HasValue ? ObterCorIMC(Model.IMC.Value) : "")">
+                            @(Model.IMC.HasValue ? Model.IMC.Value.ToString("F2") : "—")
+                        </div>
+                        <div class="imc-class" id="imc-class">@(Model.IMC.HasValue ? Model.ClassificacaoIMC : "—")</div>
                     </div>
 
                     <!-- Tabela de referência -->
@@ -100,7 +140,7 @@
         </div>
 
         <!-- COLUNA DIREITA: circunferências -->
-        <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex; flex-direction:column; gap:16px">
             <div class="card">
                 <div class="card-body">
                     <div class="card-title"><i class="ti ti-ruler-2"></i> Circunferências (cm)</div>
@@ -108,67 +148,80 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Pescoço</label>
-                            <input class="form-control" asp-for="Pescoco" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="Pescoco" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.Pescoco.HasValue ? Model.Pescoco.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Ombro</label>
-                            <input class="form-control" asp-for="Ombro" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="Ombro" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.Ombro.HasValue ? Model.Ombro.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Tórax (contraído)</label>
-                            <input class="form-control" asp-for="ToraxContrai" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="ToraxContrai" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.ToraxContrai.HasValue ? Model.ToraxContrai.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Tórax (relaxado)</label>
-                            <input class="form-control" asp-for="ToraxRelax" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="ToraxRelax" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.ToraxRelax.HasValue ? Model.ToraxRelax.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Bíceps D</label>
-                            <input class="form-control" asp-for="BicepsDireito" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="BicepsDireito" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.BicepsDireito.HasValue ? Model.BicepsDireito.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Bíceps E</label>
-                            <input class="form-control" asp-for="BicepsEsquerdo" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="BicepsEsquerdo" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.BicepsEsquerdo.HasValue ? Model.BicepsEsquerdo.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Cintura</label>
-                            <input class="form-control" asp-for="Cintura" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="Cintura" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.Cintura.HasValue ? Model.Cintura.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Abdômen</label>
-                            <input class="form-control" asp-for="Abdomen" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="Abdomen" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.Abdomen.HasValue ? Model.Abdomen.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Quadril</label>
-                            <input class="form-control" asp-for="Quadril" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="Quadril" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.Quadril.HasValue ? Model.Quadril.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Coxa D</label>
-                            <input class="form-control" asp-for="CoxaDireita" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="CoxaDireita" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.CoxaDireita.HasValue ? Model.CoxaDireita.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Coxa E</label>
-                            <input class="form-control" asp-for="CoxaEsquerda" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="CoxaEsquerda" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.CoxaEsquerda.HasValue ? Model.CoxaEsquerda.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Panturrilha D</label>
-                            <input class="form-control" asp-for="PanturrilhaDireita" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="PanturrilhaDireita" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.PanturrilhaDireita.HasValue ? Model.PanturrilhaDireita.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                         <div class="form-group">
                             <label class="form-label">Panturrilha E</label>
-                            <input class="form-control" asp-for="PanturrilhaEsquerda" type="number" step="0.1" placeholder="—" />
+                            <input class="form-control" asp-for="PanturrilhaEsquerda" type="number" step="0.1" placeholder="—"
+                                   value="@(Model.PanturrilhaEsquerda.HasValue ? Model.PanturrilhaEsquerda.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) : "")" />
                         </div>
                     </div>
 
@@ -180,7 +233,7 @@
             </div>
 
             <button type="submit" class="btn btn-primary" style="justify-content:center">
-                <i class="ti ti-device-floppy"></i> Salvar medidas
+                <i class="ti ti-device-floppy"></i> @(isEditing ? "Atualizar medidas" : "Salvar medidas")
             </button>
         </div>
 
@@ -212,6 +265,18 @@
     .imc-faixa.ativo .faixa-range,
     .imc-faixa.ativo .faixa-label { color: #fff; font-weight: 600; }
 </style>
+
+@functions {
+    private string ObterCorIMC(decimal imc)
+    {
+        if (imc < 18.5m) return "#388bfd";
+        if (imc < 25.0m) return "#2ea043";
+        if (imc < 30.0m) return "#c4a87a";
+        if (imc < 35.0m) return "#ee7719";
+        if (imc < 40.0m) return "#ee1920";
+        return "#9a1020";
+    }
+}
 
 <script>
     function calcularIMC() {
@@ -245,6 +310,11 @@
         const idx    = labels.findIndex(l => classe.startsWith(l.split(' ')[0]));
         if (faixas[idx]) faixas[idx].classList.add('ativo');
     }
+
+    // Executar ao carregar a página para exibir o IMC já calculado
+    document.addEventListener('DOMContentLoaded', function() {
+        calcularIMC();
+    });
 </script>
 
 @section Scripts {

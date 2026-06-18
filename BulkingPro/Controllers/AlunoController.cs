@@ -144,69 +144,132 @@ public class AlunoController : Controller
         return View(vm);
     }
 
-    // GET: /Aluno/Treinos
-    public async Task<IActionResult> Treinos()
+    // ═══════════════════════════════════════════════════════════════
+    // GET: /Aluno/Treinos (VERSÃO ATUALIZADA COM HISTÓRICO)
+    // ═══════════════════════════════════════════════════════════════
+    public async Task<IActionResult> Treinos(string? planoId)
     {
         var aluno = await _userManager.GetUserAsync(User);
         if (aluno == null) return Challenge();
 
-        var planoAtivo = await _context.PlanosTreino
+        var vm = new TreinosAlunoViewModel();
+        vm.DataReferencia = DateTime.Today;
+
+        // ── Buscar TODOS os planos do aluno (ordenados por data) ──
+        var todosPlanos = await _context.PlanosTreino
             .Include(p => p.Treinos)
                 .ThenInclude(t => t.TreinoExercicios)
                     .ThenInclude(te => te.Exercicio)
                         .ThenInclude(e => e.GrupoMuscular)
-            .FirstOrDefaultAsync(p => p.AlunoId == aluno.Id && p.Status == 1);
+            .Where(p => p.AlunoId == aluno.Id)
+            .OrderByDescending(p => p.DataInicio)
+            .ToListAsync();
 
-        if (planoAtivo == null)
+        if (!todosPlanos.Any())
         {
-            ViewBag.Mensagem = "Você ainda não possui um plano de treino ativo. Aguarde seu personal trainer montar um plano para você!";
-            return View(new TreinoAlunoViewModel { DiasTreino = new List<DiaTreinoAlunoViewModel>() });
+            vm.Mensagem = "Você ainda não possui nenhum plano de treino. Aguarde seu personal trainer montar um plano para você!";
+            return View(vm);
         }
 
-        // Buscar comentários do aluno
+        // ── Popular lista de planos disponíveis ──
+        foreach (var plano in todosPlanos)
+        {
+            vm.PlanosDisponiveis.Add(new PlanoPeriodoViewModel
+            {
+                Id = plano.Id.ToString(),
+                Titulo = plano.Titulo,
+                DataInicio = plano.DataInicio,
+                DataFim = plano.DataFim,
+                IsAtivo = plano.Status == 1
+            });
+        }
+
+        // ── Determinar qual plano exibir ──
+        PlanoTreino? planoSelecionado = null;
+
+        // Se o usuário selecionou um plano específico via query string
+        if (!string.IsNullOrEmpty(planoId) && int.TryParse(planoId, out int id))
+        {
+            planoSelecionado = todosPlanos.FirstOrDefault(p => p.Id == id);
+        }
+
+        // Se não selecionou ou o ID é inválido, pega o plano ativo (Status = 1)
+        if (planoSelecionado == null)
+        {
+            planoSelecionado = todosPlanos.FirstOrDefault(p => p.Status == 1);
+
+            // Se não tem plano ativo, pega o mais recente
+            if (planoSelecionado == null)
+            {
+                planoSelecionado = todosPlanos.FirstOrDefault();
+            }
+        }
+
+        if (planoSelecionado == null)
+        {
+            vm.Mensagem = "Nenhum plano disponível para visualização.";
+            return View(vm);
+        }
+
+        // ── Atualizar ViewModel com o plano selecionado ──
+        vm.PlanoSelecionadoId = planoSelecionado.Id.ToString();
+        vm.PlanoAtual = vm.PlanosDisponiveis.FirstOrDefault(p => p.Id == vm.PlanoSelecionadoId);
+        vm.TemPlanoAtivo = planoSelecionado.Status == 1;
+
+        // ── Buscar execuções do aluno para saber o que foi realizado ──
+        var execucoes = await _context.ExecucoesTreinoExercicios
+            .Include(e => e.ExecucaoTreino)
+            .Where(e => e.ExecucaoTreino.AlunoId == aluno.Id && e.Concluido)
+            .Select(e => new { e.TreinoExercicioId, e.ExecucaoTreino.DataExecucao })
+            .ToListAsync();
+
+        // ── Buscar comentários do aluno ──
         var comentarios = await _context.ComentariosTreino
             .Where(c => c.AlunoId == aluno.Id)
             .ToDictionaryAsync(c => c.TreinoExercicioId, c => c.Comentario);
 
-        // Buscar execuções realizadas
-        var execucoesRealizadas = await _context.ExecucoesTreinoExercicios
-            .Include(ete => ete.ExecucaoTreino)
-            .Where(ete => ete.ExecucaoTreino.AlunoId == aluno.Id && ete.Concluido)
-            .Select(ete => new { ete.TreinoExercicioId, ete.ExecucaoTreino.DataExecucao })
-            .ToListAsync();
-
+        // ── Mapear dias da semana com datas reais ──
         var hoje = DateTime.Today;
         var diaSemanaHoje = (int)hoje.DayOfWeek;
-        
-        // Mapeamento: para cada treino, verificar se foi realizado hoje
-        var treinosRealizadosHoje = execucoesRealizadas
-            .Where(e => e.DataExecucao.Date == hoje)
-            .Select(e => e.TreinoExercicioId)
-            .Distinct()
-            .ToList();
+        if (diaSemanaHoje == 0) diaSemanaHoje = 7; // Domingo = 7
 
-        var diasTreino = new List<DiaTreinoAlunoViewModel>();
+        var diasTreino = new List<DiaTreinoComDataViewModel>();
 
-        foreach (var treino in planoAtivo.Treinos.OrderBy(t => t.OrdemDia))
+        foreach (var treino in planoSelecionado.Treinos.OrderBy(t => t.OrdemDia))
         {
-            // Associa o dia da semana baseado na ordem (1 = Segunda, 7 = Domingo)
-            var diaSemanaTreino = (DayOfWeek)((treino.OrdemDia % 7));
-            var isHoje = (int)diaSemanaTreino == diaSemanaHoje;
+            // Calcula a data real deste dia da semana na semana atual
+            var ordemDia = treino.OrdemDia;
+            if (ordemDia == 7) ordemDia = 0; // Converter Domingo para 0 para DayOfWeek
+
+            var diaSemana = (DayOfWeek)ordemDia;
+            var dataReferencia = hoje.AddDays(-(diaSemanaHoje - (int)diaSemana));
+
+            // Se o dia da semana for Domingo (0) e hoje for Domingo (0), ajusta
+            if (diaSemana == DayOfWeek.Sunday && hoje.DayOfWeek == DayOfWeek.Sunday)
+            {
+                dataReferencia = hoje;
+            }
+
+            var isHoje = dataReferencia.Date == hoje.Date;
 
             var exercicios = new List<ExercicioTreinoAlunoViewModel>();
+
             foreach (var te in treino.TreinoExercicios.OrderBy(te => te.Ordem))
             {
-                // ⭐ CORREÇÃO: Exibe baseado no que foi SALVO, não no tipo do exercício
+                // Verifica se o exercício foi concluído
+                var foiExecutado = execucoes.Any(e => e.TreinoExercicioId == te.Id);
+
+                // Verifica se tem comentário
+                comentarios.TryGetValue(te.Id, out string? comentario);
+
+                // Formata reps ou tempo
                 string repsOuTempo;
-                
-                // Se tem tempo salvo (em segundos), exibe como tempo
                 if (te.TempoExecucaoSegundos.HasValue && te.TempoExecucaoSegundos.Value > 0)
                 {
                     var minutos = te.TempoExecucaoSegundos.Value / 60;
                     var segundos = te.TempoExecucaoSegundos.Value % 60;
                     repsOuTempo = minutos > 0 ? $"{minutos}min {segundos}s" : $"{segundos}s";
                 }
-                // Senão, exibe as repetições
                 else
                 {
                     repsOuTempo = string.IsNullOrEmpty(te.RepeticoesPlanejadas) ? "—" : te.RepeticoesPlanejadas;
@@ -223,29 +286,44 @@ public class AlunoController : Controller
                     Carga = te.CargaPlanejada,
                     Descanso = te.TempoDescanso,
                     Observacoes = te.Observacoes,
-                    MeuComentario = comentarios.GetValueOrDefault(te.Id),
-                    JaComentou = comentarios.ContainsKey(te.Id)
+                    MeuComentario = comentario,
+                    JaComentou = !string.IsNullOrEmpty(comentario),
+                    Concluido = foiExecutado
                 });
             }
 
-            diasTreino.Add(new DiaTreinoAlunoViewModel
+            // Verifica se o treino foi realizado (pelo menos um exercício concluído)
+            var treinoRealizado = exercicios.Any(e => e.Concluido);
+            var dataRealizacao = treinoRealizado ? hoje : (DateTime?)null;
+
+            // Se o treino foi realizado, buscar a data real da execução
+            if (treinoRealizado)
+            {
+                var primeiraExecucao = execucoes
+                    .Where(e => treino.TreinoExercicios.Select(te => te.Id).Contains(e.TreinoExercicioId))
+                    .OrderBy(e => e.DataExecucao)
+                    .FirstOrDefault();
+                if (primeiraExecucao != null)
+                {
+                    dataRealizacao = primeiraExecucao.DataExecucao;
+                }
+            }
+
+            diasTreino.Add(new DiaTreinoComDataViewModel
             {
                 TreinoId = treino.Id,
                 Nome = treino.Nome,
                 OrdemDia = treino.OrdemDia,
-                DiaSemana = diaSemanaTreino,
+                DiaSemana = diaSemana,
+                DataReferencia = dataReferencia,
                 Hoje = isHoje,
-                Realizado = false,
+                Realizado = treinoRealizado,
+                DataRealizacao = dataRealizacao,
                 Exercicios = exercicios
             });
         }
 
-        var vm = new TreinoAlunoViewModel
-        {
-            PlanoAtivo = planoAtivo,
-            DiasTreino = diasTreino,
-            DataAtual = hoje
-        };
+        vm.DiasTreino = diasTreino;
 
         return View(vm);
     }
@@ -354,7 +432,7 @@ public class AlunoController : Controller
         {
             string repeticoesFeitas;
             
-            // ⭐ Se tem tempo salvo, registra como tempo
+            // Se tem tempo salvo, registra como tempo
             if (te.TempoExecucaoSegundos.HasValue && te.TempoExecucaoSegundos.Value > 0)
             {
                 var minutos = te.TempoExecucaoSegundos.Value / 60;
