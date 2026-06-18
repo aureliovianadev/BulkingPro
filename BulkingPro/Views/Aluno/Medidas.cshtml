@@ -18,17 +18,34 @@
 {
     <div style="text-align: center; padding: 60px 20px; color: var(--muted);">
         <i class="ti ti-ruler" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
-        <p>Nenhuma avaliação física registrada ainda.</p>
+        <p>Nenhuma avaliação física cadastrada até o momento.</p>
+        <p style="font-size: 12px; margin-top: 8px;">Seu personal trainer irá registrar suas medidas em breve.</p>
     </div>
 }
 else
 {
-    <!-- Gráfico de IMC -->
-    <div class="grafico-container">
-        <div class="card-title"><i class="ti ti-chart-line"></i> Evolução do IMC</div>
-        <canvas id="imcChart" width="400" height="200"></canvas>
-    </div>
+    <!-- Filtra avaliações que têm peso E altura para o gráfico -->
+    var avaliacoesComImc = Model.Where(a => a.Peso.HasValue && a.Altura.HasValue && a.Altura > 0).OrderBy(a => a.DataAvaliacao).ToList();
 
+    @if (avaliacoesComImc.Any())
+    {
+        <!-- Gráfico de IMC -->
+        <div class="grafico-container">
+            <div class="card-title"><i class="ti ti-chart-line"></i> Evolução do IMC</div>
+            <canvas id="imcChart" width="400" height="200"></canvas>
+        </div>
+    }
+    else
+    {
+        <!-- Mensagem quando não há dados suficientes para o gráfico -->
+        <div style="text-align: center; padding: 40px 20px; color: var(--muted); background: var(--bg3); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px;">
+            <i class="ti ti-chart-bar" style="font-size: 32px; display: block; margin-bottom: 8px; color: rgba(196,168,122,0.3);"></i>
+            <p>Não há dados suficientes para exibir o gráfico de IMC.</p>
+            <p style="font-size: 12px; margin-top: 4px;">É necessário ter pelo menos uma avaliação com peso e altura preenchidos.</p>
+        </div>
+    }
+
+    <!-- Lista de avaliações -->
     @foreach (var av in Model)
     {
         decimal? imc = (av.Peso.HasValue && av.Altura.HasValue && av.Altura > 0)
@@ -43,6 +60,10 @@ else
                         @if (imc.HasValue)
                         {
                             <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">IMC: @imc.Value.ToString("F1")</div>
+                        }
+                        else
+                        {
+                            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">IMC: — (dados incompletos)</div>
                         }
                     </div>
                 </div>
@@ -72,29 +93,167 @@ else
     }
 }
 
+<style>
+    .grafico-container {
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .card-title i {
+        color: var(--gold);
+        font-size: 18px;
+    }
+    
+    .medidas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    
+    .medida-item {
+        background: rgba(255,255,255,0.03);
+        border-radius: 8px;
+        padding: 8px 12px;
+    }
+    
+    .medida-label {
+        font-size: 9px;
+        color: rgba(255,255,255,0.3);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+    }
+    
+    .medida-val {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+    }
+</style>
+
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        @if (Model.Any() && Model.Where(a => a.Peso.HasValue && a.Altura.HasValue).Any())
-        {
-            var avaliacoesComImc = Model.Where(a => a.Peso.HasValue && a.Altura.HasValue).OrderBy(a => a.DataAvaliacao).ToList();
-            <text>
-                const imcCtx = document.getElementById('imcChart').getContext('2d');
-                new Chart(imcCtx, {
-                    type: 'line',
-                    data: {
-                        labels: [@Html.Raw(string.Join(", ", avaliacoesComImc.Select(a => $"'{a.DataAvaliacao.ToString("dd/MM")}'")))],
-                        datasets: [{
-                            label: 'IMC',
-                            data: [@string.Join(", ", avaliacoesComImc.Select(a => Math.Round(a.Peso.Value / (a.Altura.Value * a.Altura.Value), 2).ToString(System.Globalization.CultureInfo.InvariantCulture)))],
-                            borderColor: '#c4a87a',
-                            backgroundColor: 'rgba(196,168,122,0.1)',
-                            fill: true,
-                            tension: 0.3
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: '#fff' } } } }
-                });
-            </text>
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            @{
+                var avaliacoesComImc = Model.Where(a => a.Peso.HasValue && a.Altura.HasValue && a.Altura > 0).OrderBy(a => a.DataAvaliacao).ToList();
+            }
+            
+            @if (avaliacoesComImc.Any())
+            {
+                <text>
+                    try {
+                        var canvas = document.getElementById('imcChart');
+                        if (!canvas) {
+                            console.warn('Elemento imcChart não encontrado');
+                            return;
+                        }
+
+                        var ctx = canvas.getContext('2d');
+                        
+                        // Prepara os dados
+                        var labels = [@Html.Raw(string.Join(", ", avaliacoesComImc.Select(a => $"'{a.DataAvaliacao.ToString("dd/MM/yyyy")}'")))];
+                        var dataValues = [@string.Join(", ", avaliacoesComImc.Select(a => 
+                            Math.Round(a.Peso.Value / (a.Altura.Value * a.Altura.Value), 2)
+                            .ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        ))];
+
+                        console.log('📊 Dados do gráfico IMC:', {
+                            labels: labels,
+                            values: dataValues,
+                            totalAvaliacoes: @avaliacoesComImc.Count
+                        });
+
+                        // Verifica se os dados são válidos
+                        if (dataValues.length === 0) {
+                            console.warn('Nenhum dado válido para o gráfico');
+                            return;
+                        }
+
+                        // Cria o gráfico
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'IMC',
+                                    data: dataValues,
+                                    borderColor: '#c4a87a',
+                                    backgroundColor: 'rgba(196,168,122,0.1)',
+                                    fill: true,
+                                    tension: 0.3,
+                                    pointBackgroundColor: '#c4a87a',
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 1,
+                                    pointRadius: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: true,
+                                plugins: {
+                                    legend: {
+                                        labels: {
+                                            color: 'rgba(255,255,255,0.6)',
+                                            font: {
+                                                size: 11
+                                            }
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return 'IMC: ' + context.parsed.y.toFixed(2);
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        grid: {
+                                            color: 'rgba(255,255,255,0.03)'
+                                        },
+                                        ticks: {
+                                            color: 'rgba(255,255,255,0.3)',
+                                            font: {
+                                                size: 10
+                                            }
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            color: 'rgba(255,255,255,0.03)'
+                                        },
+                                        ticks: {
+                                            color: 'rgba(255,255,255,0.3)',
+                                            font: {
+                                                size: 10
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        console.log('✅ Gráfico IMC renderizado com sucesso!');
+                    } catch (error) {
+                        console.error('❌ Erro ao renderizar gráfico IMC:', error);
+                    }
+                </text>
+            }
+        });
     </script>
 }

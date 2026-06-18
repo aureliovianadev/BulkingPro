@@ -10,6 +10,7 @@
     <title>BulkingPro - Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -224,6 +225,45 @@
             color: #252220;
         }
 
+        /* ── Botão toggle senha ── */
+        .btn-toggle-senha {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+            z-index: 2;
+            border-radius: 4px;
+            line-height: 1;
+        }
+
+        .btn-toggle-senha:hover {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-toggle-senha:focus {
+            outline: none;
+            color: #ee1920;
+        }
+
+        .btn-toggle-senha i {
+            font-size: 18px;
+            pointer-events: none;
+        }
+
+        .input-group input:focus ~ .btn-toggle-senha {
+            color: rgba(238, 25, 32, 0.4);
+        }
+
         /* Ícone após input (workaround para ordem no DOM) */
         .input-wrap input:focus ~ svg {
             color: rgba(238,25,32,0.5);
@@ -372,10 +412,13 @@
             <div class="input-group">
                 <label>Senha</label>
                 <div class="input-wrap">
-                    <input type="password" name="senha" placeholder="••••••••" required />
+                    <input type="password" name="senha" id="senhaLogin" placeholder="••••••••" required />
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
+                    <button type="button" class="btn-toggle-senha" data-target="senhaLogin" aria-label="Mostrar ou ocultar senha">
+                        <i class="ti ti-eye"></i>
+                    </button>
                 </div>
             </div>
 
@@ -404,6 +447,58 @@
         </div>
 
     </div>
+
+    <!-- ─── SCRIPT PARA MOSTRAR/OCULTAR SENHA ─── -->
+    <script>
+        (function() {
+            'use strict';
+
+            function toggleSenha(button) {
+                var targetId = button.getAttribute('data-target');
+                if (!targetId) return;
+
+                var input = document.getElementById(targetId);
+                if (!input) return;
+
+                var icon = button.querySelector('i');
+                if (!icon) return;
+
+                var isPassword = input.type === 'password';
+
+                input.type = isPassword ? 'text' : 'password';
+
+                if (isPassword) {
+                    icon.className = 'ti ti-eye';
+                } else {
+                    icon.className = 'ti ti-eye-off';
+                }
+
+                input.focus();
+                event.preventDefault();
+            }
+
+            function initToggleSenha() {
+                var buttons = document.querySelectorAll('.btn-toggle-senha');
+                buttons.forEach(function(button) {
+                    button.removeEventListener('click', toggleSenhaHandler);
+                    button.addEventListener('click', toggleSenhaHandler);
+                });
+            }
+
+            function toggleSenhaHandler(event) {
+                event.preventDefault();
+                var button = event.currentTarget;
+                toggleSenha(button);
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initToggleSenha);
+            } else {
+                initToggleSenha();
+            }
+
+        })();
+    </script>
 
 </body>
 

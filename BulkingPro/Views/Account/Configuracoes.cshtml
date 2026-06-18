@@ -31,38 +31,327 @@
     </div>
 }
 
+<style>
+    /* ── Estilos para os campos de senha com ícone ── */
+    .senha-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .senha-wrapper .form-control {
+        width: 100%;
+        padding-right: 44px;
+        /* Espaço para o ícone */
+    }
+
+    .btn-toggle-senha {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        padding: 4px 6px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s ease;
+        z-index: 2;
+        border-radius: 4px;
+        line-height: 1;
+    }
+
+    .btn-toggle-senha:hover {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .btn-toggle-senha:focus {
+        outline: none;
+        color: var(--gold, #c4a87a);
+    }
+
+    .btn-toggle-senha i {
+        font-size: 18px;
+        pointer-events: none;
+    }
+
+    /* Ajuste para campos com ícone já existente (se houver) */
+    .senha-wrapper .form-control:focus~.btn-toggle-senha {
+        color: rgba(238, 25, 32, 0.5);
+    }
+
+    /* ── Responsivo para telas pequenas ── */
+    @@media (max-width: 480px) {
+        .btn-toggle-senha {
+            right: 10px;
+            font-size: 16px;
+        }
+        .btn-toggle-senha i {
+            font-size: 16px;
+        }
+        .senha-wrapper .form-control {
+            padding-right: 38px;
+        }
+    }
+
+    /* ── Estilos existentes da página ── */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.6);
+        font-weight: 500;
+    }
+
+    .form-label i {
+        font-size: 14px;
+        color: var(--gold, #c4a87a);
+    }
+
+    .form-control {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 12px 16px;
+        color: #fff;
+        font-size: 14px;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--red, #ee1920);
+        box-shadow: 0 0 0 3px rgba(238, 25, 32, 0.1);
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.15);
+    }
+
+    .field-validation-error {
+        font-size: 12px;
+        color: #ee1920;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .card {
+        background: var(--bg3, #131316);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .card-body {
+        padding: 20px 24px;
+    }
+
+    .card-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+    }
+
+    .card-title i {
+        font-size: 20px;
+        color: var(--gold, #c4a87a);
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 30px;
+        padding: 10px 24px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ee1920, #c41218);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        box-shadow: 0 4px 15px rgba(238, 25, 32, 0.3);
+    }
+
+    .btn-ghost {
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-ghost:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-danger {
+        background: rgba(238, 25, 32, 0.12);
+        color: #ee1920;
+        border: 1px solid rgba(238, 25, 32, 0.2);
+    }
+
+    .btn-danger:hover {
+        background: rgba(238, 25, 32, 0.2);
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .alert-success {
+        background: rgba(46, 160, 67, 0.12);
+        color: #2ea043;
+        border: 1px solid rgba(46, 160, 67, 0.2);
+    }
+
+    .alert-danger {
+        background: rgba(238, 25, 32, 0.12);
+        color: #ee1920;
+        border: 1px solid rgba(238, 25, 32, 0.2);
+    }
+
+    .btn-logout {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(238, 25, 32, 0.08);
+        border: 1px solid rgba(238, 25, 32, 0.15);
+        border-radius: 30px;
+        padding: 10px 24px;
+        color: #ee1920;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-logout:hover {
+        background: rgba(238, 25, 32, 0.16);
+        border-color: rgba(238, 25, 32, 0.3);
+    }
+
+    .btn-logout i {
+        font-size: 16px;
+    }
+
+    .card-footer-logout {
+        border: 1px solid rgba(238, 25, 32, 0.15);
+        background: rgba(238, 25, 32, 0.02);
+    }
+
+    .card-footer-logout .card-body {
+        padding: 20px 24px;
+    }
+
+    .card-footer-logout .card-title {
+        color: #ee1920;
+        border-bottom-color: rgba(238, 25, 32, 0.1);
+    }
+
+    .card-footer-logout .card-title i {
+        color: #ee1920;
+    }
+
+    .logout-description {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+
+    .logout-btn-wrapper {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .logout-btn-wrapper .btn-logout {
+        border-radius: 30px;
+        padding: 10px 24px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .logout-btn-wrapper .btn-logout:hover {
+        background: rgba(238, 25, 32, 0.2);
+        border-color: rgba(238, 25, 32, 0.4);
+    }
+
+    .logout-btn-wrapper .btn-logout i {
+        font-size: 16px;
+        margin-right: 4px;
+    }
+</style>
+
 <div style="max-width:600px; margin:0 auto;">
 
     <!-- Dados pessoais -->
-    <div class="card" style="margin-bottom:24px">
+    <div class="card">
         <div class="card-body">
-            <div class="card-title" style="display:flex; align-items:center; gap:10px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px">
-                <i class="ti ti-user-circle" style="font-size:24px; color:var(--gold)"></i>
-                <span style="font-size:16px; font-weight:600">Dados pessoais</span>
+            <div class="card-title">
+                <i class="ti ti-user-circle"></i>
+                <span>Dados pessoais</span>
             </div>
-            
+
             <form asp-controller="Account" asp-action="AtualizarNome" method="post">
                 @Html.AntiForgeryToken()
-                
-                <div class="form-group" style="margin-bottom:20px">
-                    <label class="form-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px">
-                        <i class="ti ti-user" style="font-size:14px"></i> Nome completo
+
+                <div class="form-group">
+                    <label class="form-label" asp-for="NomeCompleto">
+                        <i class="ti ti-user"></i> Nome completo
                     </label>
-                    <input class="form-control" asp-for="NomeCompleto" placeholder="Seu nome completo" 
-                           style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; color:#fff" />
+                    <input class="form-control" asp-for="NomeCompleto" placeholder="Seu nome completo" />
                     <span asp-validation-for="NomeCompleto" class="field-validation-error"></span>
                 </div>
-                
-                <div class="form-group" style="margin-bottom:24px">
-                    <label class="form-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px">
-                        <i class="ti ti-mail" style="font-size:14px"></i> E-mail
+
+                <div class="form-group">
+                    <label class="form-label" asp-for="Email">
+                        <i class="ti ti-mail"></i> E-mail
                     </label>
-                    <input class="form-control" asp-for="Email" type="email" placeholder="seu@email.com"
-                           style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; color:#fff" />
+                    <input class="form-control" asp-for="Email" type="email" placeholder="seu@email.com" />
                     <span asp-validation-for="Email" class="field-validation-error"></span>
                 </div>
-                
-                <button type="submit" class="btn btn-primary" style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg, #ee1920, #c41218); border:none; border-radius:30px; padding:10px 24px; font-weight:600">
+
+                <button type="submit" class="btn btn-primary">
                     <i class="ti ti-device-floppy"></i> Salvar alterações
                 </button>
             </form>
@@ -70,44 +359,59 @@
     </div>
 
     <!-- Alterar senha -->
-    <div class="card" style="margin-bottom:24px">
+    <div class="card">
         <div class="card-body">
-            <div class="card-title" style="display:flex; align-items:center; gap:10px; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px">
-                <i class="ti ti-lock" style="font-size:24px; color:var(--gold)"></i>
-                <span style="font-size:16px; font-weight:600">Alterar senha</span>
+            <div class="card-title">
+                <i class="ti ti-lock"></i>
+                <span>Alterar senha</span>
             </div>
-            
-            <form asp-controller="Account" asp-action="AlterarSenha" method="post">
+
+            <form asp-controller="Account" asp-action="AlterarSenha" method="post" id="form-alterar-senha">
                 @Html.AntiForgeryToken()
-                
-                <div class="form-group" style="margin-bottom:20px">
-                    <label class="form-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px">
-                        <i class="ti ti-key" style="font-size:14px"></i> Senha atual
+
+                <!-- Senha Atual -->
+                <div class="form-group">
+                    <label class="form-label" asp-for="SenhaAtual">
+                        <i class="ti ti-key"></i> Senha atual
                     </label>
-                    <input class="form-control" asp-for="SenhaAtual" type="password" placeholder="••••••••"
-                           style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; color:#fff" />
+                    <div class="senha-wrapper">
+                        <input class="form-control" asp-for="SenhaAtual" type="password" id="senhaAtual" placeholder="Digite sua senha atual" />
+                        <button type="button" class="btn-toggle-senha" data-target="senhaAtual" aria-label="Mostrar ou ocultar senha">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                    </div>
                     <span asp-validation-for="SenhaAtual" class="field-validation-error"></span>
                 </div>
-                
-                <div class="form-group" style="margin-bottom:20px">
-                    <label class="form-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px">
-                        <i class="ti ti-lock-plus" style="font-size:14px"></i> Nova senha
+
+                <!-- Nova Senha -->
+                <div class="form-group">
+                    <label class="form-label" asp-for="NovaSenha">
+                        <i class="ti ti-lock-plus"></i> Nova senha
                     </label>
-                    <input class="form-control" asp-for="NovaSenha" type="password" placeholder="Mínimo 6 caracteres"
-                           style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; color:#fff" />
+                    <div class="senha-wrapper">
+                        <input class="form-control" asp-for="NovaSenha" type="password" id="novaSenha" placeholder="Mínimo 6 caracteres" />
+                        <button type="button" class="btn-toggle-senha" data-target="novaSenha" aria-label="Mostrar ou ocultar senha">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                    </div>
                     <span asp-validation-for="NovaSenha" class="field-validation-error"></span>
                 </div>
-                
-                <div class="form-group" style="margin-bottom:24px">
-                    <label class="form-label" style="display:flex; align-items:center; gap:6px; margin-bottom:8px">
-                        <i class="ti ti-lock-check" style="font-size:14px"></i> Confirmar nova senha
+
+                <!-- Confirmar Nova Senha -->
+                <div class="form-group">
+                    <label class="form-label" asp-for="ConfirmarSenha">
+                        <i class="ti ti-lock-check"></i> Confirmar nova senha
                     </label>
-                    <input class="form-control" asp-for="ConfirmarSenha" type="password" placeholder="Repita a nova senha"
-                           style="width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px 16px; color:#fff" />
+                    <div class="senha-wrapper">
+                        <input class="form-control" asp-for="ConfirmarSenha" type="password" id="confirmarSenha" placeholder="Repita a nova senha" />
+                        <button type="button" class="btn-toggle-senha" data-target="confirmarSenha" aria-label="Mostrar ou ocultar senha">
+                            <i class="ti ti-eye"></i>
+                        </button>
+                    </div>
                     <span asp-validation-for="ConfirmarSenha" class="field-validation-error"></span>
                 </div>
-                
-                <button type="submit" class="btn btn-primary" style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg, #ee1920, #c41218); border:none; border-radius:30px; padding:10px 24px; font-weight:600">
+
+                <button type="submit" class="btn btn-primary">
                     <i class="ti ti-lock-check"></i> Alterar senha
                 </button>
             </form>
@@ -115,23 +419,25 @@
     </div>
 
     <!-- Sair da conta -->
-    <div class="card" style="border:1px solid rgba(238,25,32,0.3); background:rgba(238,25,32,0.03)">
+    <div class="card card-footer-logout">
         <div class="card-body">
-            <div class="card-title" style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
-                <i class="ti ti-logout" style="font-size:24px; color:#ee1920"></i>
-                <span style="font-size:16px; font-weight:600; color:#ee1920">Sair da conta</span>
+            <div class="card-title">
+                <i class="ti ti-logout"></i>
+                <span>Sair da conta</span>
             </div>
-            
-            <p style="font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.5">
+
+            <p class="logout-description">
                 Encerra sua sessão atual. Você precisará fazer login novamente para acessar o sistema.
             </p>
-            
-            <form asp-controller="Account" asp-action="Logout" method="post">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn" style="display:flex; align-items:center; gap:8px; background:rgba(238,25,32,0.15); border:1px solid rgba(238,25,32,0.3); border-radius:30px; padding:10px 24px; color:#ee1920; font-weight:600; cursor:pointer; transition:all 0.2s">
-                    <i class="ti ti-logout"></i> Sair agora
-                </button>
-            </form>
+
+            <div class="logout-btn-wrapper">
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-logout">
+                        <i class="ti ti-logout"></i> Sair agora
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -139,4 +445,93 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        (function() {
+            'use strict';
+
+            /**
+             * Alterna a visibilidade de um campo de senha
+             * param {HTMLElement} button - O botao que foi clicado
+             */
+            function toggleSenha(button) {
+                var targetId = button.getAttribute('data-target');
+                if (!targetId) return;
+
+                var input = document.getElementById(targetId);
+                if (!input) return;
+
+                var icon = button.querySelector('i');
+                if (!icon) return;
+
+                var isPassword = input.type === 'password';
+
+                input.type = isPassword ? 'text' : 'password';
+
+                if (isPassword) {
+                    icon.className = 'ti ti-eye';
+                } else {
+                    icon.className = 'ti ti-eye-off';
+                }
+
+                input.focus();
+                event.preventDefault();
+            }
+
+            function initToggleSenha() {
+                var buttons = document.querySelectorAll('.btn-toggle-senha');
+                buttons.forEach(function(button) {
+                    button.removeEventListener('click', toggleSenhaHandler);
+                    button.addEventListener('click', toggleSenhaHandler);
+                });
+            }
+
+            function toggleSenhaHandler(event) {
+                event.preventDefault();
+                var button = event.currentTarget;
+                toggleSenha(button);
+            }
+
+            function setupMutationObserver() {
+                var observer = new MutationObserver(function(mutations) {
+                    var needsInit = false;
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length > 0) {
+                            mutation.addedNodes.forEach(function(node) {
+                                if (node.nodeType === Node.ELEMENT_NODE) {
+                                    if (node.querySelector && node.querySelector('.btn-toggle-senha')) {
+                                        needsInit = true;
+                                    }
+                                    if (node.matches && node.matches('.btn-toggle-senha')) {
+                                        needsInit = true;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    if (needsInit) {
+                        initToggleSenha();
+                    }
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+
+                return observer;
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    initToggleSenha();
+                    setupMutationObserver();
+                });
+            } else {
+                initToggleSenha();
+                setupMutationObserver();
+            }
+
+        })();
+    </script>
 }
