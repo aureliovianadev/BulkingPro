@@ -40,6 +40,12 @@ namespace BulkingPro.ViewModels
         public string? TreinoDiaNome { get; set; }
         public List<ExercicioResumoViewModel> Exercicios { get; set; } = new();
         public bool TemExercicios => Exercicios.Any();
+        
+        // ════════════════════════════════════════════════════════════════
+        // PROPRIEDADES PARA CORREÇÃO DO BUG DA AGENDA
+        // ════════════════════════════════════════════════════════════════
+        public bool TemPlanoAtivo { get; set; }
+        public string? MensagemSemPlano { get; set; }
     }
 
     public class ExercicioResumoViewModel

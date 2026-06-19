@@ -129,6 +129,9 @@
                              data-hora-inicio="@ag.HoraInicio.ToString(@"hh\:mm")"
                              data-hora-fim="@ag.HoraFim.ToString(@"hh\:mm")"
                              data-treino-dia="@ag.TreinoDiaNome"
+                             data-tem-plano-ativo="@ag.TemPlanoAtivo.ToString().ToLower()"
+                             data-mensagem-sem-plano="@ag.MensagemSemPlano"
+                             data-ordem-dia="@(((int)dia.Data.DayOfWeek == 0) ? 7 : (int)dia.Data.DayOfWeek)"
                              onclick="abrirModal(this)">
                             
                             <div class="agendamento-horario">
@@ -1436,6 +1439,10 @@
 </style>
 
 <script>
+    // ═══════════════════════════════════════════════════════════════════
+    // CONSTRUÇÃO DOS DADOS DOS AGENDAMENTOS COM LOG DE DEBUG
+    // ═══════════════════════════════════════════════════════════════════
+
     var dadosAgendamentos = {};
 
     @{
@@ -1444,13 +1451,25 @@
         {
             foreach (var ag in dia.Agendamentos)
             {
-                jsData.Append($"dadosAgendamentos['{ag.AlunoId}'] = {{");
+                // Obtém o dia da semana e ordem para debug
+                var diaSemana = dia.Data.DayOfWeek;
+                var ordemDia = diaSemana == DayOfWeek.Sunday ? 7 : (int)diaSemana;
+                
+                // Chave única: alunoId + data (evita sobrescrever quando o mesmo aluno aparece em vários dias)
+                var chaveJs = $"{ag.AlunoId}_{dia.Data.ToString("yyyy-MM-dd")}";
+                
+                jsData.Append($"dadosAgendamentos['{chaveJs}'] = {{");
                 jsData.Append($"nome: '{ag.AlunoNome}',");
                 jsData.Append($"iniciais: '{ag.Iniciais}',");
                 jsData.Append($"objetivo: '{(ag.Objetivo ?? "Sem objetivo definido")}',");
                 jsData.Append($"horario: '{ag.HoraInicio.ToString(@"hh\:mm")} - {ag.HoraFim.ToString(@"hh\:mm")}',");
-                jsData.Append($"treinoDia: '{(ag.TreinoDiaNome ?? "Treino do dia")}',");
+                jsData.Append($"treinoDia: '{(ag.TreinoDiaNome ?? "Nenhum treino")}',");
                 jsData.Append($"planoId: '{(ag.PlanoTreinoId.HasValue ? ag.PlanoTreinoId.Value.ToString() : "")}',");
+                jsData.Append($"temPlanoAtivo: {ag.TemPlanoAtivo.ToString().ToLower()},");
+                jsData.Append($"mensagemSemPlano: '{(ag.MensagemSemPlano ?? "").Replace("'", "\\'")}',");
+                jsData.Append($"dataAgendamento: '{dia.Data.ToString("yyyy-MM-dd")}',");
+                jsData.Append($"diaSemanaStr: '{diaSemana}',");
+                jsData.Append($"ordemDia: {ordemDia},");
                 jsData.Append("exercicios: [");
 
                 var exercicios = ag.Exercicios;
@@ -1477,23 +1496,41 @@
 
     @Html.Raw(jsData.ToString())
 
+    // ═══════════════════════════════════════════════════════════════════
+    // FUNÇÃO ABRIR MODAL COM LOG DE DEBUG
+    // ═══════════════════════════════════════════════════════════════════
+
     function abrirModal(elemento) {
         var alunoId = elemento.dataset.alunoId;
-        var dados = dadosAgendamentos[alunoId];
+        var dataDia = elemento.dataset.dia;
+        var chave = alunoId + '_' + dataDia;
+        var dados = dadosAgendamentos[chave];
 
         if (!dados) {
-            console.error('Dados não encontrados para aluno:', alunoId);
+            console.error('❌ Dados não encontrados para chave:', chave);
             return;
         }
+
+        var temPlanoAtivo = dados.temPlanoAtivo === true || dados.temPlanoAtivo === 'true';
+        var mensagemSemPlano = dados.mensagemSemPlano || 'Não há plano de treino ativo para esta data.';
 
         document.getElementById('modalAvatar').textContent = dados.iniciais;
         document.getElementById('modalNome').textContent = dados.nome;
         document.getElementById('modalHorario').textContent = dados.horario;
-        document.getElementById('modalObjetivo').textContent = dados.objetivo;
-        document.getElementById('modalTreinoDia').textContent = dados.treinoDia;
+        
+        // ════════════════════════════════════════════════════════════════
+        // CORREÇÃO: Só exibe Objetivo e Treino do Dia se houver plano ativo
+        // ════════════════════════════════════════════════════════════════
+        if (temPlanoAtivo) {
+            document.getElementById('modalObjetivo').textContent = dados.objetivo || '—';
+            document.getElementById('modalTreinoDia').textContent = dados.treinoDia || '—';
+        } else {
+            document.getElementById('modalObjetivo').textContent = '—';
+            document.getElementById('modalTreinoDia').textContent = '—';
+        }
 
         var btnPlano = document.getElementById('modalBtnPlano');
-        if (dados.planoId && dados.planoId !== '') {
+        if (dados.planoId && dados.planoId !== '' && temPlanoAtivo) {
             btnPlano.href = '/Personal/VisualizarPlano/' + dados.planoId;
             btnPlano.style.display = 'inline-flex';
         } else {
@@ -1502,7 +1539,10 @@
 
         var container = document.getElementById('modalExercicios');
 
-        if (dados.exercicios && dados.exercicios.length > 0) {
+        // ════════════════════════════════════════════════════════════════
+        // CORREÇÃO: Verifica se há plano ativo para a data E exercícios
+        // ════════════════════════════════════════════════════════════════
+        if (temPlanoAtivo && dados.exercicios && dados.exercicios.length > 0) {
             var html = '';
             dados.exercicios.forEach(function(ex, index) {
                 var detalhes = [];
@@ -1533,10 +1573,14 @@
             });
             container.innerHTML = html;
         } else {
+            // ════════════════════════════════════════════════════════════
+            // CORREÇÃO: Exibe mensagem quando não há plano ativo ou exercícios
+            // ════════════════════════════════════════════════════════════
+            var mensagem = mensagemSemPlano || 'Não há plano de treino ativo para esta data.';
             container.innerHTML = `
-                <div class="sem-treino-msg">
-                    <i class="ti ti-barbell-off"></i>
-                    <span>Nenhum treino cadastrado para este dia</span>
+                <div class="sem-treino-msg" style="text-align:center;padding:30px 12px;color:rgba(255,255,255,0.4);">
+                    <i class="ti ti-calendar-off" style="font-size:36px;display:block;margin-bottom:10px;color:rgba(238,25,32,0.3);"></i>
+                    <span style="font-size:14px;color:rgba(255,255,255,0.5);">${mensagem}</span>
                 </div>
             `;
         }
@@ -1544,6 +1588,10 @@
         document.getElementById('modalAgendamento').style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FUNÇÕES AUXILIARES
+    // ═══════════════════════════════════════════════════════════════════
 
     function fecharModal() {
         document.getElementById('modalAgendamento').style.display = 'none';
@@ -1576,7 +1624,6 @@
         
         dataSelecionadaCalendarioVisual = null;
         
-        // Atualiza input de ano
         document.getElementById('calendarioInputAno').value = dataCalendarioVisual.getFullYear();
         document.getElementById('calendarioSelectMes').value = dataCalendarioVisual.getMonth();
         
@@ -1695,7 +1742,6 @@
     function irParaAnoVisual(ano) {
         var anoInt = parseInt(ano);
         if (isNaN(anoInt) || anoInt < 1900 || anoInt > 2100) {
-            // Restaura o valor atual se for inválido
             document.getElementById('calendarioInputAno').value = dataCalendarioVisual.getFullYear();
             return;
         }
@@ -1751,7 +1797,6 @@
         dataCalendarioVisual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
     });
 
-    // ── ENTER NO INPUT DE ANO ──
     document.getElementById('calendarioInputAno').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -1759,7 +1804,6 @@
         }
     });
 
-    // ── VALIDAÇÃO DO INPUT DE ANO ──
     document.getElementById('calendarioInputAno').addEventListener('blur', function() {
         var val = parseInt(this.value);
         if (isNaN(val) || val < 1900 || val > 2100) {

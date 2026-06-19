@@ -433,7 +433,7 @@ namespace BulkingPro.Controllers
         }
 
         // ═════════════════════════════════════════════════════════════════
-        // AGENDA SEMANAL
+        // AGENDA SEMANAL - CORRIGIDA
         // ═════════════════════════════════════════════════════════════════
 
         public async Task<IActionResult> Agenda(DateTime? data)
@@ -471,24 +471,48 @@ namespace BulkingPro.Controllers
 
                 foreach (var ag in agendamentosDoDia)
                 {
+                    // ════════════════════════════════════════════════════════════
+                    // CORREÇÃO 1: Busca o plano ATIVO e com vigência para a data
+                    // ════════════════════════════════════════════════════════════
+                    
                     var planoAtivo = await _context.PlanosTreino
                         .Include(p => p.Treinos)
                             .ThenInclude(t => t.TreinoExercicios)
                                 .ThenInclude(te => te.Exercicio)
                                     .ThenInclude(e => e.GrupoMuscular)
-                        .FirstOrDefaultAsync(p => p.AlunoId == ag.AlunoId && p.Status == 1);
+                        .FirstOrDefaultAsync(p => 
+                            p.AlunoId == ag.AlunoId && 
+                            p.Status == 1 &&
+                            p.DataInicio.Date <= dia.Date && 
+                            (p.DataFim == null || p.DataFim.Value.Date >= dia.Date)
+                        );
 
-                    var ordemDia = (int)dia.DayOfWeek;
-                    if (ordemDia == 0) ordemDia = 7;
+                    // ════════════════════════════════════════════════════════════
+                    // CORREÇÃO 2: Mapeamento correto do dia da semana
+                    // Usando o dia da semana da data do agendamento (dia)
+                    // ════════════════════════════════════════════════════════════
                     
+                    // Obtém o dia da semana da data atual (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
+                    var diaSemana = (int)dia.DayOfWeek;
+                    
+                    // Converte para o formato do sistema (1 = Segunda, 2 = Terça, ..., 7 = Domingo)
+                    var ordemDia = diaSemana == 0 ? 7 : diaSemana;
+                    
+                    // Busca o treino correspondente ao dia da semana
                     var treinoDoDia = planoAtivo?.Treinos
                         .FirstOrDefault(t => t.OrdemDia == ordemDia);
 
                     var exercicios = new List<ExercicioResumoViewModel>();
 
-                    if (treinoDoDia != null)
+                    // ════════════════════════════════════════════════════════════
+                    // CORREÇÃO 3: Só carrega exercícios se houver plano E treino
+                    // ════════════════════════════════════════════════════════════
+
+                    var planoValidoParaData = planoAtivo != null && treinoDoDia != null;
+
+                    if (planoValidoParaData)
                     {
-                        foreach (var te in treinoDoDia.TreinoExercicios.OrderBy(te => te.Ordem))
+                        foreach (var te in treinoDoDia!.TreinoExercicios.OrderBy(te => te.Ordem))
                         {
                             string repsOuTempo;
                             if (te.TempoExecucaoSegundos.HasValue && te.TempoExecucaoSegundos.Value > 0)
@@ -524,6 +548,23 @@ namespace BulkingPro.Controllers
                         ? $"{nomeCompleto[0]}{nomeCompleto.Split(' ').Last()[0]}".ToUpper()
                         : nomeCompleto[0].ToString().ToUpper();
 
+                    // ════════════════════════════════════════════════════════════
+                    // CORREÇÃO 4: Define a mensagem correta baseada no motivo
+                    // ════════════════════════════════════════════════════════════
+                    string mensagemSemPlano;
+                    if (planoAtivo == null)
+                    {
+                        mensagemSemPlano = "Não há plano de treino ativo para esta data.";
+                    }
+                    else if (treinoDoDia == null)
+                    {
+                        mensagemSemPlano = $"Não há treino configurado para {dia.DayOfWeek}.";
+                    }
+                    else
+                    {
+                        mensagemSemPlano = null!;
+                    }
+
                     cards.Add(new AgendamentoCardViewModel
                     {
                         Id = ag.Id,
@@ -533,10 +574,12 @@ namespace BulkingPro.Controllers
                         HoraInicio = ag.HoraInicio,
                         HoraFim = ag.HoraFim,
                         Status = "Confirmado",
-                        Objetivo = planoAtivo?.Objetivo,
-                        PlanoTreinoId = planoAtivo?.Id,
-                        TreinoDiaNome = treinoDoDia?.Nome,
-                        Exercicios = exercicios
+                        Objetivo = planoValidoParaData ? planoAtivo!.Objetivo : null,
+                        PlanoTreinoId = planoValidoParaData ? planoAtivo!.Id : null,
+                        TreinoDiaNome = planoValidoParaData ? treinoDoDia!.Nome : null,
+                        Exercicios = exercicios,
+                        TemPlanoAtivo = planoValidoParaData,
+                        MensagemSemPlano = mensagemSemPlano
                     });
 
                     if (proximoAtendimento == "Nenhum agendamento" && 
@@ -603,6 +646,26 @@ namespace BulkingPro.Controllers
                 DayOfWeek.Saturday => "SÁB",
                 _ => ""
             };
+        }
+
+        // ═════════════════════════════════════════════════════════════════
+        // VALIDAÇÃO DE CONFLITO DE PLANOS
+        // ═════════════════════════════════════════════════════════════════
+
+        private async Task<bool> ValidarConflitoPlanos(string alunoId, DateTime dataInicio, DateTime dataFim, int? planoIdIgnorar = null)
+        {
+            // Dois períodos [A, B] e [C, D] se sobrepõem quando: A <= D e C <= B
+            // Trata plano sem data fim como permanente (DateTime.MaxValue)
+            var conflito = await _context.PlanosTreino
+                .AnyAsync(p =>
+                    p.AlunoId == alunoId &&
+                    p.Status == 1 &&
+                    (planoIdIgnorar == null || p.Id != planoIdIgnorar) &&
+                    p.DataInicio <= dataFim &&
+                    dataInicio <= (p.DataFim ?? DateTime.MaxValue)
+                );
+
+            return conflito;
         }
 
         // ═════════════════════════════════════════════════════════════════
@@ -693,7 +756,7 @@ namespace BulkingPro.Controllers
                 Titulo = $"{planoOriginal.Titulo} (Cópia)",
                 Objetivo = planoOriginal.Objetivo,
                 DataInicio = DateTime.Today,
-                DataFim = planoOriginal.DataFim,
+                DataFim = null,
                 Status = 1,
                 DataCriacao = DateTime.Now
             };
@@ -755,6 +818,25 @@ namespace BulkingPro.Controllers
 
             if (!ModelState.IsValid)
             {
+                await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                return View(vm);
+            }
+
+            // ════════════════════════════════════════════════════════════
+            // CORREÇÃO: Validar conflito de datas antes de salvar
+            // ════════════════════════════════════════════════════════════
+
+            if (vm.DataFim.HasValue && vm.DataFim.Value < vm.DataInicio)
+            {
+                ModelState.AddModelError("", "A data de fim não pode ser anterior à data de início.");
+                await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                return View(vm);
+            }
+
+            var temConflito = await ValidarConflitoPlanos(vm.AlunoId, vm.DataInicio, vm.DataFim ?? DateTime.MaxValue);
+            if (temConflito)
+            {
+                ModelState.AddModelError("", "Já existe um treino ativo para este aluno dentro do período informado. Edite o treino existente ou altere as datas do novo treino.");
                 await CarregarSelectsPlano(personal.Id, vm.AlunoId);
                 return View(vm);
             }
@@ -932,6 +1014,25 @@ namespace BulkingPro.Controllers
 
             if (!ModelState.IsValid)
             {
+                await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                return View("EditarPlano", vm);
+            }
+
+            // ════════════════════════════════════════════════════════════
+            // CORREÇÃO: Validar conflito de datas na edição (ignorando o próprio plano)
+            // ════════════════════════════════════════════════════════════
+
+            if (vm.DataFim.HasValue && vm.DataFim.Value < vm.DataInicio)
+            {
+                ModelState.AddModelError("", "A data de fim não pode ser anterior à data de início.");
+                await CarregarSelectsPlano(personal.Id, vm.AlunoId);
+                return View("EditarPlano", vm);
+            }
+
+            var temConflito = await ValidarConflitoPlanos(vm.AlunoId, vm.DataInicio, vm.DataFim ?? DateTime.MaxValue, vm.Id);
+            if (temConflito)
+            {
+                ModelState.AddModelError("", "Já existe outro treino ativo para este aluno dentro do período informado. Edite o treino existente ou altere as datas do novo treino.");
                 await CarregarSelectsPlano(personal.Id, vm.AlunoId);
                 return View("EditarPlano", vm);
             }
@@ -1381,29 +1482,25 @@ namespace BulkingPro.Controllers
         }
 
         // ═════════════════════════════════════════════════════════════════
-        // HELPERS - CARREGAMENTO DE ALUNOS (CORRIGIDO - SEM DUPLICAÇÃO)
+        // HELPERS - CARREGAMENTO DE ALUNOS
         // ═════════════════════════════════════════════════════════════════
 
         // ── Carregar alunos para o select de planos de treino ──
         private async Task CarregarSelectsPlano(string personalId, string? alunoIdSel)
         {
-            // Busca os IDs dos alunos vinculados ao personal através dos planos de treino
             var alunosIds = await _context.PlanosTreino
                 .Where(p => p.TreinadorId == personalId)
                 .Select(p => p.AlunoId)
                 .Distinct()
                 .ToListAsync();
 
-            // Busca os usuários que estão na lista de IDs
             var alunos = await _userManager.Users
                 .Where(u => alunosIds.Contains(u.Id))
                 .OrderBy(u => u.NomeCompleto)
                 .ToListAsync();
 
-            // Cria a lista COM APENAS UM placeholder
             var lista = new List<SelectListItem>();
             
-            // Adiciona o placeholder APENAS SE houver alunos
             if (alunos.Any())
             {
                 lista.Add(new SelectListItem 
@@ -1414,7 +1511,6 @@ namespace BulkingPro.Controllers
                 });
             }
             
-            // Adiciona os alunos
             lista.AddRange(alunos.Select(a => new SelectListItem
             {
                 Value = a.Id,
@@ -1434,32 +1530,27 @@ namespace BulkingPro.Controllers
                 .ToListAsync();
         }
 
-        // ── Carregar alunos para outras telas (Medidas, Anamnese, etc) ──
+        // ── Carregar alunos para outras telas ──
         private async Task CarregarAlunosSelect(string personalId, string? selecionado)
         {
-            // Busca os IDs dos alunos vinculados ao personal através dos planos de treino
             var alunosIds = await _context.PlanosTreino
                 .Where(p => p.TreinadorId == personalId)
                 .Select(p => p.AlunoId)
                 .Distinct()
                 .ToListAsync();
 
-            // Busca os usuários que estão na lista de IDs
             var alunos = await _userManager.Users
                 .Where(u => alunosIds.Contains(u.Id))
                 .OrderBy(u => u.NomeCompleto)
                 .ToListAsync();
 
-            // Verifica se o aluno selecionado ainda está na lista (caso tenha sido desvinculado)
             if (!string.IsNullOrEmpty(selecionado) && !alunos.Any(a => a.Id == selecionado))
             {
                 selecionado = null;
             }
 
-            // Cria a lista COM APENAS UM placeholder
             var lista = new List<SelectListItem>();
             
-            // Adiciona o placeholder APENAS SE houver alunos
             if (alunos.Any())
             {
                 lista.Add(new SelectListItem 
@@ -1470,7 +1561,6 @@ namespace BulkingPro.Controllers
                 });
             }
             
-            // Adiciona os alunos
             lista.AddRange(alunos.Select(a => new SelectListItem
             {
                 Value = a.Id,
