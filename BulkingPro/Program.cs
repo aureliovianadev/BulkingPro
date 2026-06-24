@@ -104,97 +104,162 @@ using (var scope = app.Services.CreateScope())
 
                 if (!planoExistente)
                 {
-                    // ── 1. Cria o Plano de Treino ──
-                    var plano = new PlanoTreino
+                    // ── Definição dos 5 ciclos de treino (2 semanas cada) ──
+                    var ciclos = new[]
                     {
-                        TreinadorId = personal.Id,
-                        AlunoId = aluno.Id,
-                        Titulo = "Plano Inicial - Hipertrofia",
-                        Objetivo = "Hipertrofia (ganho de massa muscular)",
-                        DataInicio = DateTime.Today,
-                        Status = 1,
-                        DataCriacao = DateTime.Now
+                        new { Inicio = new DateTime(2026, 5, 3),  Fim = new DateTime(2026, 5, 17), Titulo = "Ciclo 1 - Hipertrofia (Adaptação)" },
+                        new { Inicio = new DateTime(2026, 5, 18), Fim = new DateTime(2026, 6, 1),  Titulo = "Ciclo 2 - Hipertrofia (Volume)" },
+                        new { Inicio = new DateTime(2026, 6, 2),  Fim = new DateTime(2026, 6, 15), Titulo = "Ciclo 3 - Hipertrofia (Intensidade)" },
+                        new { Inicio = new DateTime(2026, 6, 16), Fim = new DateTime(2026, 6, 30), Titulo = "Ciclo 4 - Hipertrofia (Progressão de Carga)" },
+                        new { Inicio = new DateTime(2026, 7, 1),  Fim = new DateTime(2026, 7, 15), Titulo = "Ciclo 5 - Hipertrofia (Pico)" }
                     };
-                    db.PlanosTreino.Add(plano);
-                    await db.SaveChangesAsync();
 
-                    // ── 2. Cria os Treinos para cada dia da semana ──
                     var diasSemana = new[]
                     {
-                        new { Nome = "Segunda-feira", Ordem = 1 },
-                        new { Nome = "Terça-feira", Ordem = 2 },
-                        new { Nome = "Quarta-feira", Ordem = 3 },
-                        new { Nome = "Quinta-feira", Ordem = 4 },
-                        new { Nome = "Sexta-feira", Ordem = 5 },
-                        new { Nome = "Sábado", Ordem = 6 }
+                        new { Nome = "Segunda-feira", Ordem = 1, Dia = DayOfWeek.Monday },
+                        new { Nome = "Terça-feira",   Ordem = 2, Dia = DayOfWeek.Tuesday },
+                        new { Nome = "Quarta-feira",  Ordem = 3, Dia = DayOfWeek.Wednesday },
+                        new { Nome = "Quinta-feira",  Ordem = 4, Dia = DayOfWeek.Thursday },
+                        new { Nome = "Sexta-feira",   Ordem = 5, Dia = DayOfWeek.Friday },
+                        new { Nome = "Sábado",        Ordem = 6, Dia = DayOfWeek.Saturday }
                     };
 
-                    foreach (var diaInfo in diasSemana)
+                    var hoje = DateTime.Today;
+                    int cicloIndex = 0;
+
+                    foreach (var ciclo in ciclos)
                     {
-                        var treino = new Treino
+                        cicloIndex++;
+                        decimal incrementoCarga = (cicloIndex - 1) * 2.5m; // leve progressão de carga entre ciclos
+
+                        // Plano já concluído (data fim no passado) ou ainda ativo
+                        int statusPlano = ciclo.Fim < hoje ? 2 : 1;
+
+                        var plano = new PlanoTreino
                         {
-                            PlanoTreinoId = plano.Id,
-                            Nome = diaInfo.Nome,
-                            OrdemDia = diaInfo.Ordem,
-                            Observacoes = diaInfo.Ordem % 2 == 0 ? "Foco em membros inferiores" : "Foco em membros superiores",
-                            DataCriacao = DateTime.Now
+                            TreinadorId = personal.Id,
+                            AlunoId = aluno.Id,
+                            Titulo = ciclo.Titulo,
+                            Objetivo = "Hipertrofia (ganho de massa muscular)",
+                            DataInicio = ciclo.Inicio,
+                            DataFim = ciclo.Fim,
+                            Status = statusPlano,
+                            DataCriacao = ciclo.Inicio
                         };
-                        db.Treinos.Add(treino);
+                        db.PlanosTreino.Add(plano);
                         await db.SaveChangesAsync();
 
-                        // ── 3. Adiciona exercícios para cada treino ──
-                        // Usando lista de tuplas com tipos explícitos
-                        var exerciciosDoDia = new List<(int ExercicioId, int Ordem, int Series, string Repeticoes, decimal? Carga, int? Descanso)>();
+                        foreach (var diaInfo in diasSemana)
+                        {
+                            var treino = new Treino
+                            {
+                                PlanoTreinoId = plano.Id,
+                                Nome = diaInfo.Nome,
+                                OrdemDia = diaInfo.Ordem,
+                                Observacoes = diaInfo.Ordem % 2 == 0 ? "Foco em membros inferiores" : "Foco em membros superiores",
+                                DataCriacao = ciclo.Inicio
+                            };
+                            db.Treinos.Add(treino);
+                            await db.SaveChangesAsync();
 
-                        if (diaInfo.Ordem % 2 == 1) // Dias ímpares: Superiores
-                        {
-                            exerciciosDoDia.AddRange(new (int, int, int, string, decimal?, int?)[]
+                            // ── Exercícios do dia (com progressão leve de carga entre ciclos) ──
+                            var exerciciosDoDia = new List<(int ExercicioId, int Ordem, int Series, string Repeticoes, decimal? Carga, int? Descanso)>();
+
+                            if (diaInfo.Ordem % 2 == 1) // Dias ímpares: Superiores
                             {
-                                (1, 1, 4, "12", 40.0m, 60),
-                                (3, 2, 4, "12", 30.0m, 60),
-                                (7, 3, 4, "12", 50.0m, 60),
-                                (9, 4, 3, "15", 20.0m, 45),
-                                (13, 5, 3, "15", 15.0m, 45),
-                                (17, 6, 3, "15", 20.0m, 45),
-                                (21, 7, 4, "12", 25.0m, 60)
-                            });
-                        }
-                        else // Dias pares: Inferiores
-                        {
-                            exerciciosDoDia.AddRange(new (int, int, int, string, decimal?, int?)[]
+                                exerciciosDoDia.AddRange(new (int, int, int, string, decimal?, int?)[]
+                                {
+                                    (1, 1, 4, "12", 40.0m + incrementoCarga, 60),
+                                    (3, 2, 4, "12", 30.0m + incrementoCarga, 60),
+                                    (7, 3, 4, "12", 50.0m + incrementoCarga, 60),
+                                    (9, 4, 3, "15", 20.0m + incrementoCarga, 45),
+                                    (13, 5, 3, "15", 15.0m + incrementoCarga, 45),
+                                    (17, 6, 3, "15", 20.0m + incrementoCarga, 45),
+                                    (21, 7, 4, "12", 25.0m + incrementoCarga, 60)
+                                });
+                            }
+                            else // Dias pares: Inferiores
                             {
-                                (29, 1, 4, "10", 60.0m, 90),
-                                (30, 2, 4, "12", 80.0m, 60),
-                                (31, 3, 4, "15", 40.0m, 45),
-                                (32, 4, 4, "15", 35.0m, 45),
-                                (35, 5, 3, "15", 50.0m, 60),
-                                (38, 6, 4, "20", 30.0m, 30)
-                            });
+                                exerciciosDoDia.AddRange(new (int, int, int, string, decimal?, int?)[]
+                                {
+                                    (29, 1, 4, "10", 60.0m + incrementoCarga, 90),
+                                    (30, 2, 4, "12", 80.0m + incrementoCarga, 60),
+                                    (31, 3, 4, "15", 40.0m + incrementoCarga, 45),
+                                    (32, 4, 4, "15", 35.0m + incrementoCarga, 45),
+                                    (35, 5, 3, "15", 50.0m + incrementoCarga, 60),
+                                    (38, 6, 4, "20", 30.0m + incrementoCarga, 30)
+                                });
+                            }
+
+                            var treinoExerciciosCriados = new List<TreinoExercicio>();
+                            foreach (var ex in exerciciosDoDia)
+                            {
+                                var te = new TreinoExercicio
+                                {
+                                    TreinoId = treino.Id,
+                                    ExercicioId = ex.ExercicioId,
+                                    Ordem = ex.Ordem,
+                                    SeriesPlanejadas = ex.Series,
+                                    RepeticoesPlanejadas = ex.Repeticoes,
+                                    CargaPlanejada = ex.Carga,
+                                    TempoDescanso = ex.Descanso,
+                                    DataCriacao = ciclo.Inicio
+                                };
+                                db.TreinoExercicios.Add(te);
+                                treinoExerciciosCriados.Add(te);
+                            }
+                            await db.SaveChangesAsync();
+
+                            // ── Gera execuções reais nas datas do ciclo que caem nesse dia da semana ──
+                            // (só gera execuções para datas que já passaram, até hoje)
+                            for (var data = ciclo.Inicio; data <= ciclo.Fim; data = data.AddDays(1))
+                            {
+                                if (data.DayOfWeek != diaInfo.Dia) continue;
+                                if (data > hoje) continue; // não cria execução para o futuro
+
+                                var execucao = new ExecucaoTreino
+                                {
+                                    TreinoId = treino.Id,
+                                    AlunoId = aluno.Id,
+                                    DataExecucao = data,
+                                    DuracaoMinutos = 55 + (cicloIndex * 2),
+                                    EsforcoPercebido = Math.Min(6 + cicloIndex, 10),
+                                    ObservacoesGerais = "Treino concluído conforme planejado.",
+                                    Concluido = true,
+                                    DataCriacao = data
+                                };
+                                db.ExecucoesTreino.Add(execucao);
+                                await db.SaveChangesAsync();
+
+                                foreach (var te in treinoExerciciosCriados)
+                                {
+                                    db.ExecucoesTreinoExercicios.Add(new ExecucaoTreinoExercicio
+                                    {
+                                        ExecucaoTreinoId = execucao.Id,
+                                        TreinoExercicioId = te.Id,
+                                        SeriesFeitas = te.SeriesPlanejadas,
+                                        RepeticoesFeitas = te.RepeticoesPlanejadas,
+                                        CargaUsada = te.CargaPlanejada,
+                                        Concluido = true,
+                                        Observacoes = ""
+                                    });
+                                }
+                                await db.SaveChangesAsync();
+                            }
                         }
 
-                        foreach (var ex in exerciciosDoDia)
-                        {
-                            db.TreinoExercicios.Add(new TreinoExercicio
-                            {
-                                TreinoId = treino.Id,
-                                ExercicioId = ex.ExercicioId,
-                                Ordem = ex.Ordem,
-                                SeriesPlanejadas = ex.Series,
-                                RepeticoesPlanejadas = ex.Repeticoes,
-                                CargaPlanejada = ex.Carga,
-                                TempoDescanso = ex.Descanso,
-                                DataCriacao = DateTime.Now
-                            });
-                        }
-                        await db.SaveChangesAsync();
+                        Console.WriteLine($"📋 Plano '{plano.Titulo}' criado ({ciclo.Inicio:dd/MM} a {ciclo.Fim:dd/MM}) - status {(statusPlano == 1 ? "Ativo" : "Concluído")}");
                     }
 
-                    // ── 4. Cria os Horários de Atendimento ──
+                    // ── Horários de Atendimento (Segunda a Sábado) ──
                     var horariosAtendimento = new[]
                     {
-                        new { Dia = DayOfWeek.Monday, HoraInicio = new TimeSpan(8, 0, 0), HoraFim = new TimeSpan(9, 0, 0) },
-                        new { Dia = DayOfWeek.Wednesday, HoraInicio = new TimeSpan(10, 0, 0), HoraFim = new TimeSpan(11, 0, 0) },
-                        new { Dia = DayOfWeek.Friday, HoraInicio = new TimeSpan(14, 0, 0), HoraFim = new TimeSpan(15, 0, 0) }
+                        new { Dia = DayOfWeek.Monday,    HoraInicio = new TimeSpan(8, 0, 0),  HoraFim = new TimeSpan(9, 0, 0) },
+                        new { Dia = DayOfWeek.Tuesday,   HoraInicio = new TimeSpan(8, 0, 0),  HoraFim = new TimeSpan(9, 0, 0) },
+                        new { Dia = DayOfWeek.Wednesday, HoraInicio = new TimeSpan(8, 0, 0),  HoraFim = new TimeSpan(9, 0, 0) },
+                        new { Dia = DayOfWeek.Thursday,  HoraInicio = new TimeSpan(8, 0, 0),  HoraFim = new TimeSpan(9, 0, 0) },
+                        new { Dia = DayOfWeek.Friday,    HoraInicio = new TimeSpan(8, 0, 0),  HoraFim = new TimeSpan(9, 0, 0) },
+                        new { Dia = DayOfWeek.Saturday,  HoraInicio = new TimeSpan(10, 0, 0), HoraFim = new TimeSpan(11, 0, 0) }
                     };
 
                     foreach (var horario in horariosAtendimento)
@@ -210,13 +275,120 @@ using (var scope = app.Services.CreateScope())
                             DataCriacao = DateTime.Now
                         });
                     }
-
                     await db.SaveChangesAsync();
 
-                    Console.WriteLine($"✅ Aluno '{aluno.Email}' vinculado ao Personal '{personal.Email}' com plano de treino completo!");
-                    Console.WriteLine($"📋 Total de treinos criados: 6 (Segunda a Sábado)");
-                    Console.WriteLine($"📋 Total de exercícios criados: 39");
-                    Console.WriteLine($"📋 Horários de atendimento: Segunda 08:00, Quarta 10:00, Sexta 14:00");
+                    // ── Avaliações Físicas (medidas + IMC calculado a partir de Altura/Peso) ──
+                    var avaliacoes = new[]
+                    {
+                        new AvaliacaoFisica
+                        {
+                            AlunoId = aluno.Id,
+                            TreinadorId = personal.Id,
+                            DataAvaliacao = new DateTime(2026, 5, 18),
+                            Altura = 1.78m,
+                            Peso = 72.4m,
+                            Pescoco = 37.0m,
+                            Ombro = 112.0m,
+                            ToraxContrai = 98.0m,
+                            ToraxRelax = 95.0m,
+                            BicepsDireito = 32.0m,
+                            BicepsEsquerdo = 31.5m,
+                            Cintura = 81.0m,
+                            Abdomen = 84.0m,
+                            Quadril = 96.0m,
+                            CoxaDireita = 54.0m,
+                            CoxaEsquerda = 53.5m,
+                            PanturrilhaDireita = 36.0m,
+                            PanturrilhaEsquerda = 35.5m,
+                            Observacoes = "Avaliação inicial do Ciclo 2. Aluno iniciando adaptação ao volume de treino.",
+                            DataCriacao = new DateTime(2026, 5, 18)
+                        },
+                        new AvaliacaoFisica
+                        {
+                            AlunoId = aluno.Id,
+                            TreinadorId = personal.Id,
+                            DataAvaliacao = new DateTime(2026, 6, 2),
+                            Altura = 1.78m,
+                            Peso = 74.1m,
+                            Pescoco = 37.2m,
+                            Ombro = 113.5m,
+                            ToraxContrai = 99.5m,
+                            ToraxRelax = 96.5m,
+                            BicepsDireito = 33.0m,
+                            BicepsEsquerdo = 32.5m,
+                            Cintura = 80.0m,
+                            Abdomen = 83.0m,
+                            Quadril = 96.5m,
+                            CoxaDireita = 55.0m,
+                            CoxaEsquerda = 54.5m,
+                            PanturrilhaDireita = 36.5m,
+                            PanturrilhaEsquerda = 36.0m,
+                            Observacoes = "Avaliação do Ciclo 3. Ganho de massa muscular visível, leve redução de cintura.",
+                            DataCriacao = new DateTime(2026, 6, 2)
+                        },
+                        new AvaliacaoFisica
+                        {
+                            AlunoId = aluno.Id,
+                            TreinadorId = personal.Id,
+                            DataAvaliacao = new DateTime(2026, 6, 16),
+                            Altura = 1.78m,
+                            Peso = 75.6m,
+                            Pescoco = 37.5m,
+                            Ombro = 115.0m,
+                            ToraxContrai = 101.0m,
+                            ToraxRelax = 98.0m,
+                            BicepsDireito = 34.0m,
+                            BicepsEsquerdo = 33.5m,
+                            Cintura = 79.5m,
+                            Abdomen = 82.0m,
+                            Quadril = 97.0m,
+                            CoxaDireita = 56.0m,
+                            CoxaEsquerda = 55.5m,
+                            PanturrilhaDireita = 37.0m,
+                            PanturrilhaEsquerda = 36.5m,
+                            Observacoes = "Avaliação do Ciclo 4. Progresso consistente de hipertrofia, ótima evolução geral.",
+                            DataCriacao = new DateTime(2026, 6, 16)
+                        }
+                    };
+
+                    db.AvaliacoesFisicas.AddRange(avaliacoes);
+                    await db.SaveChangesAsync();
+                    Console.WriteLine("📏 3 avaliações físicas (medidas + IMC) cadastradas: 18/05, 02/06 e 16/06.");
+
+                    // ── Anamnese ──
+                    var anamnese = new AnamneseAluno
+                    {
+                        AlunoId = aluno.Id,
+                        TreinadorId = personal.Id,
+                        DataAvaliacao = new DateTime(2026, 5, 3),
+                        JaTreinouAntes = true,
+                        TempoTreinando = "2 anos",
+                        TempoSemAtividade = "3 meses",
+                        Objetivo = "Hipertrofia e ganho de massa muscular",
+                        FrequenciaSemanal = "6x por semana",
+                        TempoPorDia = "60 minutos",
+                        TemDoenca = false,
+                        QualDoenca = null,
+                        TemLimitacaoMovimento = false,
+                        QualLimitacao = null,
+                        TemDorMovimento = false,
+                        QualDor = null,
+                        FezCirurgia = false,
+                        QualCirurgia = null,
+                        UsaMedicamento = false,
+                        QualMedicamento = null,
+                        FazDieta = true,
+                        TipoDieta = "Dieta hipercalórica com foco em proteína (acompanhamento nutricional)",
+                        ConsomeAlcool = "Socialmente, finais de semana",
+                        Fuma = false,
+                        ObservacoesGerais = "Aluno motivado, sem restrições médicas. Retomando treinos após período de pausa de 3 meses.",
+                        DataCriacao = new DateTime(2026, 5, 3)
+                    };
+                    db.Anamneses.Add(anamnese);
+                    await db.SaveChangesAsync();
+                    Console.WriteLine("📝 Anamnese inicial cadastrada para o aluno.");
+
+                    Console.WriteLine($"✅ Aluno '{aluno.Email}' vinculado ao Personal '{personal.Email}' com 5 ciclos de treino completos!");
                 }
                 else
                 {
