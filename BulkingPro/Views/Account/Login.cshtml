@@ -367,6 +367,23 @@
             border-radius: 50%;
             background: #1e1e1e;
         }
+
+        /* ── Link Esqueceu a senha ── */
+        .link-forgot-password {
+            text-align: center;
+            margin-top: 2px;
+        }
+        .link-forgot-password a {
+            font-size: 12px;
+            font-weight: 600;
+            color: #5a5250;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+        .link-forgot-password a:hover {
+            color: #ee1920;
+        }
     </style>
 </head>
 
@@ -422,8 +439,8 @@
                 </div>
             </div>
 
-            <div class="row-forgot">
-                <a href="#">Esqueceu a senha?</a>
+            <div class="link-forgot-password">
+                <a asp-controller="PasswordReset" asp-action="ForgotPassword">Esqueceu sua senha?</a>
             </div>
 
             <button type="submit" class="btn-login">Entrar</button>

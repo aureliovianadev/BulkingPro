@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using BulkingPro.Data;
 using BulkingPro.Models;
+using BulkingPro.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
+// ── Serviços de E-mail (Recuperação de Senha) ────────────────
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 // ── MVC + Razor Pages ────────────────────────────────────────
 builder.Services.AddControllersWithViews(options =>
 {
@@ -65,7 +69,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var db = services.GetRequiredService<ApplicationDbContext>();
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
 
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<Usuario>>();

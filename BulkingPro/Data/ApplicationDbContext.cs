@@ -28,6 +28,11 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
     public DbSet<AlunoHorarioAtendimento> AlunosHorariosAtendimento { get; set; }
     public DbSet<ComentarioTreino> ComentariosTreino { get; set; }
 
+    // ═══════════════════════════════════════════════════════════════════
+    // NOVA TABELA PARA RECUPERAÇÃO DE SENHA
+    // ═══════════════════════════════════════════════════════════════════
+    public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -177,6 +182,17 @@ public class ApplicationDbContext : IdentityDbContext<Usuario>
             .WithMany()
             .HasForeignKey(c => c.TreinoExercicioId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // ÍNDICES PARA RECUPERAÇÃO DE SENHA
+        // ═══════════════════════════════════════════════════════════════════
+
+        builder.Entity<PasswordResetToken>()
+            .HasIndex(t => t.Code)
+            .IsUnique();
+
+        builder.Entity<PasswordResetToken>()
+            .HasIndex(t => new { t.Email, t.Code });
 
         // ── SEED: Categorias ─────────────────────────────────────
         builder.Entity<CategoriaMuscular>().HasData(

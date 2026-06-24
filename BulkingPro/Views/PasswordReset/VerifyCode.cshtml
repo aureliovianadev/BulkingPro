@@ -1,0 +1,546 @@
+@model BulkingPro.ViewModels.VerifyCodeViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <title>Verificar Código - BulkingPro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #060606;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .bg-scene {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .bg-lines {
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                -55deg,
+                transparent,
+                transparent 40px,
+                rgba(255,255,255,0.012) 40px,
+                rgba(255,255,255,0.012) 41px
+            );
+        }
+
+        .bg-vignette {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, rgba(0,0,0,0.85) 100%),
+                radial-gradient(ellipse 60% 80% at 0% 50%, rgba(180,10,15,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 100% 50%, rgba(180,10,15,0.15) 0%, transparent 60%);
+        }
+
+        .bg-topbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ee1920 30%, #ee1920 70%, transparent);
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            margin: 20px;
+            background: rgba(12, 12, 12, 0.92);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-top: 2px solid #ee1920;
+            border-radius: 4px;
+            padding: 40px 36px 32px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 0 1px rgba(238,25,32,0.08), 0 40px 80px rgba(0,0,0,0.7);
+        }
+
+        .card::before,
+        .card::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: #ee1920;
+            border-style: solid;
+        }
+        .card::before {
+            bottom: -1px;
+            left: -1px;
+            border-width: 0 0 2px 2px;
+            border-radius: 0 0 0 4px;
+        }
+        .card::after {
+            bottom: -1px;
+            right: -1px;
+            border-width: 0 2px 2px 0;
+            border-radius: 0 0 4px 0;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .logo-area img {
+            height: 90px;
+            width: auto;
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .form-title h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 3px;
+            color: #f0ece8;
+        }
+        .form-title h1 span {
+            color: #ee1920;
+        }
+        .form-title p {
+            font-size: 13px;
+            font-weight: 500;
+            color: #484240;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
+        }
+
+        .divider-line {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .divider-line::before,
+        .divider-line::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #1a1a1a;
+        }
+        .divider-line span {
+            font-size: 10px;
+            color: #2e2a28;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .code-input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .code-input {
+            width: 52px;
+            height: 60px;
+            background: #0d0d0d;
+            border: 2px solid #1c1c1c;
+            border-radius: 8px;
+            color: #d8d0c8;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #ee1920;
+            box-shadow: 0 0 0 3px rgba(238, 25, 32, 0.15);
+        }
+
+        .code-input.filled {
+            border-color: rgba(46, 160, 67, 0.4);
+        }
+
+        .code-input.error {
+            border-color: #ee1920;
+            animation: shake 0.3s ease;
+        }
+
+        @@keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 3px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-success {
+            background: rgba(46, 160, 67, 0.12);
+            color: #2ea043;
+            border: 1px solid rgba(46, 160, 67, 0.2);
+        }
+
+        .alert-danger {
+            background: rgba(238, 25, 32, 0.07);
+            color: #ff5055;
+            border: 1px solid rgba(238, 25, 32, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            background: #ee1920;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            padding: 15px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 4px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 24px rgba(238, 25, 32, 0.4);
+        }
+
+        .btn:hover {
+            background: #f52028;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(238, 25, 32, 0.55);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: rgba(255,255,255,0.4);
+            box-shadow: none;
+            font-size: 13px;
+            letter-spacing: 1px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(255,255,255,0.05);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .field-validation-error {
+            font-size: 12px;
+            color: #ee1920;
+            margin-top: 4px;
+            display: block;
+            text-align: center;
+        }
+
+        .card-footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #2e2a28;
+        }
+
+        .card-footer a {
+            color: #5a5250;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .card-footer a:hover {
+            color: #ee1920;
+        }
+
+        .timer-text {
+            text-align: center;
+            font-size: 13px;
+            color: #5a5250;
+            margin-top: 10px;
+        }
+
+        .timer-text strong {
+            color: #c4a87a;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @@media (max-width: 480px) {
+            .card { padding: 28px 20px; }
+            .form-title h1 { font-size: 22px; }
+            .logo-area img { height: 70px; }
+            .code-input { width: 44px; height: 52px; font-size: 20px; }
+            .code-input-group { gap: 6px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-scene">
+        <div class="bg-lines"></div>
+        <div class="bg-vignette"></div>
+        <div class="bg-topbar"></div>
+    </div>
+
+    <div class="card">
+        <div class="logo-area">
+            <img src="~/img/Logo_sem_fundo.png" alt="BulkingPro" />
+        </div>
+
+        <div class="form-title">
+            <h1>VERIFICAR <span>CÓDIGO</span></h1>
+            <p>Digite o código enviado para seu e-mail</p>
+        </div>
+
+        <div class="divider-line"><span>Verificação</span></div>
+
+        <div id="alert-container">
+            @if (TempData["Sucesso"] != null)
+            {
+                <div class="alert alert-success">
+                    <i class="ti ti-circle-check"></i> @TempData["Sucesso"]
+                </div>
+            }
+            @if (TempData["Erro"] != null)
+            {
+                <div class="alert alert-danger">
+                    <i class="ti ti-alert-circle"></i> @TempData["Erro"]
+                </div>
+            }
+        </div>
+
+        <form asp-action="VerifyCode" method="post" id="verifyForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Email" value="@Model.Email" />
+
+            <div class="form-group">
+                <label style="text-align:center;width:100%;">Código de 6 dígitos</label>
+                <div class="code-input-group" id="codeInputs">
+                    <input type="text" class="code-input" maxlength="1" data-index="0" autofocus />
+                    <input type="text" class="code-input" maxlength="1" data-index="1" />
+                    <input type="text" class="code-input" maxlength="1" data-index="2" />
+                    <input type="text" class="code-input" maxlength="1" data-index="3" />
+                    <input type="text" class="code-input" maxlength="1" data-index="4" />
+                    <input type="text" class="code-input" maxlength="1" data-index="5" />
+                </div>
+                <input type="hidden" asp-for="Code" id="codeHidden" />
+                <span asp-validation-for="Code" class="field-validation-error"></span>
+            </div>
+
+            <button type="submit" class="btn" id="verifyBtn">Verificar Código</button>
+        </form>
+
+        <div class="timer-text" id="timerText">
+            <span>⏱️ O código expira em <strong id="timerDisplay">15:00</strong></span>
+        </div>
+
+        <button type="button" class="btn btn-ghost" id="resendBtn" onclick="resendCode()">
+            <i class="ti ti-refresh"></i> Reenviar código
+        </button>
+
+        <div class="card-footer">
+            <a asp-controller="Account" asp-action="Login">← Voltar para o login</a>
+        </div>
+    </div>
+
+    <script>
+        // ── INPUTS DE CÓDIGO ──
+        const inputs = document.querySelectorAll('.code-input');
+        const codeHidden = document.getElementById('codeHidden');
+        const verifyBtn = document.getElementById('verifyBtn');
+        let timerInterval;
+
+        function initCodeInputs() {
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/\D/g, '').slice(0, 1);
+                    
+                    if (this.value) {
+                        this.classList.add('filled');
+                        if (index < inputs.length - 1) {
+                            inputs[index + 1].focus();
+                        }
+                    } else {
+                        this.classList.remove('filled');
+                    }
+
+                    updateCode();
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !this.value && index > 0) {
+                        inputs[index - 1].focus();
+                        inputs[index - 1].value = '';
+                        inputs[index - 1].classList.remove('filled');
+                        updateCode();
+                    }
+                });
+
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const paste = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = paste.replace(/\D/g, '').slice(0, 6);
+                    
+                    for (let i = 0; i < digits.length && i < inputs.length; i++) {
+                        inputs[i].value = digits[i];
+                        inputs[i].classList.add('filled');
+                    }
+                    
+                    if (digits.length > 0 && digits.length < inputs.length) {
+                        inputs[digits.length].focus();
+                    } else if (digits.length >= inputs.length) {
+                        inputs[inputs.length - 1].focus();
+                    }
+                    
+                    updateCode();
+                });
+            });
+        }
+
+        function updateCode() {
+            let code = '';
+            inputs.forEach(input => code += input.value);
+            codeHidden.value = code;
+            
+            if (code.length === 6) {
+                verifyBtn.disabled = false;
+            } else {
+                verifyBtn.disabled = true;
+            }
+        }
+
+        // ── TIMER ──
+        function startTimer(minutes) {
+            let totalSeconds = minutes * 60;
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const mins = Math.floor(totalSeconds / 60);
+                const secs = totalSeconds % 60;
+                document.getElementById('timerDisplay').textContent = 
+                    String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+                
+                if (totalSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timerDisplay').textContent = '00:00';
+                    document.getElementById('timerText').innerHTML = 
+                        '<span style="color:#ee1920;">⏰ Código expirado! <a href="#" onclick="resendCode(); return false;" style="color:#c4a87a;">Solicitar novo</a></span>';
+                }
+                
+                totalSeconds--;
+            }, 1000);
+        }
+
+        // ── REENVIAR CÓDIGO ──
+        async function resendCode() {
+            const email = document.querySelector('input[name="Email"]').value;
+            
+            if (!email) {
+                showAlert('E-mail não encontrado. Volte e tente novamente.', 'danger');
+                return;
+            }
+
+            const btn = document.getElementById('resendBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ti ti-refresh ti-spin"></i> Enviando...';
+
+            try {
+                const response = await fetch('/PasswordReset/ResendCode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('Novo código enviado para seu e-mail!', 'success');
+                    startTimer(15);
+                    inputs.forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled');
+                        input.classList.remove('error');
+                    });
+                    inputs[0].focus();
+                    updateCode();
+                } else {
+                    showAlert(result.message || 'Erro ao reenviar código.', 'danger');
+                }
+            } catch (error) {
+                showAlert('Erro ao reenviar código. Tente novamente.', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-refresh"></i> Reenviar código';
+            }
+        }
+
+        // ── ALERT ──
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = '';
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type;
+            alertDiv.innerHTML = '<i class="ti ti-' + (type === 'success' ? 'circle-check' : 'alert-circle') + '"></i> ' + message;
+            container.appendChild(alertDiv);
+            
+            if (type === 'danger') {
+                inputs.forEach(input => {
+                    input.classList.add('error');
+                    setTimeout(() => input.classList.remove('error'), 500);
+                });
+            }
+        }
+
+        // ── ENVIO DO FORMULÁRIO ──
+        document.getElementById('verifyForm').addEventListener('submit', function(e) {
+            const code = document.querySelector('input[name="Code"]').value;
+            if (code.length < 6) {
+                e.preventDefault();
+                showAlert('Preencha o código de 6 dígitos.', 'danger');
+                return false;
+            }
+        });
+
+        // ── INICIAR ──
+        document.addEventListener('DOMContentLoaded', function() {
+            initCodeInputs();
+            updateCode();
+            startTimer(15);
+            verifyBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
