@@ -66,11 +66,14 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+    var db = services.GetRequiredService<ApplicationDbContext>();
+
+    // Migrations são críticas: se falharem, o app não deve continuar rodando
+    // "quebrado" silenciosamente — melhor falhar alto e visível no startup.
+    await db.Database.MigrateAsync();
+
     try
     {
-        var db = services.GetRequiredService<ApplicationDbContext>();
-        await db.Database.MigrateAsync();
-
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<Usuario>>();
 
