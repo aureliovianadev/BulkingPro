@@ -14,6 +14,8 @@ public class HomeController : Controller
 
     public IActionResult Privacy() => View();
 
+    public IActionResult SecurityPolicy() => View();
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

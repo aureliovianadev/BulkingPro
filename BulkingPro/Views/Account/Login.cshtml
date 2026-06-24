@@ -384,6 +384,26 @@
         .link-forgot-password a:hover {
             color: #ee1920;
         }
+
+        /* ── Links de políticas ── */
+        .policy-links {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 11px;
+        }
+        .policy-links a {
+            color: #2e2a28;
+            text-decoration: none;
+            letter-spacing: 0.3px;
+            transition: color 0.2s;
+        }
+        .policy-links a:hover {
+            color: #ee1920;
+        }
+        .policy-sep {
+            color: #1e1e1e;
+            margin: 0 8px;
+        }
     </style>
 </head>
 
@@ -461,6 +481,12 @@
                 </svg>
                 24h disponível
             </div>
+        </div>
+
+        <div class="policy-links">
+            <a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a>
+            <span class="policy-sep">•</span>
+            <a asp-controller="Home" asp-action="SecurityPolicy">Política de Segurança</a>
         </div>
 
     </div>
