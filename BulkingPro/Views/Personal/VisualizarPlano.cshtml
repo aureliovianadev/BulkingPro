@@ -197,7 +197,7 @@
         </button>
     </form>
     <form asp-action="ExcluirPlano" method="post" style="display:inline" 
-          onsubmit="return confirm('Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita.')">
+          data-confirm="Tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita." data-confirm-danger data-confirm-text="Excluir">
         @Html.AntiForgeryToken()
         <input type="hidden" name="id" value="@Model.Id" />
         <button type="submit" class="btn btn-danger">

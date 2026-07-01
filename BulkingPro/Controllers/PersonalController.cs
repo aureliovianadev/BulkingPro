@@ -432,6 +432,121 @@ namespace BulkingPro.Controllers
             return RedirectToAction(nameof(Alunos));
         }
 
+        // ── Excluir Aluno (exclusão definitiva) ─────────────────────
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExcluirAluno(string id)
+        {
+            var personal = await _userManager.GetUserAsync(User);
+            if (personal == null) return Challenge();
+
+            var alunoVinculado = await _context.PlanosTreino
+                .AnyAsync(p => p.TreinadorId == personal.Id && p.AlunoId == id);
+
+            if (!alunoVinculado) return Forbid();
+
+            var aluno = await _userManager.FindByIdAsync(id);
+            if (aluno == null) return NotFound();
+
+            var alunoNome = aluno.NomeCompleto;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var planosIds = await _context.PlanosTreino
+                    .Where(p => p.AlunoId == id)
+                    .Select(p => p.Id)
+                    .ToListAsync();
+
+                var treinosIds = await _context.Treinos
+                    .Where(t => planosIds.Contains(t.PlanoTreinoId))
+                    .Select(t => t.Id)
+                    .ToListAsync();
+
+                var treinoExerciciosIds = await _context.TreinoExercicios
+                    .Where(te => treinosIds.Contains(te.TreinoId))
+                    .Select(te => te.Id)
+                    .ToListAsync();
+
+                var execucoesTreinoIds = await _context.ExecucoesTreino
+                    .Where(et => et.AlunoId == id || treinosIds.Contains(et.TreinoId))
+                    .Select(et => et.Id)
+                    .ToListAsync();
+
+                // Comentários vinculados aos exercícios do treino do aluno
+                var comentarios = await _context.ComentariosTreino
+                    .Where(c => treinoExerciciosIds.Contains(c.TreinoExercicioId))
+                    .ToListAsync();
+                _context.ComentariosTreino.RemoveRange(comentarios);
+
+                // Execuções de exercício (ligadas à execução do treino e/ou ao exercício do treino)
+                var execucoesExercicios = await _context.ExecucoesTreinoExercicios
+                    .Where(ete => execucoesTreinoIds.Contains(ete.ExecucaoTreinoId) || treinoExerciciosIds.Contains(ete.TreinoExercicioId))
+                    .ToListAsync();
+                _context.ExecucoesTreinoExercicios.RemoveRange(execucoesExercicios);
+
+                var execucoesTreino = await _context.ExecucoesTreino
+                    .Where(et => execucoesTreinoIds.Contains(et.Id))
+                    .ToListAsync();
+                _context.ExecucoesTreino.RemoveRange(execucoesTreino);
+
+                var treinoExercicios = await _context.TreinoExercicios
+                    .Where(te => treinoExerciciosIds.Contains(te.Id))
+                    .ToListAsync();
+                _context.TreinoExercicios.RemoveRange(treinoExercicios);
+
+                var treinos = await _context.Treinos
+                    .Where(t => treinosIds.Contains(t.Id))
+                    .ToListAsync();
+                _context.Treinos.RemoveRange(treinos);
+
+                var planos = await _context.PlanosTreino
+                    .Where(p => planosIds.Contains(p.Id))
+                    .ToListAsync();
+                _context.PlanosTreino.RemoveRange(planos);
+
+                var avaliacoes = await _context.AvaliacoesFisicas
+                    .Where(a => a.AlunoId == id)
+                    .ToListAsync();
+                _context.AvaliacoesFisicas.RemoveRange(avaliacoes);
+
+                var anamneses = await _context.Anamneses
+                    .Where(a => a.AlunoId == id)
+                    .ToListAsync();
+                _context.Anamneses.RemoveRange(anamneses);
+
+                var agendamentos = await _context.AgendamentosAlunos
+                    .Where(a => a.AlunoId == id)
+                    .ToListAsync();
+                _context.AgendamentosAlunos.RemoveRange(agendamentos);
+
+                var horariosAtendimento = await _context.AlunosHorariosAtendimento
+                    .Where(h => h.AlunoId == id)
+                    .ToListAsync();
+                _context.AlunosHorariosAtendimento.RemoveRange(horariosAtendimento);
+
+                await _context.SaveChangesAsync();
+
+                var resultadoExclusao = await _userManager.DeleteAsync(aluno);
+                if (!resultadoExclusao.Succeeded)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["Erro"] = "Não foi possível excluir o aluno. Tente novamente.";
+                    return RedirectToAction(nameof(Alunos));
+                }
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                TempData["Erro"] = "Não foi possível excluir o aluno. Tente novamente.";
+                return RedirectToAction(nameof(Alunos));
+            }
+
+            TempData["Sucesso"] = $"Aluno {alunoNome} foi excluído permanentemente. Caso ele queira voltar, será necessário se cadastrar novamente.";
+            return RedirectToAction(nameof(Alunos));
+        }
+
         // ═════════════════════════════════════════════════════════════════
         // AGENDA SEMANAL - CORRIGIDA
         // ═════════════════════════════════════════════════════════════════

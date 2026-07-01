@@ -18,6 +18,9 @@
     
     <!-- Estilos específicos para treinos do aluno -->
     <link rel="stylesheet" href="~/css/aluno-treinos.css" />
+
+    <!-- Modal de confirmação/alerta padronizado -->
+    <script src="~/js/site-dialog.js"></script>
     
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -310,12 +313,13 @@
             fecharModal();
             location.reload();
         } else {
-            alert('Erro ao enviar comentário');
+            await siteAlert('Erro ao enviar comentário', { danger: true });
         }
     }
     
     async function marcarTreinoRealizado(treinoId) {
-        if (!confirm('Marcar este treino como realizado hoje?')) return;
+        const ok = await siteConfirm('Marcar este treino como realizado hoje?', { confirmText: 'Marcar' });
+        if (!ok) return;
         
         const response = await fetch('/Aluno/MarcarTreinoRealizado', {
             method: 'POST',
@@ -330,7 +334,7 @@
         if (result.sucesso) {
             location.reload();
         } else {
-            alert(result.erro || 'Erro ao marcar treino');
+            await siteAlert(result.erro || 'Erro ao marcar treino', { danger: true });
         }
     }
 </script>

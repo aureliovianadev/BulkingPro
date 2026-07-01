@@ -1032,6 +1032,14 @@
                             <div style="background: rgba(46,160,67,0.12); display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 20px; color: #2ea043;">
                                 <i class="ti ti-circle-check"></i> Treino realizado em @dia.DataRealizacao?.ToString("dd/MM/yyyy")
                             </div>
+                            @if (isHoje)
+                            {
+                                <div style="margin-top: 8px;">
+                                    <button class="btn btn-ghost btn-marcar-treino" onclick="desmarcarTreinoRealizado(@dia.TreinoId)">
+                                        <i class="ti ti-x"></i> Desmarcar treino de hoje
+                                    </button>
+                                </div>
+                            }
                         </div>
                     }
                     @if (!estaRealizado && !isHoje)
@@ -1134,13 +1142,14 @@
             fecharModal();
             location.reload();
         } else {
-            alert('Erro ao enviar comentário');
+            await siteAlert('Erro ao enviar comentário', { danger: true });
         }
     }
 
     // ── MARCAR TREINO COMO REALIZADO ──
     async function marcarTreinoRealizado(treinoId) {
-        if (!confirm('Marcar este treino como realizado hoje?')) return;
+        const ok = await siteConfirm('Marcar este treino como realizado hoje?', { confirmText: 'Marcar' });
+        if (!ok) return;
 
         const response = await fetch('/Aluno/MarcarTreinoRealizado', {
             method: 'POST',
@@ -1155,7 +1164,29 @@
         if (result.sucesso) {
             location.reload();
         } else {
-            alert(result.erro || 'Erro ao marcar treino');
+            await siteAlert(result.erro || 'Erro ao marcar treino', { danger: true });
+        }
+    }
+
+    // ── DESMARCAR TREINO COMO REALIZADO ──
+    async function desmarcarTreinoRealizado(treinoId) {
+        const ok = await siteConfirm('Desmarcar este treino como realizado hoje?', { danger: true, confirmText: 'Desmarcar' });
+        if (!ok) return;
+
+        const response = await fetch('/Aluno/DesmarcarTreinoRealizado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            body: JSON.stringify({ treinoId: treinoId })
+        });
+
+        const result = await response.json();
+        if (result.sucesso) {
+            location.reload();
+        } else {
+            await siteAlert(result.erro || 'Erro ao desmarcar treino', { danger: true });
         }
     }
 

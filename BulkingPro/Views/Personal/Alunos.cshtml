@@ -75,34 +75,12 @@
                             <i class="ti ti-edit"></i> Editar
                         </a>
                         
-                        @if (a.Ativo)
-                        {
-                            <form asp-action="InativarAluno" method="post" style="display:inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@a.Id" />
-                                <button type="submit" class="btn btn-danger btn-sm" 
-                                        onclick="return confirm('Inativar @a.NomeCompleto? O aluno não poderá mais acessar o sistema até ser reativado.')">
-                                    <i class="ti ti-user-x"></i> Inativar
-                                </button>
-                            </form>
-                        }
-                        else
-                        {
-                            <form asp-action="ReativarAluno" method="post" style="display:inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@a.Id" />
-                                <button type="submit" class="btn btn-success btn-sm">
-                                    <i class="ti ti-user-check"></i> Reativar
-                                </button>
-                            </form>
-                        }
-                        
-                        <form asp-action="DesvincularAluno" method="post" style="display:inline"
-                              onsubmit="return confirm('Desvincular @a.NomeCompleto? O aluno será removido da sua lista, mas continuará existindo no sistema.')">
+                        <form asp-action="ExcluirAluno" method="post" style="display:inline"
+                              data-confirm="Excluir @a.NomeCompleto permanentemente? Todos os planos, treinos, avaliações e dados do aluno serão apagados. Caso ele queira voltar, precisará se cadastrar novamente." data-confirm-danger data-confirm-text="Excluir">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@a.Id" />
-                            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--gold)">
-                                <i class="ti ti-link-off"></i> Desvincular
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="ti ti-trash"></i> Excluir
                             </button>
                         </form>
                     </td>
